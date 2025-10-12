@@ -2,12 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import MainLayout from '../components/layout/MainLayout';
-import ProductCard from '../components/product/ProductCard';
-import RoleNavigation from '../components/navigation/RoleNavigation';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Button } from '../components/ui/Button';
-import { sampleProducts, sampleUsers } from '../lib/dummyData';
-import { ShoppingBag, Truck, Shield, Headphones, ChevronLeft, ChevronRight } from 'lucide-react';
+import BrowseCategories from '../components/home/BrowseCategories';
+import FeaturedProducts from '../components/home/FeaturedProducts';
+import PromoBanners from '../components/home/PromoBanners';
+import BestSelling from '../components/home/BestSelling';
+import DiscountPromo from '../components/home/DiscountPromo';
+import ForYou from '../components/home/ForYou';
+import FeaturesSection from '../components/home/FeaturesSection';
+import { sampleUsers } from '../lib/dummyData';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 /**
  * Home page component showcasing the e-commerce platform
@@ -102,29 +105,6 @@ export default function Home() {
     // TODO: Implement newsletter subscription
   };
 
-  /**
-   * Handle add to cart
-   */
-  const handleAddToCart = (product: any) => {
-    console.log('Add to cart:', product);
-    // TODO: Implement add to cart functionality
-  };
-
-  /**
-   * Handle add to wishlist
-   */
-  const handleAddToWishlist = (product: any) => {
-    console.log('Add to wishlist:', product);
-    // TODO: Implement add to wishlist functionality
-  };
-
-  /**
-   * Handle product click
-   */
-  const handleProductClick = (product: any) => {
-    console.log('Product clicked:', product);
-    // TODO: Navigate to product detail page
-  };
 
   return (
     <MainLayout
@@ -226,97 +206,26 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-16 bg-white">
-        <div className="w-full max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="text-center">
-              <CardContent className="pt-6">
-                <Truck className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Free Shipping</h3>
-                <p className="text-gray-600">Free shipping on orders over $50</p>
-              </CardContent>
-            </Card>
-            <Card className="text-center">
-              <CardContent className="pt-6">
-                <Shield className="h-12 w-12 text-green-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Secure Payment</h3>
-                <p className="text-gray-600">Your payment information is safe</p>
-              </CardContent>
-            </Card>
-            <Card className="text-center">
-              <CardContent className="pt-6">
-                <Headphones className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">24/7 Support</h3>
-                <p className="text-gray-600">We're here to help you anytime</p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+      {/* Browse Categories Section */}
+      <BrowseCategories />
 
       {/* Featured Products Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="w-full max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Featured Products
-            </h2>
-            <p className="text-lg text-gray-600">
-              Discover our most popular and trending products
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {sampleProducts.slice(0, 8).map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={handleAddToCart}
-                onAddToWishlist={handleAddToWishlist}
-                onProductClick={handleProductClick}
-              />
-            ))}
-          </div>
-          
-          <div className="text-center mt-12">
-            <Button size="lg" className="bg-purple-600 hover:bg-purple-700">
-              View All Products
-            </Button>
-          </div>
-        </div>
-      </section>
+      <FeaturedProducts />
 
-      {/* Role Navigation Section */}
-      <section className="py-16 bg-white">
-        <div className="w-full max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
-          <RoleNavigation />
-        </div>
-      </section>
+      {/* Promotional Banners Section */}
+      <PromoBanners />
 
-      {/* Newsletter Section */}
-      <section className="py-16 bg-purple-600 text-white">
-        <div className="w-full max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">
-            Stay Updated
-          </h2>
-          <p className="text-xl mb-8 text-blue-100">
-            Subscribe to our newsletter for the latest deals and updates
-          </p>
-          <div className="max-w-md mx-auto">
-            <div className="flex gap-2">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 px-4 py-3 rounded-lg text-gray-900"
-              />
-              <Button className="bg-white text-purple-600 hover:bg-gray-100">
-                Subscribe
-              </Button>
-            </div>
-          </div>
-    </div>
-      </section>
+      {/* Best Selling Section */}
+      <BestSelling />
+
+      {/* Discount Promo Section */}
+      <DiscountPromo />
+
+      {/* For You Section */}
+      <ForYou />
+
+      {/* Features Section */}
+      <FeaturesSection />
     </MainLayout>
   );
 }
