@@ -25,9 +25,9 @@ export const sampleProducts: Product[] = [
     price: 199.99,
     originalPrice: 249.99,
     images: [
-      '/images/products/headphones-1.jpg',
-      '/images/products/headphones-2.jpg',
-      '/images/products/headphones-3.jpg',
+      'https://placehold.co/400x400/purple/white?text=Headphones',
+      'https://placehold.co/400x400/purple/white?text=Headphones+2',
+      'https://placehold.co/400x400/purple/white?text=Headphones+3',
     ],
     category: 'Electronics',
     subcategory: 'Audio',
@@ -53,8 +53,8 @@ export const sampleProducts: Product[] = [
     price: 299.99,
     originalPrice: 349.99,
     images: [
-      '/images/products/watch-1.jpg',
-      '/images/products/watch-2.jpg',
+      'https://placehold.co/400x400/blue/white?text=Smart+Watch',
+      'https://placehold.co/400x400/blue/white?text=Smart+Watch+2',
     ],
     category: 'Electronics',
     subcategory: 'Wearables',
@@ -79,8 +79,8 @@ export const sampleProducts: Product[] = [
     description: 'Comfortable organic cotton t-shirt made from sustainable materials. Available in multiple colors and sizes.',
     price: 29.99,
     images: [
-      '/images/products/tshirt-1.jpg',
-      '/images/products/tshirt-2.jpg',
+      'https://placehold.co/400x400/green/white?text=T-Shirt',
+      'https://placehold.co/400x400/green/white?text=T-Shirt+2',
     ],
     category: 'Clothing',
     subcategory: 'Tops',
@@ -106,8 +106,8 @@ export const sampleProducts: Product[] = [
     price: 599.99,
     originalPrice: 699.99,
     images: [
-      '/images/products/lens-1.jpg',
-      '/images/products/lens-2.jpg',
+      'https://placehold.co/400x400/orange/white?text=Camera+Lens',
+      'https://placehold.co/400x400/orange/white?text=Camera+Lens+2',
     ],
     category: 'Electronics',
     subcategory: 'Photography',
@@ -132,8 +132,8 @@ export const sampleProducts: Product[] = [
     description: 'Insulated stainless steel water bottle that keeps drinks cold for 24 hours or hot for 12 hours. BPA-free and eco-friendly.',
     price: 24.99,
     images: [
-      '/images/products/bottle-1.jpg',
-      '/images/products/bottle-2.jpg',
+      'https://placehold.co/400x400/cyan/white?text=Water+Bottle',
+      'https://placehold.co/400x400/cyan/white?text=Water+Bottle+2',
     ],
     category: 'Home & Kitchen',
     subcategory: 'Drinkware',
@@ -159,8 +159,8 @@ export const sampleProducts: Product[] = [
     price: 39.99,
     originalPrice: 49.99,
     images: [
-      '/images/products/charger-1.jpg',
-      '/images/products/charger-2.jpg',
+      'https://placehold.co/400x400/red/white?text=Wireless+Charger',
+      'https://placehold.co/400x400/red/white?text=Wireless+Charger+2',
     ],
     category: 'Electronics',
     subcategory: 'Accessories',
@@ -191,7 +191,7 @@ export const sampleUsers: User[] = [
     firstName: 'John',
     lastName: 'Doe',
     role: 'client',
-    avatar: '/images/avatars/john-doe.jpg',
+    avatar: 'https://placehold.co/150x150/blue/white?text=JD',
     phone: '+1-555-0123',
     address: {
       street: '123 Main St',
@@ -210,7 +210,7 @@ export const sampleUsers: User[] = [
     firstName: 'Jane',
     lastName: 'Smith',
     role: 'seller',
-    avatar: '/images/avatars/jane-smith.jpg',
+    avatar: 'https://placehold.co/150x150/purple/white?text=JS',
     phone: '+1-555-0456',
     address: {
       street: '456 Oak Ave',
@@ -229,7 +229,7 @@ export const sampleUsers: User[] = [
     firstName: 'Mike',
     lastName: 'Wilson',
     role: 'reseller',
-    avatar: '/images/avatars/mike-wilson.jpg',
+    avatar: 'https://placehold.co/150x150/green/white?text=MW',
     phone: '+1-555-0789',
     address: {
       street: '789 Pine Rd',
@@ -248,7 +248,7 @@ export const sampleUsers: User[] = [
     firstName: 'Admin',
     lastName: 'User',
     role: 'super-admin',
-    avatar: '/images/avatars/admin.jpg',
+    avatar: 'https://placehold.co/150x150/red/white?text=Admin',
     phone: '+1-555-0000',
     address: {
       street: '100 Admin Blvd',

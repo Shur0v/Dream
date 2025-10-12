@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import ReduxProvider from "./ReduxProvider";
@@ -15,7 +15,11 @@ export const metadata: Metadata = {
   description: "A professional e-commerce platform with multi-role support for clients, sellers, resellers, and administrators.",
   keywords: "e-commerce, online shopping, marketplace, retail, business",
   authors: [{ name: "Dream E-Commerce Team" }],
-  viewport: "width=device-width, initial-scale=1",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
