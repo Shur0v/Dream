@@ -191,12 +191,12 @@ export default function Home() {
               {/* Bottom Two Images */}
               <div className="w-full flex justify-start items-center gap-6">
                 <img 
-                  className="w-[234px] h-[260px] rounded-xl object-cover flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity" 
+                  className="w-[234px] h-[260px] rounded-xl object-cover flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity bg-cover bg-center" 
                   src="/hero/images/image3.png" 
                   alt="Banner 3"
                 />
                 <img 
-                  className="w-[234px] h-[260px] rounded-xl object-cover flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity" 
+                  className="w-[234px] h-[260px] rounded-xl object-cover flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity bg-cover bg-center" 
                   src="/hero/images/image4.png" 
                   alt="Banner 4"
                 />
