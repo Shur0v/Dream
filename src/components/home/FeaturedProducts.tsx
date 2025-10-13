@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 
 /**
@@ -10,8 +10,30 @@ import Image from 'next/image';
 export default function FeaturedProducts() {
   const [activeFilter, setActiveFilter] = useState('Man');
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  const [showDropdown, setShowDropdown] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const filters = ['Man', 'Woman', 'Kids'];
+
+  const filterData = {
+    Man: ['T-Shirts', 'Shirts', 'Jeans', 'Shoes', 'Watches', 'Accessories'],
+    Woman: ['Dresses', 'Tops', 'Skirts', 'Handbags', 'Jewelry', 'Shoes'],
+    Kids: ['Clothing', 'Toys', 'Books', 'Shoes', 'Accessories', 'Games']
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const products = [
     {
@@ -74,29 +96,55 @@ export default function FeaturedProducts() {
           </div>
 
           {/* Filter Buttons */}
-          <div className="inline-flex justify-start items-center gap-6">
+          <div className="inline-flex justify-start items-center gap-6" ref={dropdownRef}>
             {filters.map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setActiveFilter(filter)}
-                className="p-2.5 rounded border border-stone-300 flex justify-center items-center gap-2.5 hover:bg-gray-50 transition-colors"
-              >
-                <div className="justify-start text-neutral-400 text-base font-normal font-['PolySans_Trial'] leading-tight">
-                  {filter}
-                </div>
-                <div className="w-6 h-6 relative overflow-hidden">
-                  <svg
-                    className="absolute left-[6.25px] top-[9.25px]"
-                    width="12"
-                    height="6"
-                    viewBox="0 0 12 6"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path d="M1 1L6 5L11 1" stroke="#1e293b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-              </button>
+              <div key={filter} className="relative">
+                <button
+                  onClick={() => {
+                    setActiveFilter(filter);
+                    setShowDropdown(showDropdown === filter ? null : filter);
+                  }}
+                  className="p-2.5 rounded border border-stone-300 flex justify-center items-center gap-2.5 hover:bg-gray-50 transition-colors cursor-pointer"
+                >
+                  <div className="justify-start text-neutral-400 text-base font-normal font-['PolySans_Trial'] leading-tight">
+                    {filter}
+                  </div>
+                  <div className="w-6 h-6 relative overflow-hidden">
+                    <svg
+                      className={`absolute left-[6.25px] top-[9.25px] transition-transform duration-200 ${
+                        showDropdown === filter ? 'rotate-180' : ''
+                      }`}
+                      width="12"
+                      height="6"
+                      viewBox="0 0 12 6"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path d="M1 1L6 5L11 1" stroke="#1e293b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                </button>
+                
+                {/* Dropdown Menu */}
+                {showDropdown === filter && (
+                  <div className="absolute top-full left-0 mt-1 w-48 bg-white border border-stone-300 rounded-lg shadow-lg z-10">
+                    <div className="py-2">
+                      {filterData[filter as keyof typeof filterData].map((item, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            setActiveFilter(filter);
+                            setShowDropdown(null);
+                          }}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+                        >
+                          {item}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </div>
@@ -125,7 +173,7 @@ export default function FeaturedProducts() {
                     Verified Seller
                   </div>
                 </div>
-                <div className="transform group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
+                <div className="transform group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 cursor-pointer">
                   <Image
                     src="/card/icon/butterfly.svg"
                     alt="Wishlist"
@@ -196,7 +244,7 @@ export default function FeaturedProducts() {
 
                 {/* Add to Cart Button - Hidden by default, shown on hover */}
                 <div className="self-stretch overflow-hidden">
-                  <button className="w-full h-0 opacity-0 px-7 bg-fuchsia-500 rounded-xl inline-flex justify-center items-center gap-1.5 group-hover:h-14 group-hover:py-3 group-hover:opacity-100 hover:bg-fuchsia-600 transition-all duration-500 ease-out transform translate-y-2 group-hover:translate-y-0">
+                  <button className="w-full h-0 opacity-0 px-7 bg-fuchsia-500 rounded-xl inline-flex justify-center items-center gap-1.5 group-hover:h-14 group-hover:py-3 group-hover:opacity-100 hover:bg-fuchsia-600 transition-all duration-500 ease-out transform translate-y-2 group-hover:translate-y-0 cursor-pointer">
                     <div className="w-5 h-5 relative">
                       <Image
                         src="/card/icon/cart.svg"
