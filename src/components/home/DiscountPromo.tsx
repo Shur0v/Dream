@@ -1,65 +1,224 @@
 'use client';
 
 import React from 'react';
-import { Button } from '../ui/Button';
 
 /**
  * Discount Promo Component
- * Large promotional banner for special offers
+ * Displays promotional offers and discounts with countdown timer
  */
 export default function DiscountPromo() {
   return (
-    <section className="w-full py-12 bg-gradient-to-r from-purple-100 via-purple-50 to-blue-50">
-      <div className="w-full max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative h-[400px] rounded-3xl overflow-hidden bg-gradient-to-br from-purple-600 via-purple-500 to-blue-500">
-          <div className="absolute inset-0 flex flex-col md:flex-row items-center justify-between p-12">
-            {/* Left Content */}
-            <div className="text-white z-10 max-w-xl">
-              <h2 className="text-5xl font-bold mb-4">
-                Flat 30% OFF on<br />
-                Headphones & Accessories
-              </h2>
-              <p className="text-xl mb-6 text-purple-100">
-                Don't miss out on our exclusive summer sale
-              </p>
-              <ul className="space-y-2 mb-8">
-                <li className="flex items-center gap-2">
-                  <span className="text-2xl">✓</span>
-                  <span className="text-lg">Premium Quality Products</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-2xl">✓</span>
-                  <span className="text-lg">Free Shipping Over $50</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-2xl">✓</span>
-                  <span className="text-lg">1 Year Warranty</span>
-                </li>
-              </ul>
-              <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100 text-lg px-8 py-6">
-                Shop Now
-              </Button>
+    <section className="w-full py-12 bg-white">
+      <div className="w-full max-w-[1320px] mx-auto">
+        <div className="w-[1320px] flex justify-start items-center gap-6">
+          {/* Left Card */}
+          <div className="w-[648px] px-9 py-10 bg-black/30 rounded-xl inline-flex flex-col justify-center items-center gap-2.5 relative overflow-hidden">
+            {/* Background Image */}
+            <div className="absolute inset-0 z-0">
+              <img 
+                src="/promobanner/img1.png" 
+                alt="Powerbank" 
+                className="w-full h-full object-cover"
+              />
             </div>
-
-            {/* Right Image */}
-            <div className="relative w-full md:w-1/2 h-full flex items-center justify-center">
-              <div className="relative w-[400px] h-[400px]">
-                <img 
-                  src="/hero/images/image1.png"
-                  alt="Laptop"
-                  className="w-full h-full object-contain drop-shadow-2xl"
-                />
+            {/* Content Overlay */}
+            <div className="relative z-10 self-stretch flex flex-col justify-center items-start gap-6">
+              <div className="self-stretch flex flex-col justify-start items-start gap-3">
+                <div className="w-96 justify-start text-white text-3xl font-semibold font-['Poppins'] leading-10">
+                  Apple Powerbank Aluminum Case
+                </div>
+                <div className="self-stretch flex flex-col justify-start items-start">
+                  <div className="self-stretch justify-start text-red-500 text-base font-semibold font-['Poppins'] leading-7">
+                    Starting bid:
+                  </div>
+                  <div className="self-stretch justify-start text-white text-3xl font-semibold font-['Poppins']">
+                    $849.00
+                  </div>
+                </div>
+                <div className="self-stretch flex flex-col justify-start items-start gap-4">
+                  <div className="flex flex-col justify-start items-center gap-2">
+                    <div className="inline-flex justify-start items-start gap-2">
+                      {/* Days */}
+                      <div className="inline-flex flex-col justify-start items-center gap-1.5">
+                        <div className="w-14 inline-flex justify-start items-center gap-1.5">
+                          <div className="w-12 h-10 p-2.5 bg-white rounded flex justify-center items-center gap-2.5">
+                            <div className="text-center justify-start text-blue-700 text-lg font-semibold font-['PolySans_Trial']">
+                              118
+                            </div>
+                          </div>
+                          <div className="inline-flex flex-col justify-start items-start gap-1.5">
+                            <div className="w-1 h-1 bg-neutral-800 rounded-full" />
+                            <div className="w-1 h-1 bg-neutral-800 rounded-full" />
+                          </div>
+                        </div>
+                        <div className="justify-start text-white text-xs font-medium font-['Poppins']">
+                          DAYS
+                        </div>
+                      </div>
+                      {/* Hours */}
+                      <div className="inline-flex flex-col justify-start items-center gap-1.5">
+                        <div className="w-14 inline-flex justify-start items-center gap-1.5">
+                          <div className="w-12 h-10 p-2.5 bg-white rounded flex justify-center items-center gap-2.5">
+                            <div className="text-center justify-start text-blue-700 text-lg font-semibold font-['PolySans_Trial']">
+                              08
+                            </div>
+                          </div>
+                          <div className="inline-flex flex-col justify-start items-start gap-1.5">
+                            <div className="w-1 h-1 bg-neutral-800 rounded-full" />
+                            <div className="w-1 h-1 bg-neutral-800 rounded-full" />
+                          </div>
+                        </div>
+                        <div className="justify-start text-white text-xs font-medium font-['Poppins']">
+                          HOURS
+                        </div>
+                      </div>
+                      {/* Minutes */}
+                      <div className="inline-flex flex-col justify-start items-center gap-1.5">
+                        <div className="w-14 inline-flex justify-start items-center gap-1.5">
+                          <div className="w-12 h-10 p-2.5 bg-white rounded flex justify-center items-center gap-2.5">
+                            <div className="text-center justify-start text-blue-700 text-lg font-semibold font-['PolySans_Trial']">
+                              19
+                            </div>
+                          </div>
+                          <div className="inline-flex flex-col justify-start items-start gap-1.5">
+                            <div className="w-1 h-1 bg-neutral-800 rounded-full" />
+                            <div className="w-1 h-1 bg-neutral-800 rounded-full" />
+                          </div>
+                        </div>
+                        <div className="justify-start text-white text-xs font-medium font-['Poppins']">
+                          MINS
+                        </div>
+                      </div>
+                      {/* Seconds */}
+                      <div className="inline-flex flex-col justify-start items-center gap-1.5">
+                        <div className="w-14 inline-flex justify-start items-center gap-1.5">
+                          <div className="w-12 h-10 p-2.5 bg-white rounded flex justify-center items-center gap-2.5">
+                            <div className="text-center justify-start text-blue-700 text-lg font-semibold font-['PolySans_Trial']">
+                              54
+                            </div>
+                          </div>
+                        </div>
+                        <div className="justify-start text-white text-xs font-medium font-['Poppins']">
+                          SECS
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="h-11 px-8 py-3 bg-fuchsia-500 rounded-xl inline-flex justify-center items-center gap-1.5">
+                <div className="justify-start text-white text-base font-semibold font-['Poppins'] leading-none">
+                  Buy Now
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Decorative Circles */}
-          <div className="absolute top-10 right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-          <div className="absolute bottom-10 left-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+          {/* Right Card */}
+          <div className="flex-1 self-stretch relative overflow-hidden">
+            <div className="w-[648px] h-96 left-0 top-0 absolute bg-black/30 rounded-xl" />
+            {/* Background Image */}
+            <div className="w-[648px] h-96 left-0 top-0 absolute">
+              <img 
+                src="/promobanner/img2.png" 
+                alt="Smartphone" 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            {/* Content Overlay */}
+            <div className="w-[572px] left-[38.41px] top-[40.50px] absolute inline-flex flex-col justify-center items-start gap-6 z-10">
+              <div className="self-stretch flex flex-col justify-start items-start gap-3">
+                <div className="w-96 justify-start text-white text-3xl font-semibold font-['Poppins'] leading-10">
+                  Apple Powerbank Aluminum Case
+                </div>
+                <div className="self-stretch flex flex-col justify-start items-start">
+                  <div className="self-stretch justify-start text-red-500 text-base font-semibold font-['Poppins'] leading-7">
+                    Starting bid:
+                  </div>
+                  <div className="self-stretch justify-start text-white text-3xl font-semibold font-['Poppins']">
+                    $849.00
+                  </div>
+                </div>
+                <div className="self-stretch flex flex-col justify-start items-start gap-4">
+                  <div className="flex flex-col justify-start items-center gap-2">
+                    <div className="inline-flex justify-start items-start gap-2">
+                      {/* Days */}
+                      <div className="inline-flex flex-col justify-start items-center gap-1.5">
+                        <div className="w-14 inline-flex justify-start items-center gap-1.5">
+                          <div className="w-12 h-10 p-2.5 bg-white rounded flex justify-center items-center gap-2.5">
+                            <div className="text-center justify-start text-blue-700 text-base font-medium font-['Poppins']">
+                              118
+                            </div>
+                          </div>
+                          <div className="inline-flex flex-col justify-start items-start gap-1.5">
+                            <div className="w-1 h-1 bg-neutral-800 rounded-full" />
+                            <div className="w-1 h-1 bg-neutral-800 rounded-full" />
+                          </div>
+                        </div>
+                        <div className="justify-start text-white text-xs font-medium font-['Poppins']">
+                          DAYS
+                        </div>
+                      </div>
+                      {/* Hours */}
+                      <div className="inline-flex flex-col justify-start items-center gap-1.5">
+                        <div className="w-14 inline-flex justify-start items-center gap-1.5">
+                          <div className="w-12 h-10 p-2.5 bg-white rounded flex justify-center items-center gap-2.5">
+                            <div className="text-center justify-start text-blue-700 text-base font-medium font-['Poppins']">
+                              08
+                            </div>
+                          </div>
+                          <div className="inline-flex flex-col justify-start items-start gap-1.5">
+                            <div className="w-1 h-1 bg-neutral-800 rounded-full" />
+                            <div className="w-1 h-1 bg-neutral-800 rounded-full" />
+                          </div>
+                        </div>
+                        <div className="justify-start text-white text-xs font-medium font-['Poppins']">
+                          HOURS
+                        </div>
+                      </div>
+                      {/* Minutes */}
+                      <div className="inline-flex flex-col justify-start items-center gap-1.5">
+                        <div className="w-14 inline-flex justify-start items-center gap-1.5">
+                          <div className="w-12 h-10 p-2.5 bg-white rounded flex justify-center items-center gap-2.5">
+                            <div className="text-center justify-start text-blue-700 text-base font-medium font-['Poppins']">
+                              19
+                            </div>
+                          </div>
+                          <div className="inline-flex flex-col justify-start items-start gap-1.5">
+                            <div className="w-1 h-1 bg-neutral-800 rounded-full" />
+                            <div className="w-1 h-1 bg-neutral-800 rounded-full" />
+                          </div>
+                        </div>
+                        <div className="justify-start text-white text-xs font-medium font-['Poppins']">
+                          MINS
+                        </div>
+                      </div>
+                      {/* Seconds */}
+                      <div className="inline-flex flex-col justify-start items-center gap-1.5">
+                        <div className="w-14 inline-flex justify-start items-center gap-1.5">
+                          <div className="w-12 h-10 p-2.5 bg-white rounded flex justify-center items-center gap-2.5">
+                            <div className="text-center justify-start text-blue-700 text-base font-medium font-['Poppins']">
+                              54
+                            </div>
+                          </div>
+                        </div>
+                        <div className="justify-start text-white text-xs font-medium font-['Poppins']">
+                          SECS
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="h-11 px-8 py-3 bg-fuchsia-500 rounded-xl inline-flex justify-center items-center gap-1.5">
+                <div className="justify-start text-white text-base font-semibold font-['Poppins'] leading-none">
+                  Buy Now
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
   );
 }
-
-
