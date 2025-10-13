@@ -72,11 +72,11 @@ export default function BestSelling() {
         </div>
 
         {/* Products Grid */}
-        <div className="self-stretch h-[532px] inline-flex justify-start items-center gap-5 my-12">
+        <div className="self-stretch h-[532px] flex justify-between items-center my-12">
           {products.map((product, index) => (
             <div
               key={product.id}
-              className="w-[312px] p-4 bg-sky-50 rounded-xl border border-black/10 inline-flex flex-col justify-start items-start group hover:shadow-md hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer"
+              className="w-[312px] p-4 bg-sky-50 rounded-xl border border-black/10 inline-flex flex-col justify-start items-start group hover:shadow-md hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0"
               onMouseEnter={() => setHoveredCard(index)}
               onMouseLeave={() => setHoveredCard(null)}
             >

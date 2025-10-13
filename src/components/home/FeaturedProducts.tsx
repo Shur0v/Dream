@@ -9,13 +9,14 @@ import Image from 'next/image';
  */
 export default function FeaturedProducts() {
   const [activeFilter, setActiveFilter] = useState('Man');
+  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
 
   const filters = ['Man', 'Woman', 'Kids'];
 
   const products = [
     {
       id: 1,
-      name: 'MacBook Pro 16-inch M3 Max',
+      name: 'MacBook Pro 16-inch M3',
       price: 809.99,
       originalPrice: 1000,
       currency: '৳',
@@ -26,35 +27,35 @@ export default function FeaturedProducts() {
     },
     {
       id: 2,
-      name: 'MacBook Pro 16-inch M3 Max',
-      price: 809.99,
-      originalPrice: 1000,
+      name: 'Samsung Galaxy S24 Ultra',
+      price: 1299.99,
+      originalPrice: 1500,
       currency: '৳',
       image: '/card/image/img1.jpg',
-      rating: 5,
-      reviews: 7,
+      rating: 4,
+      reviews: 23,
       isVerifiedSeller: true,
     },
     {
       id: 3,
-      name: 'MacBook Pro 16-inch M3 Max',
-      price: 809.99,
-      originalPrice: 1000,
+      name: 'Sony WH-1000XM5',
+      price: 399.99,
+      originalPrice: 499,
       currency: '৳',
       image: '/card/image/img1.jpg',
       rating: 5,
-      reviews: 7,
+      reviews: 156,
       isVerifiedSeller: true,
     },
     {
       id: 4,
-      name: 'MacBook Pro 16-inch M3 Max',
-      price: 809.99,
-      originalPrice: 1000,
+      name: 'Apple AirPods Pro 2nd',
+      price: 249.99,
+      originalPrice: 299,
       currency: '৳',
       image: '/card/image/img1.jpg',
-      rating: 5,
-      reviews: 7,
+      rating: 4,
+      reviews: 89,
       isVerifiedSeller: true,
     },
   ];
@@ -101,11 +102,13 @@ export default function FeaturedProducts() {
         </div>
 
         {/* Products Grid */}
-        <div className="self-stretch h-[532px] inline-flex justify-start items-center gap-5 my-12">
-          {products.map((product) => (
+        <div className="self-stretch h-[532px] flex justify-between items-center my-12">
+          {products.map((product, index) => (
             <div
               key={product.id}
-              className="w-[312px] p-4 bg-sky-50 rounded-xl border border-black/10 inline-flex flex-col justify-start items-start group hover:shadow-md hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer"
+              className="w-[312px] p-4 bg-sky-50 rounded-xl border border-black/10 inline-flex flex-col justify-start items-start group hover:shadow-md hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0"
+              onMouseEnter={() => setHoveredCard(index)}
+              onMouseLeave={() => setHoveredCard(null)}
             >
               {/* Card Header */}
               <div className="self-stretch inline-flex justify-between items-center mb-2">
@@ -148,8 +151,8 @@ export default function FeaturedProducts() {
                 <div className="self-stretch pt-4 pb-5 flex flex-col justify-center items-start gap-3">
                   {/* Product Name and Price */}
                   <div className="self-stretch flex flex-col justify-start items-start gap-1">
-                    <div className="justify-start text-slate-950 text-lg font-semibold font-['Poppins'] leading-loose group-hover:text-fuchsia-600 transition-colors duration-300">
-                      {product.name}
+                    <div className="justify-start text-slate-950 text-lg font-semibold font-['Poppins'] leading-loose group-hover:text-fuchsia-600 transition-colors duration-300 truncate max-w-full" title={product.name}>
+                      {product.name.length > 24 ? `${product.name.substring(0, 24)}...` : product.name}
                     </div>
                     <div className="inline-flex justify-start items-center gap-1.5">
                       <div className="flex justify-start items-center">
@@ -212,7 +215,23 @@ export default function FeaturedProducts() {
           ))}
         </div>
 
-
+        {/* Pagination Dots */}
+        <div className="h-2 flex justify-center items-center gap-2 mt-8">
+          {[1, 2, 3, 4].map((item, index) => (
+            <div
+              key={index}
+              className={`h-2 rounded-[10px] transition-all duration-300 ease-in-out transform origin-center ${
+                hoveredCard === index
+                  ? 'w-12 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500'
+                  : 'w-5 bg-neutral-200'
+              }`}
+              style={{
+                transformOrigin: 'center',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
