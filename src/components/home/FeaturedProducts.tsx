@@ -152,12 +152,13 @@ export default function FeaturedProducts() {
         {/* Products Grid */}
         <div className="self-stretch h-[532px] flex justify-between items-center my-12">
           {products.map((product, index) => (
-            <div
-              key={product.id}
-              className="w-[312px] p-4 bg-sky-50 rounded-xl border border-black/10 inline-flex flex-col justify-start items-start group hover:shadow-md hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0"
-              onMouseEnter={() => setHoveredCard(index)}
-              onMouseLeave={() => setHoveredCard(null)}
-            >
+             <div
+               key={product.id}
+               className="w-[312px] p-4 bg-sky-50 rounded-xl border border-black/10 inline-flex flex-col justify-start items-start group hover:shadow-md hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
+               onMouseEnter={() => setHoveredCard(index)}
+               onMouseLeave={() => setHoveredCard(null)}
+               style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
+             >
               {/* Card Header */}
               <div className="self-stretch inline-flex justify-between items-center mb-2">
                 <div className="flex justify-start items-center gap-2">
@@ -184,15 +185,18 @@ export default function FeaturedProducts() {
                 </div>
               </div>
 
-              {/* Product Image */}
-              <div className="self-stretch h-72 relative mb-4 overflow-hidden rounded-lg">
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  className="object-contain transform group-hover:scale-105 transition-transform duration-500 ease-out"
-                />
-              </div>
+               {/* Product Image */}
+               <div className="self-stretch h-72 relative mb-4 overflow-hidden rounded-lg">
+                 <Image
+                   src={product.image}
+                   alt={product.name}
+                   fill
+                   className="object-contain transform group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
+                   draggable={false}
+                   onDragStart={(e) => e.preventDefault()}
+                   style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
+                 />
+               </div>
 
               {/* Product Info */}
               <div className="self-stretch flex flex-col justify-start items-start">
