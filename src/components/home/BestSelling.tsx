@@ -165,7 +165,7 @@ export default function BestSelling() {
                 </div>
 
                 {/* Add to Cart Button - Hidden by default, shown on hover */}
-                <div className="self-stretch overflow-hidden">
+                <div className="self-stretch overflow-hidden h-0 group-hover:h-14 transition-all duration-500 ease-out">
                   <button className="w-full h-0 opacity-0 px-7 bg-fuchsia-500 rounded-xl inline-flex justify-center items-center gap-1.5 group-hover:h-14 group-hover:py-3 group-hover:opacity-100 hover:bg-fuchsia-600 transition-all duration-500 ease-out transform translate-y-2 group-hover:translate-y-0">
                     <div className="w-5 h-5 relative">
                       <Image
