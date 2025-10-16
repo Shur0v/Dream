@@ -58,7 +58,7 @@ export default function BestSelling() {
   ];
 
   return (
-    <section className="w-full pb-7 bg-white flex flex-col justify-start items-center gap-8">
+    <section className="w-full py-20 bg-white flex flex-col justify-start items-center gap-8">
       <div className="w-full max-w-[1320px] mx-auto">
         {/* Header Section */}
         <div className="self-stretch flex flex-col justify-start items-start gap-4">
