@@ -53,23 +53,19 @@ export default function PromoBanners() {
   };
 
   return (
-    <section className="w-screen h-[736px] relative overflow-hidden overflow-x-hidden">
+    <section className="father w-full h-[736px] relative overflow-hidden">
       {/* Full Screen Background SVG */}
 
-      
-      {/* Gradient Circles - Full Screen */}
-      <div className="absolute overflow-hidden w-full h-full left-[23.7%]">
-          <div className=" inset-0 w-screen max-h-[736px] z-0 bg-cover bg-center bg-no-repeat origin-center rotate-45">
-              <div className="w-96 h-96 absolute bg-gradient-to-r from-violet-200/60 to-fuchsia-400/20 rounded-full z-10" style={{left: '50%', top: '760px', transform: 'translateX(-50%)'}} />
-              <div className="w-[567px] h-[567px] absolute bg-gradient-to-r from-violet-200/60 to-fuchsia-400/20 rounded-full z-10" style={{left: '50%', top: '210px', transform: 'translateX(-50%)'}} />
-              <div className="w-[998px] h-[998px] absolute bg-gradient-to-r from-violet-200/60 to-fuchsia-400/20 rounded-full z-10" style={{left: '50%', top: '-765px', transform: 'translateX(-50%)'}} />
-          </div>
-      </div>
+      {/* Background image wrapper */}
+      <div
+        className="mother absolute inset-0 bg-[url('/promoslider/shape.svg')] bg-no-repeat bg-[length:100%_100%] bg-left"
+        style={{ left: "28.27%" }}
+      />
 
 
       
       {/* Content Container - Constrained to 1320px */}
-      <div className="relative z-20 w-full max-w-[1320px] mx-auto">
+      <div className="children relative z-20 w-full max-w-[1320px] mx-auto">
         <div className="h-[736px] relative rounded-[30px] overflow-hidden">
           {/* Main Content Container */}
           <div className="w-full h-full px-2.5 pt-20 pb-20 overflow-hidden absolute inline-flex flex-col justify-end items-center gap-12 z-20">
@@ -83,7 +79,7 @@ export default function PromoBanners() {
                 <div className="w-[700px] flex flex-col justify-start items-start gap-6">
                   {/* Headline and Subtitle */}
                   <div className="self-stretch flex flex-col justify-start items-start gap-4">
-                    <div className="self-stretch justify-start text-violet-400 text-5xl font-bold font-['Poppins'] leading-[67.20px]">
+                    <div className="self-stretch justify-start text-5xl font-bold font-['Poppins'] leading-[67.20px] bg-gradient-to-r from-[#9B77E7] to-[#1600A0] bg-clip-text text-transparent">
                       Flat 30% OFF on Headphones & Accessories
                     </div>
                     <div className="self-stretch justify-start text-zinc-600 text-base font-normal font-['PolySans_Trial'] leading-none">
@@ -165,6 +161,7 @@ export default function PromoBanners() {
           </div>
         </div>
       </div>
+      
     </section>
   );
 }
