@@ -144,7 +144,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
       
       {/* Footer */}
       {showFooter && (
-        <Footer onNewsletterSubscribe={onNewsletterSubscribe} />
+        <Footer />
       )}
     </div>
   );
