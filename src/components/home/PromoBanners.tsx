@@ -7,46 +7,86 @@ import React, { useState, useEffect } from 'react';
  * Displays promotional banner with countdown timer and product image
  */
 export default function PromoBanners() {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 18,
-    hours: 19,
-    minutes: 18,
-    seconds: 45
-  });
+  const banners = [
+    {
+      id: 1,
+      image: '/promoslider/img1.png',
+      title: 'Flat 30% OFF on Headphones & Accessories',
+      subtitle: "Don't miss out on today's exclusive deal.",
+      initialTime: { days: 18, hours: 19, minutes: 18, seconds: 45 }
+    },
+    {
+      id: 2,
+      image: '/promoslider/img2.png',
+      title: 'Save 40% on Smart Watches',
+      subtitle: 'Limited time offer ends soon.',
+      initialTime: { days: 5, hours: 12, minutes: 0, seconds: 0 }
+    },
+    {
+      id: 3,
+      image: '/promoslider/img3.png',
+      title: 'Mega Sale: Bluetooth Speakers',
+      subtitle: 'Grab premium sound at low prices.',
+      initialTime: { days: 2, hours: 6, minutes: 30, seconds: 10 }
+    },
+    {
+      id: 4,
+      image: '/promoslider/img4.png',
+      title: 'Exclusive Deals on Gaming Gear',
+      subtitle: 'Upgrade your setup today.',
+      initialTime: { days: 10, hours: 0, minutes: 45, seconds: 20 }
+    }
+  ];
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [timeLefts, setTimeLefts] = useState(
+    banners.map(b => ({ ...b.initialTime }))
+  );
+
+  useEffect(() => {
+    const slideTimer = setInterval(() => {
+      setCurrentSlide(prev => (prev + 1) % banners.length);
+    }, 5000);
+
+    return () => clearInterval(slideTimer);
+  }, []);
+
+  const decrementTime = (
+    value: { days: number; hours: number; minutes: number; seconds: number },
+    initial: { days: number; hours: number; minutes: number; seconds: number }
+  ) => {
+    let { days, hours, minutes, seconds } = value;
+    if (seconds > 0) {
+      seconds--;
+    } else if (minutes > 0) {
+      minutes--;
+      seconds = 59;
+    } else if (hours > 0) {
+      hours--;
+      minutes = 59;
+      seconds = 59;
+    } else if (days > 0) {
+      days--;
+      hours = 23;
+      minutes = 59;
+      seconds = 59;
+    } else {
+      // Reset to the banner's initial time once it reaches zero
+      return { ...initial };
+    }
+    return { days, hours, minutes, seconds };
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeLeft(prevTime => {
-        let { days, hours, minutes, seconds } = prevTime;
-        
-        if (seconds > 0) {
-          seconds--;
-        } else if (minutes > 0) {
-          minutes--;
-          seconds = 59;
-        } else if (hours > 0) {
-          hours--;
-          minutes = 59;
-          seconds = 59;
-        } else if (days > 0) {
-          days--;
-          hours = 23;
-          minutes = 59;
-          seconds = 59;
-        } else {
-          // Reset when countdown reaches zero
-          days = 18;
-          hours = 19;
-          minutes = 18;
-          seconds = 45;
-        }
-        
-        return { days, hours, minutes, seconds };
+      setTimeLefts(prev => {
+        const next = [...prev];
+        next[currentSlide] = decrementTime(prev[currentSlide], banners[currentSlide].initialTime);
+        return next;
       });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [currentSlide]);
 
   const formatTime = (value: number) => {
     return value.toString().padStart(2, '0');
@@ -80,10 +120,10 @@ export default function PromoBanners() {
                   {/* Headline and Subtitle */}
                   <div className="self-stretch flex flex-col justify-start items-start gap-4">
                     <div className="self-stretch justify-start text-5xl font-bold font-['Poppins'] leading-[67.20px] bg-gradient-to-r from-[#9B77E7] to-[#1600A0] bg-clip-text text-transparent">
-                      Flat 30% OFF on Headphones & Accessories
+                      {banners[currentSlide].title}
                     </div>
                     <div className="self-stretch justify-start text-zinc-600 text-base font-normal font-['PolySans_Trial'] leading-none">
-                      Don't miss out on today's exclusive deal.
+                      {banners[currentSlide].subtitle}
                     </div>
                   </div>
                   
@@ -94,7 +134,7 @@ export default function PromoBanners() {
                         {/* Days */}
                         <div className="text-center justify-start">
                           <span className="text-black text-lg font-semibold font-['PolySans_Trial'] leading-loose">
-                            {formatTime(timeLeft.days)}
+                            {formatTime(timeLefts[currentSlide].days)}
                           </span>
                           <span className="text-neutral-600 text-xs font-normal font-['PolySans_Trial']">
                             /Days
@@ -108,7 +148,7 @@ export default function PromoBanners() {
                         {/* Hours */}
                         <div className="text-center justify-start">
                           <span className="text-black text-lg font-semibold font-['PolySans_Trial'] leading-loose">
-                            {formatTime(timeLeft.hours)}
+                            {formatTime(timeLefts[currentSlide].hours)}
                           </span>
                           <span className="text-neutral-600 text-xs font-normal font-['PolySans_Trial']">
                             /Hours
@@ -122,7 +162,7 @@ export default function PromoBanners() {
                         {/* Minutes */}
                         <div className="text-center justify-start">
                           <span className="text-black text-lg font-semibold font-['PolySans_Trial'] leading-loose">
-                            {formatTime(timeLeft.minutes)}
+                            {formatTime(timeLefts[currentSlide].minutes)}
                           </span>
                           <span className="text-neutral-600 text-xs font-normal font-['PolySans_Trial']">
                             /Mins
@@ -145,18 +185,26 @@ export default function PromoBanners() {
               <div className="relative">
                 <img 
                   className="w-[518px] h-96 object-contain" 
-                  src="/promoslider/img1.png" 
+                  src={banners[currentSlide].image}
                   alt="Product"
                 />
               </div>
             </div>
             
             {/* Pagination Dots */}
-            <div className="h-2 inline-flex justify-start items-center gap-2 z-40">
-              <div className="w-12 h-2 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 rounded-[10px]" />
-              <div className="w-5 h-2 bg-neutral-200 rounded-[10px]" />
-              <div className="w-3.5 h-2 bg-neutral-200 rounded-[10px]" />
-              <div className="w-2.5 h-2 bg-neutral-200 rounded-[10px]" />
+            <div className="h-2 flex justify-center items-center gap-2 z-40">
+              {banners.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`h-2 rounded-[10px] transition-all duration-300 ease-in-out ${
+                    currentSlide === index
+                      ? 'w-12 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500'
+                      : 'w-5 bg-neutral-200'
+                  }`}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              ))}
             </div>
           </div>
         </div>
