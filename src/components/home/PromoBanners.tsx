@@ -58,11 +58,11 @@ export default function PromoBanners() {
 
       
       {/* Gradient Circles - Full Screen */}
-      <div className="">
-          <div className="absolute inset-0 w-screen max-h-[736px] z-0 bg-cover bg-center bg-no-repeat origin-center left-[8%] rotate-45">
-              <div className="w-96 h-96 absolute bg-gradient-to-r from-violet-200/60 to-fuchsia-400/20 rounded-full z-10" style={{left: '50%', top: '620px', transform: 'translateX(-50%)'}} />
-              <div className="w-[567px] h-[567px] absolute bg-gradient-to-r from-violet-200/60 to-fuchsia-400/20 rounded-full z-10" style={{left: '50%', top: '80px', transform: 'translateX(-50%)'}} />
-              <div className="w-[998px] h-[998px] absolute bg-gradient-to-r from-violet-200/60 to-fuchsia-400/20 rounded-full z-10" style={{left: '50%', top: '-885px', transform: 'translateX(-50%)'}} />
+      <div className="absolute overflow-hidden w-full h-full left-[23.7%]">
+          <div className=" inset-0 w-screen max-h-[736px] z-0 bg-cover bg-center bg-no-repeat origin-center rotate-45">
+              <div className="w-96 h-96 absolute bg-gradient-to-r from-violet-200/60 to-fuchsia-400/20 rounded-full z-10" style={{left: '50%', top: '760px', transform: 'translateX(-50%)'}} />
+              <div className="w-[567px] h-[567px] absolute bg-gradient-to-r from-violet-200/60 to-fuchsia-400/20 rounded-full z-10" style={{left: '50%', top: '210px', transform: 'translateX(-50%)'}} />
+              <div className="w-[998px] h-[998px] absolute bg-gradient-to-r from-violet-200/60 to-fuchsia-400/20 rounded-full z-10" style={{left: '50%', top: '-765px', transform: 'translateX(-50%)'}} />
           </div>
       </div>
 
