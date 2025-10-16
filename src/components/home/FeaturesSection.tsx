@@ -1,74 +1,76 @@
 'use client';
 
 import React from 'react';
-import { Truck, Shield, RotateCcw, Headphones } from 'lucide-react';
+import Image from 'next/image';
 
 /**
- * Features Section Component
- * Displays key service features at the bottom
+ * Features Section
+ * Matches the provided design and mirrors BestSelling card sizing/spacing
  */
 export default function FeaturesSection() {
   const features = [
     {
       id: 1,
-      icon: Truck,
       title: 'Fast Delivery',
-      description: 'We will deliver your orders in 4-6 days with fastest courier service',
-      color: 'bg-green-100 text-green-600'
+      description:
+        'Get your orders delivered quickly and safely, ensuring no time is wasted.',
+      icon: '/featuressection/fastdelivery.svg',
     },
     {
       id: 2,
-      icon: Shield,
       title: 'Secure Payment',
-      description: 'We provide safe and secure payment gateway for complete secure transactions',
-      color: 'bg-blue-100 text-blue-600'
+      description:
+        'Pay via bKash, Nagad, or credit/debit card with full encryption and safety.',
+      icon: '/featuressection/securepayment.svg',
     },
     {
       id: 3,
-      icon: RotateCcw,
       title: 'Easy Return',
-      description: 'We provide easy return policy. Return product within 7 days in case of any issues',
-      color: 'bg-orange-100 text-orange-600'
+      description:
+        'Not satisfied? Enjoy hassle-free returns or exchanges with no complications.',
+      icon: '/featuressection/easyreturn.svg',
     },
     {
       id: 4,
-      icon: Headphones,
       title: '24/7 Customer Support',
-      description: 'Our customer care is available at your service 24/7 via email or phone call',
-      color: 'bg-purple-100 text-purple-600'
-    }
+      description:
+        'Our expert support team is available round-the-clock to assist you anytime.',
+      icon: '/featuressection/customersupport.svg',
+    },
   ];
 
   return (
-    <section className="w-full py-16 bg-white">
-      <div className="w-full max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((feature) => {
-            const IconComponent = feature.icon;
-            return (
-              <div
-                key={feature.id}
-                className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-shadow"
-              >
-                <div className={`w-16 h-16 ${feature.color} rounded-full flex items-center justify-center mb-4`}>
-                  <IconComponent className="w-8 h-8" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">
-                  {feature.title}
-                </h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  {feature.description}
-                </p>
+    <section className="w-full py-24 relative bg-fuchsia-500 overflow-hidden">
+      <div className="w-full max-w-[1320px] mx-auto">
+        <div className="w-full flex justify-between items-stretch gap-6">
+          {features.map((feature) => (
+            <div
+              key={feature.id}
+              className="w-[312px] p-8 bg-white rounded-xl inline-flex flex-col justify-center items-start gap-3 flex-shrink-0"
+            >
+              <div className="w-11 h-11 relative">
+                <Image src={feature.icon} alt={feature.title} width={44} height={44} />
               </div>
-            );
-          })}
+              <div className="self-stretch flex flex-col justify-start items-start">
+                <div className="self-stretch flex flex-col justify-start items-start gap-4">
+                  <div className="self-stretch h-6 justify-center text-neutral-600 text-xl font-bold font-['Poppins'] leading-7">
+                    {feature.title}
+                  </div>
+                  <div className="self-stretch justify-center text-neutral-600 text-sm font-semibold font-['PolySans_Trial'] leading-snug">
+                    {feature.description}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
+
+        {/* gradient orbs */}
+        <div className="w-52 h-52 right-[-20px] top-[-30px] absolute bg-gradient-to-r from-violet-500/60 to-fuchsia-400/20 rounded-full" />
+        <div className="w-52 h-52 left-[70px] bottom-[-40px] absolute origin-top-left rotate-[150deg] bg-gradient-to-r from-violet-500/60 to-fuchsia-400/20 rounded-full" />
       </div>
     </section>
   );
 }
-
-
-
 
 
