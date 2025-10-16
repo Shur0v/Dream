@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { Facebook, Instagram, Twitter, Linkedin, ArrowRight, MoveRight } from 'lucide-react';
 
 /**
  * Footer component with links and company information
@@ -33,6 +34,83 @@ export default function Footer() {
       setIsSubscribing(false);
     }
   };
+
+  /**
+   * Footer data objects
+   */
+  const companyInfo = {
+    logo: "/footer/logo.png",
+    description: "DreamShop Ltd. – A trusted e-commerce platform for quality products and secure shopping. We connect customers & vendors."
+  };
+
+  const socialMediaIcons = [
+    { 
+      name: "Facebook", 
+      icon: Facebook, 
+      className: "rounded-[39px]",
+      href: "https://facebook.com"
+    },
+    { 
+      name: "Instagram", 
+      icon: Instagram, 
+      className: "rounded-[38px]",
+      href: "https://instagram.com"
+    },
+    { 
+      name: "Twitter", 
+      icon: Twitter, 
+      className: "rounded-[38px]",
+      href: "https://twitter.com"
+    },
+    { 
+      name: "LinkedIn", 
+      icon: Linkedin, 
+      className: "rounded-[50px]",
+      href: "https://linkedin.com"
+    }
+  ];
+
+  const quickLinks = [
+    { name: "About us", href: "/about" },
+    { name: "Contact Us", href: "/contact" },
+    { name: "Offer", href: "/offers" },
+    { name: "Become a seller", href: "/seller" }
+  ];
+
+  const supportLinks = [
+    { name: "Privacy Policy", href: "/privacy" },
+    { name: "Terms & Conditions", href: "/terms" },
+    { name: "Return Policy", href: "/return" },
+    { name: "Customer Support", href: "/support" }
+  ];
+
+  const contactInfo = [
+    { 
+      icon: "mail", 
+      text: "support@dreamshopltd.com",
+      href: "mailto:support@dreamshopltd.com"
+    },
+    { 
+      icon: "phone", 
+      text: "01846-437119",
+      href: "tel:01846-437119"
+    },
+    { 
+      icon: "whatsapp", 
+      text: "01576-609601",
+      href: "https://wa.me/01576609601"
+    },
+    { 
+      icon: "support", 
+      text: "0964710-1112",
+      href: "tel:09647101112"
+    },
+    { 
+      icon: "location", 
+      text: "DreamShop Limited\nKayra Bazar, Ullapara, Sirajgonj",
+      href: "https://maps.google.com"
+    }
+  ];
   
   return (
     <section className="father w-full bg-neutral-800">
@@ -45,36 +123,31 @@ export default function Footer() {
               <div className="self-stretch flex flex-col justify-start items-start gap-8">
                 {/* Logo */}
                 <div className="w-72 h-24 flex flex-col justify-start items-center">
-                  <img className="w-72 h-28" src="/footer/logo.png" alt="DreamShop Logo" />
+                  <img className="w-72 h-28" src={companyInfo.logo} alt="DreamShop Logo" />
                 </div>
                 
                 {/* Company Description */}
                 <div className="self-stretch h-auto justify-start text-white text-lg font-normal font-['Poppins'] leading-7">
-                  DreamShop Ltd. – A trusted e-commerce platform for quality products and secure shopping. We connect customers & vendors.
+                  {companyInfo.description}
                 </div>
               </div>
               
               {/* Social Media Icons */}
               <div className="inline-flex justify-start items-center gap-4">
-                {/* Facebook */}
-                <div className="p-2.5 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 rounded-[39px] inline-flex flex-col justify-start items-start gap-2.5 overflow-hidden">
-                  <img className="w-6 h-6" src="/footer/facebook.svg" alt="Facebook" />
-                </div>
-                
-                {/* Instagram */}
-                <div className="p-2.5 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 rounded-[38px] flex justify-start items-center gap-2.5 overflow-hidden">
-                  <img className="w-6 h-6" src="/footer/instagram.svg" alt="Instagram" />
-                </div>
-                
-                {/* Twitter */}
-                <div className="p-2.5 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 rounded-[38px] flex justify-start items-center gap-2.5 overflow-hidden">
-                  <img className="w-6 h-6" src="/footer/twitter.svg" alt="Twitter" />
-                </div>
-                
-                {/* LinkedIn */}
-                <div className="p-2.5 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 rounded-[50px] flex justify-start items-center gap-2.5 overflow-hidden">
-                  <img className="w-6 h-6" src="/footer/linkedin.svg" alt="LinkedIn" />
-                </div>
+                {socialMediaIcons.map((social, index) => {
+                  const IconComponent = social.icon;
+                  return (
+                    <a
+                      key={index}
+                      href={social.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`p-2.5 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 ${social.className} inline-flex flex-col justify-start items-start gap-2.5 overflow-hidden hover:from-fuchsia-600 hover:to-fuchsia-600 transition-colors`}
+                    >
+                      <IconComponent className="w-6 h-6 text-white" />
+                    </a>
+                  );
+                })}
               </div>
             </div>
             
@@ -84,18 +157,15 @@ export default function Footer() {
                 Quick link
               </div>
               <div className="self-stretch flex flex-col justify-start items-start gap-3">
-                <Link href="/about" className="self-stretch justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug hover:text-white transition-colors">
-                  About us
-                </Link>
-                <Link href="/contact" className="self-stretch justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug hover:text-white transition-colors">
-                  Contact Us
-                </Link>
-                <Link href="/offers" className="self-stretch justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug hover:text-white transition-colors">
-                  Offer
-                </Link>
-                <Link href="/seller" className="self-stretch justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug hover:text-white transition-colors">
-                  Become a seller
-                </Link>
+                {quickLinks.map((link, index) => (
+                  <Link 
+                    key={index}
+                    href={link.href} 
+                    className="self-stretch justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug hover:text-white transition-colors"
+                  >
+                    {link.name}
+                  </Link>
+                ))}
               </div>
             </div>
             
@@ -104,19 +174,16 @@ export default function Footer() {
               <div className="self-stretch justify-start text-white text-xl font-semibold font-['Poppins'] leading-relaxed tracking-tight">
                 Support
               </div>
-              <div className="self-stretch flex flex-col justify-start items-start gap-3">
-                <Link href="/privacy" className="self-stretch justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug hover:text-white transition-colors">
-                  Privacy Policy
-                </Link>
-                <Link href="/terms" className="self-stretch justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug hover:text-white transition-colors">
-                  Terms & Conditions
-                </Link>
-                <Link href="/return" className="self-stretch justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug hover:text-white transition-colors">
-                  Return Policy
-                </Link>
-                <Link href="/support" className="self-stretch justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug hover:text-white transition-colors">
-                  Customer Support
-                </Link>
+              <div className="self-stretch flex flex-col justify-start items-start gap-3 whitespace-nowrap">
+                {supportLinks.map((link, index) => (
+                  <Link 
+                    key={index}
+                    href={link.href} 
+                    className="self-stretch justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug hover:text-white transition-colors"
+                  >
+                    {link.name}
+                  </Link>
+                ))}
               </div>
             </div>
             
@@ -127,70 +194,50 @@ export default function Footer() {
               </div>
               
               <div className="self-stretch flex flex-col justify-start items-start gap-3">
-                {/* Email */}
-                <div className="inline-flex justify-start items-center gap-2">
-                  <img className="w-6 h-6" src="/footer/mail.svg" alt="Email" />
-                  <div className="justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug">
-                    support@dreamshopltd.com
-                  </div>
-                </div>
-                
-                {/* Phone Numbers */}
-                <div className="inline-flex justify-start items-start gap-5">
-                  <div className="flex justify-start items-center gap-2">
-                    <img className="w-6 h-6" src="/footer/phone.svg" alt="Phone" />
-                    <div className="w-32 justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug">
-                      01846-437119
+                {contactInfo.map((contact, index) => (
+                  <div 
+                    key={index}
+                    className={`${contact.icon === 'location' ? 'self-stretch' : ''} inline-flex justify-start items-center gap-2`}
+                  >
+                    <img 
+                      className={`${contact.icon === 'location' ? 'w-8 h-8' : 'w-6 h-6'}`} 
+                      src={`/footer/${contact.icon}.svg`} 
+                      alt={contact.icon} 
+                    />
+                    <div className={`${contact.icon === 'location' ? 'flex-1' : 'w-32'} justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug`}>
+                      {contact.text.split('\n').map((line, lineIndex) => (
+                        <span key={lineIndex}>
+                          {line}
+                          {lineIndex < contact.text.split('\n').length - 1 && <br />}
+                        </span>
+                      ))}
                     </div>
                   </div>
-                  <div className="flex justify-start items-center gap-2">
-                    <img className="w-6 h-6" src="/footer/whatsapp.svg" alt="WhatsApp" />
-                    <div className="w-32 justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug">
-                      01576-609601
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Support Number */}
-                <div className="inline-flex justify-start items-center gap-2">
-                  <img className="w-6 h-6" src="/footer/support.svg" alt="Support" />
-                  <div className="w-32 justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug">
-                    0964710-1112
-                  </div>
-                </div>
-                
-                {/* Address */}
-                <div className="self-stretch inline-flex justify-start items-center gap-2">
-                  <img className="w-8 h-8" src="/footer/location.svg" alt="Location" />
-                  <div className="flex-1 justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug">
-                    DreamShop Limited<br />
-                    Kayra Bazar, Ullapara, Sirajgonj
-                  </div>
-                </div>
+                ))}
               </div>
               
               {/* Newsletter Subscription */}
               <div className="self-stretch flex flex-col justify-start items-start gap-2.5">
-                <form onSubmit={handleNewsletterSubscribe} className="self-stretch">
-                  <div className="self-stretch h-14 px-1.5 py-1.5 bg-neutral-800 rounded-lg outline outline-1 outline-offset-[-1px] outline-fuchsia-500 flex flex-col justify-start items-start gap-2.5">
-                    <div className="w-80 inline-flex justify-between items-center">
-                      <input
-                        type="email"
-                        placeholder="Your email address"
-                        value={newsletterEmail}
-                        onChange={(e) => setNewsletterEmail(e.target.value)}
-                        className="flex-1 bg-transparent text-neutral-400 text-base font-normal font-['Poppins'] leading-relaxed tracking-tight placeholder-neutral-400 focus:outline-none focus:text-white"
-                      />
-                      <button
-                        type="submit"
-                        disabled={isSubscribing || !newsletterEmail}
-                        className="w-16 h-11 px-4 py-5 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 rounded inline-flex flex-col justify-center items-center gap-2.5 hover:from-fuchsia-600 hover:to-fuchsia-600 transition-colors disabled:opacity-50"
-                      >
-                        <img className="w-8 h-0 border-2 border-zinc-100" src="/footer/Arrow 1.svg" alt="Subscribe" />
-                      </button>
+                 <form onSubmit={handleNewsletterSubscribe} className="self-stretch">
+                    <div className="self-stretch h-14 px-1.5 py-1.5 bg-neutral-800 rounded-lg outline outline-1 outline-offset-[-1px] outline-fuchsia-500 flex flex-col justify-center items-center gap-2.5">
+                      <div className="w-full inline-flex justify-between items-center">
+                        <input
+                          type="email"
+                          placeholder="Your email address"
+                          value={newsletterEmail}
+                          onChange={(e) => setNewsletterEmail(e.target.value)}
+                          className="flex-1 bg-transparent text-neutral-400 text-base font-normal font-['Poppins'] leading-relaxed tracking-tight placeholder-neutral-400 focus:outline-none focus:text-white"
+                        />
+                        <button
+                          type="submit"
+                          disabled={isSubscribing || !newsletterEmail}
+                          className="w-16 h-11 bg-gradient-to-r from-[#E279E8] to-[#FF10FF] rounded inline-flex justify-center items-center hover:from-[#D269D8] hover:to-[#F200FF] transition-colors disabled:opacity-50 ml-2"
+                        >
+                          <MoveRight className="w-6 h-6 text-white" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </form>
+                 </form>
                 
                 {/* Privacy Policy Checkbox */}
                 <div className="inline-flex justify-start items-center gap-2">
