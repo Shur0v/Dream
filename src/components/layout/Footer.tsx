@@ -156,17 +156,17 @@ export default function Footer() {
               <div className="self-stretch justify-start text-white text-xl font-semibold font-['Poppins'] leading-relaxed tracking-tight">
                 Quick link
               </div>
-              <div className="self-stretch flex flex-col justify-start items-start gap-3">
-                {quickLinks.map((link, index) => (
-                  <Link 
-                    key={index}
-                    href={link.href} 
-                    className="self-stretch justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug hover:text-white transition-colors"
-                  >
-                    {link.name}
-                  </Link>
-                ))}
-              </div>
+               <div className="self-stretch flex flex-col justify-start items-start gap-3">
+                 {quickLinks.map((link, index) => (
+                   <Link 
+                     key={index}
+                     href={link.href} 
+                     className="self-stretch justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug hover:text-white transition-colors cursor-pointer"
+                   >
+                     {link.name}
+                   </Link>
+                 ))}
+               </div>
             </div>
             
             {/* Support Section */}
@@ -174,17 +174,17 @@ export default function Footer() {
               <div className="self-stretch justify-start text-white text-xl font-semibold font-['Poppins'] leading-relaxed tracking-tight">
                 Support
               </div>
-              <div className="self-stretch flex flex-col justify-start items-start gap-3 whitespace-nowrap">
-                {supportLinks.map((link, index) => (
-                  <Link 
-                    key={index}
-                    href={link.href} 
-                    className="self-stretch justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug hover:text-white transition-colors"
-                  >
-                    {link.name}
-                  </Link>
-                ))}
-              </div>
+               <div className="self-stretch flex flex-col justify-start items-start gap-3 whitespace-nowrap">
+                 {supportLinks.map((link, index) => (
+                   <Link 
+                     key={index}
+                     href={link.href} 
+                     className="self-stretch justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug hover:text-white transition-colors cursor-pointer"
+                   >
+                     {link.name}
+                   </Link>
+                 ))}
+               </div>
             </div>
             
             {/* Contact Us Section */}
@@ -193,28 +193,29 @@ export default function Footer() {
                 Contact Us
               </div>
               
-              <div className="self-stretch flex flex-col justify-start items-start gap-3">
-                {contactInfo.map((contact, index) => (
-                  <div 
-                    key={index}
-                    className={`${contact.icon === 'location' ? 'self-stretch' : ''} inline-flex justify-start items-center gap-2`}
-                  >
-                    <img 
-                      className={`${contact.icon === 'location' ? 'w-8 h-8' : 'w-6 h-6'}`} 
-                      src={`/footer/${contact.icon}.svg`} 
-                      alt={contact.icon} 
-                    />
-                    <div className={`${contact.icon === 'location' ? 'flex-1' : 'w-32'} justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug`}>
-                      {contact.text.split('\n').map((line, lineIndex) => (
-                        <span key={lineIndex}>
-                          {line}
-                          {lineIndex < contact.text.split('\n').length - 1 && <br />}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+               <div className="self-stretch flex flex-col justify-start items-start gap-3">
+                 {contactInfo.map((contact, index) => (
+                   <a
+                     key={index}
+                     href={contact.href}
+                     className={`${contact.icon === 'location' ? 'self-stretch' : ''} inline-flex justify-start items-center gap-2 hover:text-white transition-colors cursor-pointer`}
+                   >
+                     <img 
+                       className={`${contact.icon === 'location' ? 'w-8 h-8' : 'w-6 h-6'}`} 
+                       src={`/footer/${contact.icon}.svg`} 
+                       alt={contact.icon} 
+                     />
+                     <div className={`${contact.icon === 'location' ? 'flex-1' : 'w-32'} justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug`}>
+                       {contact.text.split('\n').map((line, lineIndex) => (
+                         <span key={lineIndex}>
+                           {line}
+                           {lineIndex < contact.text.split('\n').length - 1 && <br />}
+                         </span>
+                       ))}
+                     </div>
+                   </a>
+                 ))}
+               </div>
               
               {/* Newsletter Subscription */}
               <div className="self-stretch flex flex-col justify-start items-start gap-2.5">

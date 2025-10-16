@@ -1,179 +1,167 @@
-/**
- * @fileoverview Offers page
- * Displays current offers and deals
- * 
- * @description This page shows:
- * - Special offers
- * - Discounted products
- * - Limited time deals
- * 
- * @author Your Name
- * @version 1.0.0
- */
-
 'use client';
 
 import React from 'react';
-import MainLayout from '../../components/layout/MainLayout';
-import ProductCard from '../../components/product/ProductCard';
-import { Card, CardContent } from '../../components/ui/Card';
-import { sampleProducts, sampleUsers } from '../../lib/dummyData';
-import { Tag, TrendingDown, Clock } from 'lucide-react';
+import { Percent, Clock, Star, ShoppingBag } from 'lucide-react';
 
-/**
- * Offers page component
- * 
- * @description Renders the offers page with:
- * - Featured deals
- * - Discounted products
- * - Special promotions
- * 
- * @returns JSX offers page element
- */
 export default function OffersPage() {
-  const handleSearch = (query: string) => {
-    console.log('Search query:', query);
-  };
-
-  const handleCartClick = () => {
-    console.log('Cart clicked');
-  };
-
-  const handleWishlistClick = () => {
-    console.log('Wishlist clicked');
-  };
-
-  const handleUserAction = (action: string) => {
-    console.log('User action:', action);
-  };
-
-  const handleNewsletterSubscribe = (email: string) => {
-    console.log('Newsletter subscription:', email);
-  };
-
-  const handleAddToCart = (product: any) => {
-    console.log('Add to cart:', product);
-  };
-
-  const handleAddToWishlist = (product: any) => {
-    console.log('Add to wishlist:', product);
-  };
-
-  const handleProductClick = (product: any) => {
-    console.log('Product clicked:', product);
-  };
-
-  // Filter products with discounts
-  const discountedProducts = sampleProducts.filter(p => p.discount && p.discount > 0);
+  const offers = [
+    {
+      id: 1,
+      title: "Flash Sale - Electronics",
+      discount: "30% OFF",
+      description: "Get amazing discounts on all electronics. Limited time offer!",
+      image: "/offers/electronics.jpg",
+      validUntil: "2025-01-31",
+      category: "Electronics"
+    },
+    {
+      id: 2,
+      title: "Fashion Week Special",
+      discount: "50% OFF",
+      description: "Up to 50% off on all fashion items. Don't miss out!",
+      image: "/offers/fashion.jpg",
+      validUntil: "2025-02-15",
+      category: "Fashion"
+    },
+    {
+      id: 3,
+      title: "Home & Living",
+      discount: "25% OFF",
+      description: "Transform your home with our exclusive home decor offers.",
+      image: "/offers/home.jpg",
+      validUntil: "2025-02-28",
+      category: "Home & Living"
+    },
+    {
+      id: 4,
+      title: "Sports & Fitness",
+      discount: "40% OFF",
+      description: "Stay fit and active with our sports equipment offers.",
+      image: "/offers/sports.jpg",
+      validUntil: "2025-03-10",
+      category: "Sports"
+    }
+  ];
 
   return (
-    <MainLayout
-      user={sampleUsers[0]}
-      cartCount={2}
-      wishlistCount={3}
-      onSearch={handleSearch}
-      onCartClick={handleCartClick}
-      onWishlistClick={handleWishlistClick}
-      onUserAction={handleUserAction}
-      onNewsletterSubscribe={handleNewsletterSubscribe}
-    >
-      {/* Page Header */}
-      <section className="w-full py-12 bg-gradient-to-r from-purple-600 to-blue-600">
-        <div className="w-full max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center text-white">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Special Offers & Deals
+    <section className="father w-full bg-white">
+      {/* Content Container - Constrained to 1320px */}
+      <div className="children relative w-full max-w-[1320px] mx-auto">
+        <div className="w-full py-20 px-4">
+          {/* Header Section */}
+          <div className="text-center mb-16">
+            <h1 className="text-5xl font-bold font-['Poppins'] text-slate-950 mb-4">
+              Special Offers
             </h1>
-            <p className="text-xl text-blue-100">
-              Save big on your favorite products with our exclusive offers
+            <p className="text-xl text-gray-600 font-['Poppins'] max-w-3xl mx-auto">
+              Discover amazing deals and exclusive offers on your favorite products
             </p>
           </div>
-        </div>
-      </section>
 
-      {/* Offer Highlights */}
-      <section className="py-12 bg-white">
-        <div className="w-full max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
-                  <Tag className="h-8 w-8 text-red-600" />
+          {/* Featured Offer Banner */}
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-8 mb-12 text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-bold font-['Poppins'] mb-2">
+                  Mega Sale - Up to 70% OFF
+                </h2>
+                <p className="text-lg font-['Poppins'] opacity-90">
+                  Limited time offer on selected items. Shop now and save big!
+                </p>
+              </div>
+              <div className="text-right">
+                <div className="text-4xl font-bold font-['Poppins']">
+                  70%
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Up to 50% Off</h3>
-                <p className="text-gray-600">Amazing discounts on selected items</p>
-              </CardContent>
-            </Card>
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-orange-100 flex items-center justify-center">
-                  <TrendingDown className="h-8 w-8 text-orange-600" />
+                <div className="text-sm font-['Poppins'] opacity-90">
+                  OFF
                 </div>
-                <h3 className="text-xl font-semibold mb-2">Flash Sales</h3>
-                <p className="text-gray-600">Limited time offers you can't miss</p>
-              </CardContent>
-            </Card>
-            <Card className="text-center hover:shadow-lg transition-shadow">
-              <CardContent className="pt-6">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-blue-100 flex items-center justify-center">
-                  <Clock className="h-8 w-8 text-blue-600" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Daily Deals</h3>
-                <p className="text-gray-600">New offers added every day</p>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
 
-      {/* Discounted Products */}
-      <section className="py-16 bg-gray-50">
-        <div className="w-full max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Featured Deals
-            </h2>
-            <p className="text-lg text-gray-600">
-              Don't miss out on these amazing discounts
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {discountedProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={handleAddToCart}
-                onAddToWishlist={handleAddToWishlist}
-                onProductClick={handleProductClick}
-              />
+          {/* Offers Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
+            {offers.map((offer) => (
+              <div key={offer.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
+                {/* Offer Image */}
+                <div className="h-48 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                  <div className="text-center">
+                    <ShoppingBag className="w-16 h-16 text-gray-400 mx-auto mb-2" />
+                    <p className="text-gray-500 font-['Poppins']">{offer.category}</p>
+                  </div>
+                </div>
+
+                {/* Offer Content */}
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-sm font-semibold font-['Poppins']">
+                      {offer.discount}
+                    </span>
+                    <div className="flex items-center text-gray-500 text-sm font-['Poppins']">
+                      <Clock className="w-4 h-4 mr-1" />
+                      Valid until {offer.validUntil}
+                    </div>
+                  </div>
+
+                  <h3 className="text-xl font-bold font-['Poppins'] text-slate-950 mb-2">
+                    {offer.title}
+                  </h3>
+                  <p className="text-gray-600 font-['Poppins'] mb-4">
+                    {offer.description}
+                  </p>
+
+                  <button className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-3 px-4 rounded-lg font-semibold font-['Poppins'] hover:from-purple-600 hover:to-pink-600 transition-colors">
+                    Shop Now
+                  </button>
+                </div>
+              </div>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* Call to Action */}
-      <section className="py-16 bg-purple-600 text-white">
-        <div className="w-full max-w-[1320px] mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">
-            Subscribe to Get Exclusive Offers
-          </h2>
-          <p className="text-xl mb-8 text-blue-100">
-            Be the first to know about our latest deals and promotions
-          </p>
-          <div className="max-w-md mx-auto flex gap-2">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 px-4 py-3 rounded-lg text-gray-900"
-            />
-            <button className="px-8 py-3 bg-white text-purple-600 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
-              Subscribe
-            </button>
+          {/* Additional Info */}
+          <div className="mt-16 bg-gray-50 rounded-xl p-8">
+            <h2 className="text-2xl font-bold font-['Poppins'] text-slate-950 mb-6 text-center">
+              How Our Offers Work
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Percent className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold font-['Poppins'] text-slate-950 mb-2">
+                  Automatic Discounts
+                </h3>
+                <p className="text-gray-600 font-['Poppins']">
+                  Discounts are automatically applied at checkout
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Clock className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold font-['Poppins'] text-slate-950 mb-2">
+                  Limited Time
+                </h3>
+                <p className="text-gray-600 font-['Poppins']">
+                  Offers are valid for a limited time only
+                </p>
+              </div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Star className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold font-['Poppins'] text-slate-950 mb-2">
+                  Best Deals
+                </h3>
+                <p className="text-gray-600 font-['Poppins']">
+                  We offer the best deals on quality products
+                </p>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
-    </MainLayout>
+      </div>
+    </section>
   );
 }
-
