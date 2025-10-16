@@ -64,11 +64,27 @@ export default function FeaturesSection() {
             </div>
           ))}
         </div>
-
-        {/* gradient orbs */}
-        <div className="w-52 h-52 right-[-20px] top-[-30px] absolute bg-gradient-to-r from-violet-500/60 to-fuchsia-400/20 rounded-full" />
-        <div className="w-52 h-52 left-[70px] bottom-[-40px] absolute origin-top-left rotate-[150deg] bg-gradient-to-r from-violet-500/60 to-fuchsia-400/20 rounded-full" />
       </div>
+
+      {/* corner decorations */}
+      <Image
+        src="/featuressection/topright.png"
+        alt=""
+        width={120}
+        height={120}
+        className="pointer-events-none select-none absolute top-0 right-0"
+        aria-hidden
+        priority
+      />
+      <Image
+        src="/featuressection/bottomleft.png"
+        alt=""
+        width={120}
+        height={120}
+        className="pointer-events-none select-none absolute bottom-0 left-0"
+        aria-hidden
+        priority
+      />
     </section>
   );
 }
