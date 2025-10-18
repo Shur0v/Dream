@@ -58,20 +58,32 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   ];
 
   return (
-    <nav className={`w-full bg-gradient-to-r from-[rgba(210,105,216,1)] to-[rgba(242,0,255,1)] py-3 ${className}`}>
-      <div className="w-full max-w-[1320px] mx-auto flex items-center justify-center">
-        <div className="inline-flex items-center gap-4 sm:gap-8 lg:gap-12">
+    <nav className={`father w-full bg-gradient-to-r from-[rgba(210,105,216,1)] to-[rgba(242,0,255,1)] py-3 ${className}`} role="navigation" aria-label="Main navigation" data-layer="father">
+      {/* father = full width bottom navigation section */}
+      
+      <div className="daughter w-full max-w-[1320px] mx-auto flex items-center justify-center" data-layer="daughter">
+        {/* daughter = design holder for entire bottom navigation section */}
+        
+        <div className="layer-1 inline-flex items-center gap-4 sm:gap-8 lg:gap-12" data-layer="1">
+          {/* layer-1 = navigation links container */}
+          
           {navigationLinks.map((link, index) => (
             <Link
               key={index}
               href={link.href}
-              className="inline-flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity font-bold"
+              className="layer-2 inline-flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity font-bold"
+              aria-label={`Navigate to ${link.text}`}
+              data-layer="2"
             >
+              {/* layer-2 = individual navigation link */}
+              
               <div
-                className={`font-bold text-white text-sm text-center tracking-[-0.28px] leading-[25.2px] whitespace-nowrap ${
+                className={`layer-3 font-bold text-white text-sm text-center tracking-[-0.28px] leading-[25.2px] whitespace-nowrap ${
                   link.active ? 'font-bold' : 'font-bold'
                 }`}
+                data-layer="3"
               >
+                {/* layer-3 = navigation link text */}
                 {link.text}
               </div>
             </Link>

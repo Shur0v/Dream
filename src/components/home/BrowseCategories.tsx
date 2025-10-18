@@ -62,31 +62,57 @@ export default function BrowseCategories() {
   ];
 
   return (
-    <section className="w-full pt-10 pb-24 bg-white">
-      <div className="w-full max-w-[1320px] mx-auto">
-        <div className="text-slate-950 text-5xl font-medium font-['Poppins'] leading-[57.60px] mb-6">
-          Browse Categories
-        </div>
-        <div className="w-full flex justify-between items-start">
-          {categories.map((category) => (
-            <button 
-              key={category.id} 
-              className="flex flex-col justify-start items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => console.log(`Clicked: ${category.name}`)}
-            >
-              {/* Fixed size container for all categories */}
-              <div className="w-28 h-28 bg-white rounded-full flex justify-center items-center">
-                <img 
-                  className="w-20 h-20 object-cover" 
-                  src={category.image} 
-                  alt={category.name}
-                />
-              </div>
-              <div className="text-center text-neutral-700 text-xl font-medium font-['Poppins'] leading-tight whitespace-nowrap">
-                {category.name}
-              </div>
-            </button>
-          ))}
+    <section className="father w-full pt-10 pb-24 bg-white" role="region" aria-labelledby="browse-categories-heading" data-layer="father">
+      {/* father = full width browse categories section */}
+      
+      <div className="daughter" data-layer="daughter">
+        {/* daughter = design holder for entire browse categories section */}
+        
+        <div className="layer-1 w-full max-w-[1320px] mx-auto" role="main" data-layer="1">
+          {/* layer-1 = main content container with max width constraint */}
+          
+          <div 
+            className="layer-2 text-slate-950 text-5xl font-medium font-['Poppins'] leading-[57.60px] mb-6"
+            id="browse-categories-heading"
+            role="heading"
+            aria-level={2}
+            data-layer="2"
+          >
+            {/* layer-2 = section heading */}
+            Browse Categories
+          </div>
+          
+          <div className="layer-3 w-full flex justify-between items-start" data-layer="3">
+            {/* layer-3 = categories grid container */}
+            
+            {categories.map((category) => (
+              <button 
+                key={category.id} 
+                className="layer-4 flex flex-col justify-start items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={() => console.log(`Clicked: ${category.name}`)}
+                aria-label={`Browse ${category.name} category`}
+                data-layer="4"
+              >
+                {/* layer-4 = individual category button */}
+                
+                {/* Fixed size container for all categories */}
+                <div className="layer-5 w-28 h-28 bg-white rounded-full flex justify-center items-center" data-layer="5">
+                  {/* layer-5 = category icon container */}
+                  <img 
+                    className="w-20 h-20 object-cover" 
+                    src={category.image} 
+                    alt={`${category.name} category icon`}
+                    loading="lazy"
+                  />
+                </div>
+                
+                <div className="layer-6 text-center text-neutral-700 text-xl font-medium font-['Poppins'] leading-tight whitespace-nowrap" data-layer="6">
+                  {/* layer-6 = category name */}
+                  {category.name}
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </section>

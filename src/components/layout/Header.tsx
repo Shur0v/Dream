@@ -99,21 +99,36 @@ export const Header: React.FC<HeaderProps> = ({
   onUserAction,
 }) => {
   return (
-    <header className="sticky top-0 z-50">
-      {/* Top Information Bar */}
-      <TopBar />
+    <header className="father sticky top-0 z-50" role="banner" data-layer="father">
+      {/* father = complete header section */}
       
-      {/* Main Navigation Header */}
-      <MainHeader
-        cartCount={cartCount}
-        wishlistCount={wishlistCount}
-        onSearch={onSearch}
-        onCartClick={onCartClick}
-        onWishlistClick={onWishlistClick}
-      />
-      
-      {/* Bottom Navigation Bar */}
-      <BottomNav userRole={user?.role} />
+      <div className="daughter" data-layer="daughter">
+        {/* daughter = design holder for entire header section */}
+        
+        {/* Top Information Bar */}
+        <div className="layer-1" data-layer="1">
+          {/* layer-1 = top bar container */}
+          <TopBar />
+        </div>
+        
+        {/* Main Navigation Header */}
+        <div className="layer-2" data-layer="2">
+          {/* layer-2 = main header container */}
+          <MainHeader
+            cartCount={cartCount}
+            wishlistCount={wishlistCount}
+            onSearch={onSearch}
+            onCartClick={onCartClick}
+            onWishlistClick={onWishlistClick}
+          />
+        </div>
+        
+        {/* Bottom Navigation Bar */}
+        <div className="layer-3" data-layer="3">
+          {/* layer-3 = bottom navigation container */}
+          <BottomNav userRole={user?.role} />
+        </div>
+      </div>
     </header>
   );
 };
