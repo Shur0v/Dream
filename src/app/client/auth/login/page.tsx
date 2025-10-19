@@ -3,9 +3,9 @@
  * Page for customers to sign in
  * 
  * @description This page includes:
- * - Customer login form
- * - Link to customer registration
- * - Password recovery
+ * - Customer login form with clean design
+ * - Logo integration
+ * - Minimal, clean implementation
  * 
  * @author Your Name
  * @version 1.0.0
@@ -15,18 +15,15 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../../components/ui/Card';
-import { Button } from '../../../../components/ui/Button';
-import { Input } from '../../../../components/ui/Input';
-import { ShoppingBag, Mail, Lock } from 'lucide-react';
+import Image from 'next/image';
 
 /**
  * Customer Login page component
  * 
  * @description Renders the customer login page with:
- * - Login form
- * - Link to customer registration
- * - Remember me option
+ * - Clean design matching registration page
+ * - Logo integration
+ * - Form validation
  * 
  * @returns JSX customer login page element
  */
@@ -54,144 +51,214 @@ export default function CustomerLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md">
-        {/* Logo/Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
-              <ShoppingBag className="h-8 w-8 text-white" />
-            </div>
+    <section className="father w-full py-10 relative overflow-hidden bg-[#F7F7F7] flex items-center justify-center" role="main" data-layer="father">
+      {/* father = full width login page section */}
+      
+      <div className="daughter" data-layer="daughter">
+        {/* daughter = design holder for entire login page */}
+        
+        {/* Main Container - 1086px width with 100px padding */}
+        <div className="layer-1 w-[1086px] h-[1122px] p-[100px] bg-white rounded-3xl inline-flex flex-col justify-center items-center gap-12" data-layer="1">
+          {/* layer-1 = main container with exact dimensions and padding */}
+          
+          {/* Logo Section */}
+          <div className="layer-2 w-[657.83px] h-60 flex flex-col justify-start items-center" data-layer="2">
+            {/* layer-2 = logo container */}
+            <Image 
+              className="layer-3 self-stretch h-60" 
+              src="/common/logo.svg" 
+              alt="DreamShop Logo"
+              width={658}
+              height={239}
+              priority
+              data-layer="3"
+            />
+            {/* layer-3 = logo image */}
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Customer Login
-          </h1>
-          <p className="text-lg text-gray-600">
-            Sign in to your account
-          </p>
-        </div>
 
-        {/* Login Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl text-center">Welcome Back</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <Input
+          {/* Form Section */}
+          <div className="layer-4 w-[792px] flex flex-col justify-start items-center gap-10" data-layer="4">
+            {/* layer-4 = form section container */}
+            
+            {/* Header Section */}
+            <div className="layer-5 flex flex-col justify-start items-start gap-4" data-layer="5">
+              {/* layer-5 = header section container */}
+              
+              <div className="layer-6 self-stretch text-center justify-start text-neutral-800 text-6xl font-bold font-['Lato'] leading-[67.20px]" data-layer="6">
+                {/* layer-6 = main title */}
+                Welcome Back
+              </div>
+              <div className="layer-7 self-stretch text-center justify-start text-neutral-800 text-base font-medium font-['Lato'] leading-tight" data-layer="7">
+                {/* layer-7 = subtitle */}
+                Sign in to your account to continue
+              </div>
+            </div>
+
+            {/* Form Fields */}
+            <div className="layer-8 self-stretch flex flex-col justify-start items-start gap-10" data-layer="8">
+              {/* layer-8 = form fields container */}
+              
+              <div className="layer-9 self-stretch flex flex-col justify-start items-start gap-6" data-layer="9">
+                {/* layer-9 = form fields wrapper */}
+                
+                {/* Email Field */}
+                <div className="layer-10 self-stretch flex flex-col justify-start items-start gap-2" data-layer="10">
+                  {/* layer-10 = email field container */}
+                  
+                  <div className="layer-11 self-stretch justify-start text-neutral-600 text-base font-medium font-['Poppins'] leading-none" data-layer="11">
+                    {/* layer-11 = field label */}
+                    Email Address
+                  </div>
+                  <input
                     type="email"
                     name="email"
-                    placeholder="customer@example.com"
                     value={formData.email}
                     onChange={handleChange}
-                    className="pl-10"
+                    placeholder="Enter your email"
+                    className="layer-12 self-stretch h-11 px-5 py-3.5 rounded-md outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-start items-center gap-2.5 text-zinc-500 text-sm font-normal font-['Poppins'] leading-none"
                     required
+                    data-layer="12"
                   />
+                  {/* layer-12 = input field */}
                 </div>
-              </div>
 
-              {/* Password */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <Input
+                {/* Password Field */}
+                <div className="layer-13 self-stretch flex flex-col justify-start items-start gap-2" data-layer="13">
+                  {/* layer-13 = password field container */}
+                  
+                  <div className="layer-14 self-stretch justify-start text-neutral-600 text-base font-medium font-['Poppins'] leading-none" data-layer="14">
+                    {/* layer-14 = field label */}
+                    Password
+                  </div>
+                  <input
                     type="password"
                     name="password"
-                    placeholder="Enter your password"
                     value={formData.password}
                     onChange={handleChange}
-                    className="pl-10"
+                    placeholder="Enter your password"
+                    className="layer-15 self-stretch h-11 px-5 py-3.5 rounded-md outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-start items-center gap-2.5 text-zinc-500 text-sm font-normal font-['Poppins'] leading-none"
                     required
+                    data-layer="15"
                   />
+                  {/* layer-15 = input field */}
+                </div>
+
+                {/* Remember Me and Forgot Password */}
+                <div className="layer-16 flex flex-col justify-start items-start gap-2.5" data-layer="16">
+                  {/* layer-16 = remember me and forgot password container */}
+                  
+                  <div className="layer-17 self-stretch inline-flex justify-between items-center gap-2.5" data-layer="17">
+                    {/* layer-17 = checkbox and link wrapper */}
+                    
+                    <div className="layer-18 inline-flex justify-start items-center gap-2.5" data-layer="18">
+                      {/* layer-18 = checkbox wrapper */}
+                      
+                      <input
+                        type="checkbox"
+                        name="rememberMe"
+                        checked={formData.rememberMe}
+                        onChange={handleChange}
+                        className="layer-19 w-4 h-4 rounded-full border border-blue-600"
+                        data-layer="19"
+                      />
+                      {/* layer-19 = checkbox input */}
+                      
+                      <div className="layer-20 justify-start text-neutral-600 text-sm font-normal font-['Poppins'] leading-tight" data-layer="20">
+                        {/* layer-20 = checkbox label */}
+                        Remember me
+                      </div>
+                    </div>
+                    
+                    <Link 
+                      href="/client/auth/forgot-password" 
+                      className="layer-21 justify-start text-blue-600 text-sm font-normal font-['Poppins'] leading-tight hover:text-blue-700"
+                      data-layer="21"
+                    >
+                      {/* layer-21 = forgot password link */}
+                      Forgot password?
+                    </Link>
+                  </div>
                 </div>
               </div>
-
-              {/* Remember Me & Forgot Password */}
-              <div className="flex items-center justify-between">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    name="rememberMe"
-                    checked={formData.rememberMe}
-                    onChange={handleChange}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Remember me</span>
-                </label>
-                <Link 
-                  href="/client/auth/forgot-password" 
-                  className="text-sm text-blue-600 hover:text-blue-700"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-
-              {/* Submit Button */}
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                size="lg"
-              >
-                Sign In
-              </Button>
-            </form>
-
-            {/* Registration Link */}
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Don't have an account?{' '}
-                <Link 
-                  href="/client/auth/register" 
-                  className="font-semibold text-blue-600 hover:text-blue-700"
-                >
-                  Register here
-                </Link>
-              </p>
             </div>
+          </div>
 
-            {/* Other Login Options */}
-            <div className="mt-6 border-t pt-6">
-              <p className="text-sm text-gray-600 text-center mb-4">
-                Are you a:
-              </p>
-              <div className="flex flex-col gap-2">
-                <Link 
-                  href="/seller/login" 
-                  className="text-sm text-green-600 hover:text-green-700 text-center"
-                >
-                  Seller? Sign in here →
-                </Link>
-                <Link 
-                  href="/reseller/login" 
-                  className="text-sm text-purple-600 hover:text-purple-700 text-center"
-                >
-                  Reseller? Sign in here →
-                </Link>
-              </div>
+          {/* Sign In Button */}
+          <button
+            type="submit"
+            onClick={handleSubmit}
+            className="layer-22 w-[792px] h-14 px-5 py-3.5 bg-fuchsia-500 rounded-md inline-flex justify-center items-center gap-2.5"
+            data-layer="22"
+          >
+            {/* layer-22 = sign in button */}
+            
+            <div className="layer-23 justify-start text-white text-base font-semibold font-['Poppins'] leading-7" data-layer="23">
+              {/* layer-23 = button text */}
+              Sign In
             </div>
+          </button>
 
-            {/* Back to Home */}
-            <div className="mt-4 text-center">
+          {/* Registration Link */}
+          <div className="layer-24 text-center" data-layer="24">
+            {/* layer-24 = registration link container */}
+            
+            <p className="layer-25 text-sm text-gray-600" data-layer="25">
+              {/* layer-25 = registration link text */}
+              Don't have an account?{' '}
               <Link 
-                href="/client/home" 
-                className="text-sm text-gray-500 hover:text-gray-700"
+                href="/client/auth/register" 
+                className="font-semibold text-blue-600 hover:text-blue-700"
               >
-                ← Back to Home
+                Register here
+              </Link>
+            </p>
+          </div>
+
+          {/* Other Login Options */}
+          <div className="layer-26 text-center" data-layer="26">
+            {/* layer-26 = other login options container */}
+            
+            <p className="layer-27 text-sm text-gray-600 mb-4" data-layer="27">
+              {/* layer-27 = other login options text */}
+              Are you a:
+            </p>
+            <div className="layer-28 flex flex-col gap-2" data-layer="28">
+              {/* layer-28 = other login links wrapper */}
+              
+              <Link 
+                href="/seller/login" 
+                className="layer-29 text-sm text-green-600 hover:text-green-700"
+                data-layer="29"
+              >
+                {/* layer-29 = seller login link */}
+                Seller? Sign in here →
+              </Link>
+              <Link 
+                href="/reseller/login" 
+                className="layer-30 text-sm text-purple-600 hover:text-purple-700"
+                data-layer="30"
+              >
+                {/* layer-30 = reseller login link */}
+                Reseller? Sign in here →
               </Link>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Back to Home Link */}
+          <div className="layer-31 text-center" data-layer="31">
+            {/* layer-31 = back to home link container */}
+            
+            <Link 
+              href="/" 
+              className="layer-32 text-sm text-gray-500 hover:text-gray-700"
+              data-layer="32"
+            >
+              {/* layer-32 = back to home link */}
+              ← Back to Home
+            </Link>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
