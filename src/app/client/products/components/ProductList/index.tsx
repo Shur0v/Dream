@@ -23,48 +23,76 @@ export default function ProductList() {
   // Sample products data
   const products = [
     {
-      id: 1,
+      id: '1',
       name: 'Wireless Headphones',
+      description: 'High-quality wireless headphones with noise cancellation',
       price: 299.99,
       originalPrice: 399.99,
-      image: '/card/image/img1.jpg',
-      rating: 4.5,
-      reviewCount: 128,
+      discount: 25,
+      images: ['/card/image/img1.jpg'],
       category: 'Electronics',
-      inStock: true
+      brand: 'TechBrand',
+      sku: 'WH-001',
+      stock: 50,
+      isActive: true,
+      tags: ['wireless', 'headphones', 'electronics'],
+      sellerId: 'seller-001',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
     },
     {
-      id: 2,
+      id: '2',
       name: 'Smart Watch',
+      description: 'Advanced smartwatch with health monitoring features',
       price: 199.99,
       originalPrice: 249.99,
-      image: '/hero/images/image2.jpg',
-      rating: 4.2,
-      reviewCount: 89,
+      discount: 20,
+      images: ['/hero/images/image2.jpg'],
       category: 'Electronics',
-      inStock: true
+      brand: 'SmartTech',
+      sku: 'SW-002',
+      stock: 30,
+      isActive: true,
+      tags: ['smartwatch', 'health', 'electronics'],
+      sellerId: 'seller-002',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
     },
     {
-      id: 3,
+      id: '3',
       name: 'Bluetooth Speaker',
+      description: 'Portable Bluetooth speaker with excellent sound quality',
       price: 79.99,
       originalPrice: 99.99,
-      image: '/hero/images/image3.png',
-      rating: 4.7,
-      reviewCount: 156,
+      discount: 20,
+      images: ['/hero/images/image3.png'],
       category: 'Electronics',
-      inStock: false
+      brand: 'SoundMax',
+      sku: 'BS-003',
+      stock: 0,
+      isActive: true,
+      tags: ['bluetooth', 'speaker', 'portable'],
+      sellerId: 'seller-003',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
     },
     {
-      id: 4,
+      id: '4',
       name: 'Gaming Mouse',
+      description: 'High-precision gaming mouse with RGB lighting',
       price: 49.99,
       originalPrice: 69.99,
-      image: '/hero/images/image4.png',
-      rating: 4.3,
-      reviewCount: 203,
+      discount: 29,
+      images: ['/hero/images/image4.png'],
       category: 'Electronics',
-      inStock: true
+      brand: 'GamePro',
+      sku: 'GM-004',
+      stock: 25,
+      isActive: true,
+      tags: ['gaming', 'mouse', 'rgb'],
+      sellerId: 'seller-004',
+      createdAt: '2024-01-01T00:00:00Z',
+      updatedAt: '2024-01-01T00:00:00Z'
     }
   ];
 
@@ -186,9 +214,9 @@ export default function ProductList() {
               <ProductCard
                 key={product.id}
                 product={product}
-                onAddToCart={() => console.log('Add to cart:', product.id)}
-                onAddToWishlist={() => console.log('Add to wishlist:', product.id)}
-                onViewDetails={() => console.log('View details:', product.id)}
+                onAddToCart={(product) => console.log('Add to cart:', product.id)}
+                onAddToWishlist={(product) => console.log('Add to wishlist:', product.id)}
+                onProductClick={(product) => console.log('View details:', product.id)}
               />
             ))}
           </div>
