@@ -184,7 +184,7 @@ export default function Home() {
             <div className="w-full lg:w-[492px] lg:flex-shrink-0 flex flex-col justify-start items-start gap-6">
               {/* Top Image - Full Width */}
               <img 
-                className="w-full h-[229px] rounded-xl border border-black/20 object-cover cursor-pointer hover:opacity-90 transition-opacity" 
+                className="w-full h-[229px] rounded-xl object-cover cursor-pointer hover:opacity-90 transition-opacity" 
                 src="/hero/images/image2.jpg" 
                 alt="Banner 2"
               />
