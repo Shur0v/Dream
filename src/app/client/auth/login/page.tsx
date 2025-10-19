@@ -15,9 +15,9 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
-import { Input } from '../../../components/ui/Input';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../../components/ui/Card';
+import { Button } from '../../../../components/ui/Button';
+import { Input } from '../../../../components/ui/Input';
 import { ShoppingBag, Mail, Lock } from 'lucide-react';
 
 /**
@@ -42,6 +42,7 @@ export default function CustomerLogin() {
     console.log('Customer login:', formData);
     // TODO: Implement customer login logic
     // On success, redirect to /client/dashboard
+    window.location.href = '/client/dashboard';
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,7 +129,7 @@ export default function CustomerLogin() {
                   <span className="ml-2 text-sm text-gray-700">Remember me</span>
                 </label>
                 <Link 
-                  href="/auth/forgot-password" 
+                  href="/client/auth/forgot-password" 
                   className="text-sm text-blue-600 hover:text-blue-700"
                 >
                   Forgot password?
@@ -150,7 +151,7 @@ export default function CustomerLogin() {
               <p className="text-sm text-gray-600">
                 Don't have an account?{' '}
                 <Link 
-                  href="/auth/register" 
+                  href="/client/auth/register" 
                   className="font-semibold text-blue-600 hover:text-blue-700"
                 >
                   Register here
@@ -182,7 +183,7 @@ export default function CustomerLogin() {
             {/* Back to Home */}
             <div className="mt-4 text-center">
               <Link 
-                href="/" 
+                href="/client/home" 
                 className="text-sm text-gray-500 hover:text-gray-700"
               >
                 ← Back to Home

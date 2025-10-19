@@ -5,19 +5,19 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Store, Mail, Lock, User, Phone, MapPin } from 'lucide-react';
+import { Package, Mail, Lock, User, Phone, MapPin } from 'lucide-react';
 
 /**
- * Seller Registration page component
+ * Reseller Registration page component
  * 
- * @description Renders the seller registration page with:
+ * @description Renders the reseller registration page with:
  * - Registration form with business details
- * - Link to seller login page
+ * - Link to reseller login page
  * - Form validation
  * 
- * @returns JSX seller registration page element
+ * @returns JSX reseller registration page element
  */
-export default function SellerPage() {
+export default function ResellerPage() {
   const [formData, setFormData] = useState({
     businessName: '',
     ownerName: '',
@@ -30,8 +30,8 @@ export default function SellerPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Seller registration:', formData);
-    // TODO: Implement seller registration logic
+    console.log('Reseller registration:', formData);
+    // TODO: Implement reseller registration logic
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,27 +42,27 @@ export default function SellerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="w-full max-w-2xl">
         {/* Logo/Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-gradient-to-r from-green-600 to-emerald-600 rounded-full flex items-center justify-center">
-              <Store className="h-8 w-8 text-white" />
+            <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center">
+              <Package className="h-8 w-8 text-white" />
             </div>
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Become a Seller
+            Become a Reseller
           </h1>
           <p className="text-lg text-gray-600">
-            Start selling your products on our platform
+            Buy in bulk and resell products with special pricing
           </p>
         </div>
 
         {/* Registration Card */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl text-center">Seller Registration</CardTitle>
+            <CardTitle className="text-2xl text-center">Reseller Registration</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -72,7 +72,7 @@ export default function SellerPage() {
                   Business Name *
                 </label>
                 <div className="relative">
-                  <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Package className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
                     type="text"
                     name="businessName"
@@ -115,7 +115,7 @@ export default function SellerPage() {
                     <Input
                       type="email"
                       name="email"
-                      placeholder="seller@example.com"
+                      placeholder="reseller@example.com"
                       value={formData.email}
                       onChange={handleChange}
                       className="pl-10"
@@ -202,20 +202,20 @@ export default function SellerPage() {
               {/* Submit Button */}
               <Button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
                 size="lg"
               >
-                Create Seller Account
+                Create Reseller Account
               </Button>
             </form>
 
             {/* Login Link */}
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
-                Already have a seller account?{' '}
+                Already have a reseller account?{' '}
                 <Link 
-                  href="/seller/login" 
-                  className="font-semibold text-green-600 hover:text-green-700"
+                  href="/reseller/login" 
+                  className="font-semibold text-purple-600 hover:text-purple-700"
                 >
                   Sign in here
                 </Link>

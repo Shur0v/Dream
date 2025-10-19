@@ -257,7 +257,7 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
               </div>
 
               {/* Sign In Button */}
-              <Link href="/auth/login" aria-label="Sign in to your account">
+              <Link href="/client/auth/login" aria-label="Sign in to your account">
                 <div className="layer-27 h-[52px] px-6 sm:px-8 py-4 bg-fuchsia-500 rounded-[10px] flex justify-center items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer" data-layer="27">
                   {/* layer-27 = sign in button */}
                   
