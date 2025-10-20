@@ -17,6 +17,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ShoppingCart, Search } from 'lucide-react';
+import { CartDropdown } from '../cart/CartDropdown';
 
 /**
  * Props interface for MainHeader component
@@ -61,10 +62,31 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
   onWishlistClick,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [isCartOpen, setIsCartOpen] = useState(false);
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch?.(searchQuery);
+  };
+
+  const handleCartClick = () => {
+    setIsCartOpen(true);
+    onCartClick?.();
+  };
+
+  const handleCartClose = () => {
+    setIsCartOpen(false);
+  };
+
+  const handleQuantityChange = (itemId: string, quantity: number) => {
+    // Handle quantity change logic here
+    console.log(`Item ${itemId} quantity changed to ${quantity}`);
+  };
+
+  const handleCheckout = () => {
+    // Handle checkout logic here
+    console.log('Proceeding to checkout');
+    setIsCartOpen(false);
   };
   
   return (
@@ -185,7 +207,7 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
                   {/* Cart */}
                   <div 
                     className="layer-17 relative flex justify-start items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity" 
-                    onClick={onCartClick}
+                    onClick={handleCartClick}
                     role="button"
                     aria-label="View shopping cart"
                     data-layer="17"
@@ -270,6 +292,16 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Cart Dropdown - Positioned relative to header */}
+      <div className="relative">
+        <CartDropdown
+          isOpen={isCartOpen}
+          onClose={handleCartClose}
+          onQuantityChange={handleQuantityChange}
+          onCheckout={handleCheckout}
+        />
       </div>
     </div>
   );
