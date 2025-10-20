@@ -139,7 +139,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
             </div>
           </div>
           
-          {/* Size and Quantity */}
+          {/* Size and Quantity **/}
           <div className="self-stretch inline-flex justify-between items-center">
             <div className="flex justify-start items-center gap-6">
               <div className="justify-start text-black text-xl font-normal font-['Poppins'] leading-tight tracking-wide">Size:</div>
