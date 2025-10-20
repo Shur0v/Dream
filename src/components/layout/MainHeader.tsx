@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * @fileoverview Main Navigation Header component
  * Provides logo, search, and user actions
