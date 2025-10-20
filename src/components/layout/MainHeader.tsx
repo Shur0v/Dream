@@ -65,6 +65,26 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+  const [hoveredCategory, setHoveredCategory] = useState('');
+  
+  const categories = [
+    'Electronics',
+    'Fashion',
+    'Home & Garden',
+    'Sports',
+    'Books',
+    'Health & Beauty',
+    'Toys & Games',
+    'Automotive',
+    'Food & Beverages',
+    'Office Supplies'
+  ];
+  
+  const getRandomCategory = () => {
+    const randomIndex = Math.floor(Math.random() * categories.length);
+    return categories[randomIndex];
+  };
   
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,25 +151,57 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
                 <div className="layer-6 flex items-center gap-3 pl-6 flex-1" data-layer="6">
                   {/* layer-6 = search input container */}
                   
-                  <div className="layer-7 hidden sm:flex items-center gap-1 cursor-pointer" data-layer="7">
+                  <div className="layer-7 hidden sm:flex items-center gap-1 cursor-pointer relative" data-layer="7">
                     {/* layer-7 = categories dropdown */}
                     
-                    <div className="layer-8 text-neutral-800 text-base font-medium leading-7 whitespace-nowrap" data-layer="8">
-                      {/* layer-8 = categories text */}
-                      All Categories
-                    </div>
+                    <button
+                      onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
+                      className="flex items-center gap-1 hover:opacity-80 transition-opacity"
+                      aria-expanded={isCategoriesOpen}
+                      aria-haspopup="true"
+                    >
+                      <div className="layer-8 text-neutral-800 text-base font-medium leading-7 whitespace-nowrap" data-layer="8">
+                        {/* layer-8 = categories text */}
+                        All Categories
+                      </div>
+                      
+                      <div className="layer-9 w-5 h-5 flex items-center justify-center" data-layer="9">
+                        {/* layer-9 = dropdown arrow */}
+                        <Image
+                          src="/header/icons/downicon.svg"
+                          alt="Categories dropdown"
+                          width={20}
+                          height={20}
+                          className={`w-5 h-5 transition-transform duration-200 ${
+                            isCategoriesOpen ? 'rotate-180' : 'rotate-0'
+                          }`}
+                          loading="lazy"
+                        />
+                      </div>
+                    </button>
                     
-                    <div className="layer-9 w-5 h-5 flex items-center justify-center" data-layer="9">
-                      {/* layer-9 = dropdown arrow */}
-                      <Image
-                        src="/header/icons/downicon.svg"
-                        alt="Categories dropdown"
-                        width={20}
-                        height={20}
-                        className="w-5 h-5"
-                        loading="lazy"
-                      />
-                    </div>
+                    {/* Categories Dropdown Menu */}
+                    {isCategoriesOpen && (
+                      <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                        <div className="py-2">
+                          {Array.from({ length: 8 }, (_, index) => {
+                            const randomCategory = getRandomCategory();
+                            return (
+                              <button
+                                key={index}
+                                onClick={() => {
+                                  console.log(`Selected category: ${randomCategory}`);
+                                  setIsCategoriesOpen(false);
+                                }}
+                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                              >
+                                {randomCategory}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="layer-10 hidden sm:block w-px h-4 bg-zinc-400" data-layer="10"></div>
