@@ -1,5 +1,5 @@
 /**
- * @fileoverview Reseller Login page (aligned with client login design)
+ * @fileoverview Admin Login page (aligned with client login design)
  */
 
 'use client';
@@ -8,7 +8,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
-export default function ResellerLoginPage() {
+export default function AdminLoginPage() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -17,8 +17,8 @@ export default function ResellerLoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Reseller login:', formData);
-    window.location.href = '/reseller/dashboard';
+    console.log('Admin login:', formData);
+    window.location.href = '/admin/dashboard';
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,10 +49,10 @@ export default function ResellerLoginPage() {
           {/* Header */}
           <div className="layer-5 flex flex-col justify-start items-start gap-4" data-layer="5">
             <div className="layer-6 self-stretch text-center justify-start text-neutral-800 text-6xl font-bold font-['Lato'] leading-[67.20px]" data-layer="6">
-              Welcome Back
+              Admin Access
             </div>
             <div className="layer-7 self-stretch text-center justify-start text-neutral-800 text-base font-medium font-['Lato'] leading-tight" data-layer="7">
-              Sign in to your account to continue
+              Sign in to access the admin dashboard
             </div>
           </div>
 
@@ -69,7 +69,7 @@ export default function ResellerLoginPage() {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="Enter your email"
+                  placeholder="admin@dreamshop.com"
                   className="layer-12 self-stretch h-11 px-5 py-3.5 rounded-md outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-start items-center gap-2.5 text-zinc-500 text-sm font-normal font-['Poppins'] leading-none"
                   required
                   data-layer="12"
@@ -109,7 +109,7 @@ export default function ResellerLoginPage() {
                       Remember me
                     </div>
                   </div>
-                  <Link href="/reseller/forgot-password" className="layer-21 justify-start text-blue-600 text-sm font-normal font-['Poppins'] leading-tight hover:text-blue-700" data-layer="21">
+                  <Link href="/admin/forgot-password" className="layer-21 justify-start text-blue-600 text-sm font-normal font-['Poppins'] leading-tight hover:text-blue-700" data-layer="21">
                     Forgot password?
                   </Link>
                 </div>
@@ -124,14 +124,6 @@ export default function ResellerLoginPage() {
             </button>
           </form>
 
-          {/* Registration Link */}
-          <div className="layer-24 text-center" data-layer="24">
-            <p className="layer-25 text-sm text-gray-600" data-layer="25">
-              Don't have a reseller account?{' '}
-              <Link href="/reseller/register" className="font-semibold text-blue-600 hover:text-blue-700">Register here</Link>
-            </p>
-          </div>
-
           {/* Back to Home */}
           <div className="layer-31 text-center" data-layer="31">
             <Link href="/" className="layer-32 text-sm text-gray-500 hover:text-gray-700" data-layer="32">← Back to Home</Link>
@@ -141,4 +133,3 @@ export default function ResellerLoginPage() {
     </section>
   );
 }
-

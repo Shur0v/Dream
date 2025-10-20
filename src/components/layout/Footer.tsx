@@ -71,17 +71,17 @@ export default function Footer() {
   ];
 
   const quickLinks = [
-    { name: "About us", href: "/about" },
-    { name: "Contact Us", href: "/contact" },
-    { name: "Offer", href: "/offers" },
-    { name: "Become a seller", href: "/seller" }
+    { name: "About us", href: "/client/about" },
+    { name: "Contact Us", href: "/client/contact" },
+    { name: "Offer", href: "/client/offers" },
+    { name: "Become a seller", href: "/client/seller" }
   ];
 
   const supportLinks = [
-    { name: "Privacy Policy", href: "/privacy" },
-    { name: "Terms & Conditions", href: "/terms" },
-    { name: "Return Policy", href: "/return" },
-    { name: "Customer Support", href: "/support" }
+    { name: "Privacy Policy", href: "/client/privacy" },
+    { name: "Terms & Conditions", href: "/client/terms" },
+    { name: "Return Policy", href: "/client/return" },
+    { name: "Customer Support", href: "/client/support" }
   ];
 
   const contactInfo = [

@@ -1,253 +1,178 @@
 /**
- * @fileoverview Seller Registration page
- * Page for sellers to create an account
- * 
- * @description This page includes:
- * - Seller registration form
- * - Link to seller login
- * - Business information fields
- * 
- * @author Your Name
- * @version 1.0.0
+ * @fileoverview Seller Registration page (client auth design applied)
  */
 
 'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
-import { Button } from '../../../components/ui/Button';
-import { Input } from '../../../components/ui/Input';
-import { Store, Mail, Lock, User, Phone, MapPin } from 'lucide-react';
+import Image from 'next/image';
 
-/**
- * Seller Registration page component
- * 
- * @description Renders the seller registration page with:
- * - Registration form with business details
- * - Link to seller login page
- * - Form validation
- * 
- * @returns JSX seller registration page element
- */
 export default function SellerRegisterPage() {
   const [formData, setFormData] = useState({
-    businessName: '',
-    ownerName: '',
-    email: '',
-    phone: '',
-    address: '',
+    sellerIdOrNumber: '',
+    contactNumber: '',
     password: '',
     confirmPassword: '',
+    acceptAgreement: false,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Seller registration:', formData);
-    // TODO: Implement seller registration logic
+    // On success, redirect as needed
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: type === 'checkbox' ? checked : value,
     });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-2xl">
-        {/* Logo/Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-gradient-to-r from-green-600 to-emerald-600 rounded-full flex items-center justify-center">
-              <Store className="h-8 w-8 text-white" />
+    <section className="father w-full py-10 relative overflow-hidden bg-[#F7F7F7] flex items-center justify-center" role="main" data-layer="father">
+      <div className="daughter" data-layer="daughter">
+        <div className="layer-1 w-[1086px] h-[1122px] p-[100px] bg-white rounded-3xl inline-flex flex-col justify-center items-center gap-12" data-layer="1">
+          {/* Logo */}
+          <div className="layer-2 w-[657.83px] h-60 flex flex-col justify-start items-center" data-layer="2">
+            <Image 
+              className="layer-3 self-stretch h-60" 
+              src="/common/logo.svg" 
+              alt="DreamShop Logo"
+              width={658}
+              height={239}
+              priority
+              data-layer="3"
+            />
+          </div>
+
+          {/* Header */}
+          <div className="layer-5 flex flex-col justify-start items-start gap-4" data-layer="5">
+            <div className="layer-6 self-stretch text-center justify-start text-neutral-800 text-6xl font-bold font-['Lato'] leading-[67.20px]" data-layer="6">
+              Create your account
+            </div>
+            <div className="layer-7 self-stretch text-center justify-start text-neutral-800 text-base font-medium font-['Lato'] leading-tight" data-layer="7">
+              Join our platform to start selling
             </div>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Become a Seller
-          </h1>
-          <p className="text-lg text-gray-600">
-            Start selling your products on our platform
-          </p>
-        </div>
 
-        {/* Registration Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl text-center">Seller Registration</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Business Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Business Name *
-                </label>
-                <div className="relative">
-                  <Store className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <Input
+          {/* Form */}
+          <div className="layer-4 w-[792px] flex flex-col justify-start items-center gap-10" data-layer="4">
+            <div className="layer-8 self-stretch flex flex-col justify-start items-start gap-10" data-layer="8">
+              <div className="layer-9 self-stretch flex flex-col justify-start items-start gap-6" data-layer="9">
+                {/* ID / Number */}
+                <div className="layer-10 self-stretch flex flex-col justify-start items-start gap-2" data-layer="10">
+                  <div className="layer-11 self-stretch justify-start text-neutral-600 text-base font-medium font-['Poppins'] leading-none" data-layer="11">
+                    Number or Seller ID
+                  </div>
+                  <input
                     type="text"
-                    name="businessName"
-                    placeholder="Your business name"
-                    value={formData.businessName}
+                    name="sellerIdOrNumber"
+                    value={formData.sellerIdOrNumber}
                     onChange={handleChange}
-                    className="pl-10"
+                    placeholder="Name"
+                    className="layer-12 self-stretch h-11 px-5 py-3.5 rounded-md outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-start items-center gap-2.5 text-zinc-500 text-sm font-normal font-['Poppins'] leading-none"
                     required
+                    data-layer="12"
                   />
                 </div>
-              </div>
 
-              {/* Owner Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Owner Name *
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <Input
-                    type="text"
-                    name="ownerName"
-                    placeholder="Your full name"
-                    value={formData.ownerName}
+                {/* Contact Number */}
+                <div className="layer-13 self-stretch flex flex-col justify-start items-start gap-2" data-layer="13">
+                  <div className="layer-14 self-stretch justify-start text-neutral-600 text-base font-medium font-['Poppins'] leading-none" data-layer="14">
+                    Contact number
+                  </div>
+                  <input
+                    type="tel"
+                    name="contactNumber"
+                    value={formData.contactNumber}
                     onChange={handleChange}
-                    className="pl-10"
+                    placeholder="Enter your number"
+                    className="layer-15 self-stretch h-11 px-5 py-3.5 rounded-md outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-start items-center gap-2.5 text-zinc-500 text-sm font-normal font-['Poppins'] leading-none"
                     required
+                    data-layer="15"
                   />
                 </div>
-              </div>
 
-              {/* Email and Phone */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email *
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input
-                      type="email"
-                      name="email"
-                      placeholder="seller@example.com"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="pl-10"
-                      required
-                    />
+                {/* Password */}
+                <div className="layer-16 self-stretch flex flex-col justify-start items-start gap-2" data-layer="16">
+                  <div className="layer-17 self-stretch justify-start text-neutral-600 text-base font-medium font-['Poppins'] leading-none" data-layer="17">
+                    Password
                   </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone *
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input
-                      type="tel"
-                      name="phone"
-                      placeholder="Your phone number"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Address */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Business Address *
-                </label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <Input
-                    type="text"
-                    name="address"
-                    placeholder="Your business address"
-                    value={formData.address}
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
                     onChange={handleChange}
-                    className="pl-10"
+                    placeholder="Enter your password"
+                    className="layer-18 self-stretch h-11 px-5 py-3.5 rounded-md outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-start items-center gap-2.5 text-zinc-500 text-sm font-normal font-['Poppins'] leading-none"
                     required
+                    data-layer="18"
                   />
                 </div>
-              </div>
 
-              {/* Password */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Password *
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input
-                      type="password"
-                      name="password"
-                      placeholder="Create a password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Confirm Password *
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input
+                {/* Confirm Password */}
+                <div className="layer-19 self-stretch inline-flex justify-start items-start gap-4" data-layer="19">
+                  <div className="layer-20 flex-1 inline-flex flex-col justify-start items-start gap-2" data-layer="20">
+                    <div className="layer-21 justify-start text-neutral-600 text-base font-medium font-['Poppins'] leading-none" data-layer="21">
+                      Confirm Password
+                    </div>
+                    <input
                       type="password"
                       name="confirmPassword"
-                      placeholder="Confirm password"
                       value={formData.confirmPassword}
                       onChange={handleChange}
-                      className="pl-10"
+                      placeholder="Enter your confirm password"
+                      className="layer-22 self-stretch h-11 px-5 py-3.5 rounded-md outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-start items-center gap-2.5 text-zinc-500 text-sm font-normal font-['Poppins'] leading-none"
                       required
+                      data-layer="22"
                     />
                   </div>
                 </div>
+
+                {/* Agreement */}
+                <div className="layer-23 flex flex-col justify-start items-start gap-2.5" data-layer="23">
+                  <div className="layer-24 self-stretch inline-flex justify-start items-center gap-2.5" data-layer="24">
+                    <input
+                      type="checkbox"
+                      name="acceptAgreement"
+                      checked={formData.acceptAgreement}
+                      onChange={handleChange}
+                      className="layer-25 w-4 h-4 rounded-full border border-blue-600"
+                      required
+                      data-layer="25"
+                    />
+                    <div className="layer-26 justify-start text-neutral-600 text-sm font-normal font-['Poppins'] leading-tight" data-layer="26">
+                      I accept the Membership Agreement.
+                    </div>
+                  </div>
+                </div>
               </div>
-
-              {/* Submit Button */}
-              <Button 
-                type="submit" 
-                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                size="lg"
-              >
-                Create Seller Account
-              </Button>
-            </form>
-
-            {/* Login Link */}
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Already have a seller account?{' '}
-                <Link 
-                  href="/seller/login" 
-                  className="font-semibold text-green-600 hover:text-green-700"
-                >
-                  Sign in here
-                </Link>
-              </p>
             </div>
+          </div>
 
-            {/* Back to Home */}
-            <div className="mt-4 text-center">
-              <Link 
-                href="/" 
-                className="text-sm text-gray-500 hover:text-gray-700"
-              >
-                ← Back to Home
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Sign Up */}
+          <button type="submit" onClick={handleSubmit} className="layer-27 w-[792px] h-14 px-5 py-3.5 bg-fuchsia-500 rounded-md inline-flex justify-center items-center gap-2.5" data-layer="27">
+            <div className="layer-28 justify-start text-white text-base font-semibold font-['Poppins'] leading-7" data-layer="28">Sign up</div>
+          </button>
+
+          {/* Login Link */}
+          <div className="layer-29 text-center" data-layer="29">
+            <p className="layer-30 text-sm text-gray-600" data-layer="30">
+              Already have an account?{' '}
+              <Link href="/seller/login" className="font-semibold text-blue-600 hover:text-blue-700">Sign in here</Link>
+            </p>
+          </div>
+
+          {/* Back to Home */}
+          <div className="layer-31 text-center" data-layer="31">
+            <Link href="/" className="layer-32 text-sm text-gray-500 hover:text-gray-700" data-layer="32">← Back to Home</Link>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 

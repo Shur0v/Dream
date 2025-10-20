@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import { usePathname } from 'next/navigation';
 
 /**
  * Layout for admin pages
@@ -9,6 +12,19 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  
+  // Hide sidebar for auth pages
+  const isAuthPage = pathname?.includes('/login') || pathname?.includes('/forgot-password');
+  
+  if (isAuthPage) {
+    return (
+      <div className="min-h-screen bg-[#F7F7F7]">
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
