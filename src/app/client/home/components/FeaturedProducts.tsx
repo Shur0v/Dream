@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 /**
  * Featured Products Component
@@ -81,6 +82,12 @@ export default function FeaturedProducts() {
       isVerifiedSeller: true,
     },
   ];
+
+  const toSlug = (name: string, id: number) =>
+    `${name}`
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '') + `-${id}`;
 
   return (
     <section className="father w-full pb-7 bg-white flex flex-col justify-start items-center gap-8" role="region" aria-labelledby="featured-products-heading" data-layer="father">
@@ -192,16 +199,16 @@ export default function FeaturedProducts() {
           {/* layer-13 = products grid container */}
           
           {products.map((product, index) => (
-             <div
-               key={product.id}
-               className="layer-14 w-[312px] p-4 bg-sky-50 rounded-xl border border-black/10 inline-flex flex-col justify-start items-start group hover:shadow-md hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
-               onMouseEnter={() => setHoveredCard(index)}
-               onMouseLeave={() => setHoveredCard(null)}
-               style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
-               role="article"
-               aria-labelledby={`product-title-${product.id}`}
-               data-layer="14"
-             >
+             <Link key={product.id} href={`/client/product-details/${toSlug(product.name, product.id)}`} className="block">
+               <div
+                 className="layer-14 w-[312px] p-4 bg-sky-50 rounded-xl border border-black/10 inline-flex flex-col justify-start items-start group hover:shadow-md hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
+                 onMouseEnter={() => setHoveredCard(index)}
+                 onMouseLeave={() => setHoveredCard(null)}
+                 style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
+                 role="article"
+                 aria-labelledby={`product-title-${product.id}`}
+                 data-layer="14"
+               >
               {/* layer-14 = individual product card */}
               
               {/* Card Header */}
@@ -362,7 +369,8 @@ export default function FeaturedProducts() {
                   </button>
                 </div>
               </div>
-            </div>
+               </div>
+             </Link>
           ))}
         </div>
 

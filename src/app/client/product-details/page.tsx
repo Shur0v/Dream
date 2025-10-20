@@ -80,7 +80,7 @@ export default function ProductDetails() {
         </div>
         
         {/* Product Reviews */}
-        <Reviews />
+        <Reviews rating={4.5} reviewsCount={100} />
       </div>
     </MainLayout>
   );
