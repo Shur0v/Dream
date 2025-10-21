@@ -13,9 +13,11 @@
  * @version 1.0.0
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import Header from './Header';
 import Footer from './Footer';
+import LoginModal from '@/components/modals/LoginModal';
+import RegisterModal from '@/components/modals/RegisterModal';
 
 /**
  * Props interface for MainLayout component
@@ -124,6 +126,62 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   showFooter = true,
   className,
 }) => {
+  // Modal state management
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [currentUserType, setCurrentUserType] = useState<'client' | 'seller' | 'reseller'>('client');
+
+  // Handle opening login modal
+  const handleOpenLoginModal = (userType: 'client' | 'seller' | 'reseller' = 'client') => {
+    setCurrentUserType(userType);
+    setIsLoginModalOpen(true);
+  };
+
+  // Handle opening register modal
+  const handleOpenRegisterModal = (userType: 'client' | 'seller' | 'reseller' = 'client') => {
+    setCurrentUserType(userType);
+    setIsRegisterModalOpen(true);
+  };
+
+  // Handle closing modals
+  const handleCloseLoginModal = () => {
+    setIsLoginModalOpen(false);
+  };
+
+  const handleCloseRegisterModal = () => {
+    setIsRegisterModalOpen(false);
+  };
+
+  // Handle switching user types
+  const handleSwitchUserType = (userType: 'client' | 'seller' | 'reseller') => {
+    setCurrentUserType(userType);
+  };
+
+  // Handle opening register modal from login modal
+  const handleOpenRegisterFromLogin = (userType: 'client' | 'seller' | 'reseller') => {
+    setIsLoginModalOpen(false);
+    setCurrentUserType(userType);
+    setIsRegisterModalOpen(true);
+  };
+
+  // Handle opening login modal from register modal
+  const handleOpenLoginFromRegister = (userType: 'client' | 'seller' | 'reseller') => {
+    setIsRegisterModalOpen(false);
+    setCurrentUserType(userType);
+    setIsLoginModalOpen(true);
+  };
+
+  // Handle successful login/registration
+  const handleLoginSuccess = () => {
+    console.log('Login successful');
+    // TODO: Update user state, show success message, etc.
+  };
+
+  const handleRegisterSuccess = () => {
+    console.log('Registration successful');
+    // TODO: Update user state, show success message, etc.
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
@@ -135,6 +193,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         onCartClick={onCartClick}
         onWishlistClick={onWishlistClick}
         onUserAction={onUserAction}
+        onOpenLoginModal={handleOpenLoginModal}
+        onOpenRegisterModal={handleOpenRegisterModal}
       />
       
       {/* Main Content */}
@@ -146,6 +206,26 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
       {showFooter && (
         <Footer />
       )}
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={handleCloseLoginModal}
+        userType={currentUserType}
+        onLoginSuccess={handleLoginSuccess}
+        onSwitchUserType={handleSwitchUserType}
+        onOpenRegisterModal={handleOpenRegisterFromLogin}
+      />
+
+      {/* Register Modal */}
+      <RegisterModal
+        isOpen={isRegisterModalOpen}
+        onClose={handleCloseRegisterModal}
+        userType={currentUserType}
+        onRegisterSuccess={handleRegisterSuccess}
+        onSwitchUserType={handleSwitchUserType}
+        onOpenLoginModal={handleOpenLoginFromRegister}
+      />
     </div>
   );
 };

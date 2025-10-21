@@ -53,7 +53,7 @@ export default function CustomerRegister() {
   };
 
   return (
-    <section className="father w-full py-10 relative overflow-hidden bg-[#F7F7F7] flex items-center justify-center" role="main" data-layer="father">
+    <section className="father w-full py-10 relative overflow-hidden bg-white flex items-center justify-center" role="main" data-layer="father">
       {/* father = full width registration page section */}
       
       <div className="daughter" data-layer="daughter">

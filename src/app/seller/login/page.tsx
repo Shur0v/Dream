@@ -30,7 +30,7 @@ export default function SellerLoginPage() {
   };
 
   return (
-    <section className="father w-full py-10 relative overflow-hidden bg-[#F7F7F7] flex items-center justify-center" role="main" data-layer="father">
+    <section className="father w-full py-10 relative overflow-hidden bg-white flex items-center justify-center" role="main" data-layer="father">
       <div className="daughter" data-layer="daughter">
         <div className="layer-1 w-[1086px] h-[1122px] p-[100px] bg-white rounded-3xl inline-flex flex-col justify-center items-center gap-12" data-layer="1">
           {/* Logo */}

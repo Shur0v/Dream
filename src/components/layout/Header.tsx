@@ -63,6 +63,16 @@ interface HeaderProps {
    * Callback when user menu item is clicked
    */
   onUserAction?: (action: string) => void;
+  
+  /**
+   * Callback when login modal should be opened
+   */
+  onOpenLoginModal?: (userType?: 'client' | 'seller' | 'reseller') => void;
+  
+  /**
+   * Callback when register modal should be opened
+   */
+  onOpenRegisterModal?: (userType?: 'client' | 'seller' | 'reseller') => void;
 }
 
 /**
@@ -97,6 +107,8 @@ export const Header: React.FC<HeaderProps> = ({
   onCartClick,
   onWishlistClick,
   onUserAction,
+  onOpenLoginModal,
+  onOpenRegisterModal,
 }) => {
   return (
     <header className="father sticky top-0 z-50" role="banner" data-layer="father">
@@ -120,6 +132,8 @@ export const Header: React.FC<HeaderProps> = ({
             onSearch={onSearch}
             onCartClick={onCartClick}
             onWishlistClick={onWishlistClick}
+            onOpenLoginModal={onOpenLoginModal}
+            onOpenRegisterModal={onOpenRegisterModal}
           />
         </div>
         

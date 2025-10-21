@@ -51,6 +51,16 @@ interface MainHeaderProps {
    * Callback when wishlist is clicked
    */
   onWishlistClick?: () => void;
+  
+  /**
+   * Callback when login modal should be opened
+   */
+  onOpenLoginModal?: (userType?: 'client' | 'seller' | 'reseller') => void;
+  
+  /**
+   * Callback when register modal should be opened
+   */
+  onOpenRegisterModal?: (userType?: 'client' | 'seller' | 'reseller') => void;
 }
 
 /**
@@ -62,6 +72,8 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
   onSearch,
   onCartClick,
   onWishlistClick,
+  onOpenLoginModal,
+  onOpenRegisterModal,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -333,16 +345,19 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
               </div>
 
               {/* Sign In Button */}
-              <Link href="/client/auth/login" aria-label="Sign in to your account">
-                <div className="layer-27 h-[52px] px-6 sm:px-8 py-4 bg-fuchsia-500 rounded-[10px] flex justify-center items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer" data-layer="27">
-                  {/* layer-27 = sign in button */}
-                  
-                  <div className="layer-28 justify-start text-white text-sm sm:text-base font-semibold leading-4 whitespace-nowrap" data-layer="28">
-                    {/* layer-28 = sign in button text */}
-                    Sign in
-                  </div>
+              <button
+                onClick={() => onOpenLoginModal?.('client')}
+                className="layer-27 h-[52px] px-6 sm:px-8 py-4 bg-fuchsia-500 rounded-[10px] flex justify-center items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer"
+                aria-label="Sign in to your account"
+                data-layer="27"
+              >
+                {/* layer-27 = sign in button */}
+                
+                <div className="layer-28 justify-start text-white text-sm sm:text-base font-semibold leading-4 whitespace-nowrap" data-layer="28">
+                  {/* layer-28 = sign in button text */}
+                  Sign in
                 </div>
-              </Link>
+              </button>
             </div>
           </div>
         </div>
