@@ -124,7 +124,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <div className="w-full h-full py-6 sm:py-8 lg:py-10 relative overflow-hidden bg-white flex items-center justify-center">
-        <div className="w-full max-w-4xl h-full max-h-full p-4 sm:p-6 lg:p-8 xl:p-[100px] bg-white rounded-3xl inline-flex flex-col justify-center items-center gap-6 sm:gap-8 lg:gap-12">
+        <div className="w-full max-w-4xl h-full max-h-full p-4 sm:p-6 lg:p-8 xl:p-[100px] bg-white rounded-3xl inline-flex flex-col justify-center items-center gap-4 sm:gap-6 lg:gap-8">
           {/* Logo Section */}
           <div className="w-full max-w-[400px] h-20 sm:h-24 lg:h-28 flex flex-col justify-start items-center">
             <Image 
