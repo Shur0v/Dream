@@ -204,7 +204,10 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
       
       {/* Footer */}
       {showFooter && (
-        <Footer />
+        <Footer 
+          onOpenLoginModal={handleOpenLoginModal}
+          onOpenRegisterModal={handleOpenRegisterModal}
+        />
       )}
 
       {/* Login Modal */}

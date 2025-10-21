@@ -14,7 +14,23 @@ import { Facebook, Instagram, Twitter, Linkedin, ArrowRight, MoveRight } from 'l
  * - Newsletter subscription form
  * - Copyright and legal information
  */
-export default function Footer() {
+
+/**
+ * Props interface for Footer component
+ */
+interface FooterProps {
+  /**
+   * Callback when login modal should be opened
+   */
+  onOpenLoginModal?: (userType?: 'client' | 'seller' | 'reseller') => void;
+  
+  /**
+   * Callback when register modal should be opened
+   */
+  onOpenRegisterModal?: (userType?: 'client' | 'seller' | 'reseller') => void;
+}
+
+export default function Footer({ onOpenLoginModal, onOpenRegisterModal }: FooterProps = {}) {
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [isSubscribing, setIsSubscribing] = useState(false);
   
@@ -74,7 +90,7 @@ export default function Footer() {
     { name: "About us", href: "/client/about" },
     { name: "Contact Us", href: "/client/contact" },
     { name: "Offer", href: "/client/offers" },
-    { name: "Become a seller", href: "/client/seller" }
+    { name: "Become a seller", href: "#", onClick: () => onOpenRegisterModal?.('seller') }
   ];
 
   const supportLinks = [
@@ -194,17 +210,35 @@ export default function Footer() {
                 
                 <div className="layer-12 self-stretch flex flex-col justify-start items-start gap-3" data-layer="12">
                   {/* layer-12 = quick links list */}
-                  {quickLinks.map((link, index) => (
-                    <Link 
-                      key={index}
-                      href={link.href} 
-                      className="layer-13 self-stretch justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug hover:text-white transition-colors cursor-pointer"
-                      data-layer="13"
-                    >
-                      {/* layer-13 = individual quick link */}
-                      {link.name}
-                    </Link>
-                  ))}
+                  {quickLinks.map((link, index) => {
+                    // Check if this link has an onClick handler (modal links)
+                    if (link.onClick) {
+                      return (
+                        <button
+                          key={index}
+                          onClick={link.onClick}
+                          className="layer-13 self-stretch justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug hover:text-white transition-colors cursor-pointer text-left"
+                          data-layer="13"
+                        >
+                          {/* layer-13 = individual quick link button */}
+                          {link.name}
+                        </button>
+                      );
+                    }
+                    
+                    // Regular navigation links
+                    return (
+                      <Link 
+                        key={index}
+                        href={link.href} 
+                        className="layer-13 self-stretch justify-start text-gray-200 text-base font-normal font-['Poppins'] leading-snug hover:text-white transition-colors cursor-pointer"
+                        data-layer="13"
+                      >
+                        {/* layer-13 = individual quick link */}
+                        {link.name}
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
               
