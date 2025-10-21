@@ -27,6 +27,16 @@ interface BottomNavProps {
    * Custom className
    */
   className?: string;
+  
+  /**
+   * Callback when login modal should be opened
+   */
+  onOpenLoginModal?: (userType?: 'client' | 'seller' | 'reseller') => void;
+  
+  /**
+   * Callback when register modal should be opened
+   */
+  onOpenRegisterModal?: (userType?: 'client' | 'seller' | 'reseller') => void;
 }
 
 /**
@@ -48,13 +58,15 @@ interface BottomNavProps {
  */
 export const BottomNav: React.FC<BottomNavProps> = ({ 
   userRole = 'client',
-  className = '' 
+  className = '',
+  onOpenLoginModal,
+  onOpenRegisterModal
 }) => {
   const navigationLinks = [
     { text: "Home", active: true, href: "/" },
     { text: "Offers", active: false, href: "/offers" },
-    { text: "Become a Seller", active: false, href: "/seller/register" },
-    { text: "Re seller", active: false, href: "/reseller/register" },
+    { text: "Become a Seller", active: false, href: "#", onClick: () => onOpenRegisterModal?.('seller') },
+    { text: "Re seller", active: false, href: "#", onClick: () => onOpenRegisterModal?.('reseller') },
   ];
 
   return (
@@ -67,27 +79,55 @@ export const BottomNav: React.FC<BottomNavProps> = ({
         <div className="layer-1 inline-flex items-center gap-4 sm:gap-8 lg:gap-12" data-layer="1">
           {/* layer-1 = navigation links container */}
           
-          {navigationLinks.map((link, index) => (
-            <Link
-              key={index}
-              href={link.href}
-              className="layer-2 inline-flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity font-bold"
-              aria-label={`Navigate to ${link.text}`}
-              data-layer="2"
-            >
-              {/* layer-2 = individual navigation link */}
-              
-              <div
-                className={`layer-3 font-bold text-white text-sm text-center tracking-[-0.28px] leading-[25.2px] whitespace-nowrap ${
-                  link.active ? 'font-bold' : 'font-bold'
-                }`}
-                data-layer="3"
+          {navigationLinks.map((link, index) => {
+            // Check if this link has an onClick handler (modal links)
+            if (link.onClick) {
+              return (
+                <button
+                  key={index}
+                  onClick={link.onClick}
+                  className="layer-2 inline-flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity font-bold"
+                  aria-label={`Open ${link.text} modal`}
+                  data-layer="2"
+                >
+                  {/* layer-2 = individual navigation button */}
+                  
+                  <div
+                    className={`layer-3 font-bold text-white text-sm text-center tracking-[-0.28px] leading-[25.2px] whitespace-nowrap ${
+                      link.active ? 'font-bold' : 'font-bold'
+                    }`}
+                    data-layer="3"
+                  >
+                    {/* layer-3 = navigation button text */}
+                    {link.text}
+                  </div>
+                </button>
+              );
+            }
+            
+            // Regular navigation links
+            return (
+              <Link
+                key={index}
+                href={link.href}
+                className="layer-2 inline-flex items-center gap-1 cursor-pointer hover:opacity-80 transition-opacity font-bold"
+                aria-label={`Navigate to ${link.text}`}
+                data-layer="2"
               >
-                {/* layer-3 = navigation link text */}
-                {link.text}
-              </div>
-            </Link>
-          ))}
+                {/* layer-2 = individual navigation link */}
+                
+                <div
+                  className={`layer-3 font-bold text-white text-sm text-center tracking-[-0.28px] leading-[25.2px] whitespace-nowrap ${
+                    link.active ? 'font-bold' : 'font-bold'
+                  }`}
+                  data-layer="3"
+                >
+                  {/* layer-3 = navigation link text */}
+                  {link.text}
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </nav>

@@ -140,7 +140,11 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Bottom Navigation Bar */}
         <div className="layer-3" data-layer="3">
           {/* layer-3 = bottom navigation container */}
-          <BottomNav userRole={user?.role} />
+          <BottomNav 
+            userRole={user?.role} 
+            onOpenLoginModal={onOpenLoginModal}
+            onOpenRegisterModal={onOpenRegisterModal}
+          />
         </div>
       </div>
     </header>

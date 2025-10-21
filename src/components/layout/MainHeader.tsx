@@ -138,8 +138,8 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
             {/* layer-2 = logo container */}
             <Link href="/" aria-label="DreamShop homepage">
               <Image
-                className="w-full h-[69.3px] object-cover"
-                src="/header/icons/logo.svg"
+                className="w-full h-[69.3px] object-contain"
+                src="/common/logo.svg"
                 alt="DreamShop logo"
                 width={190}
                 height={69}
