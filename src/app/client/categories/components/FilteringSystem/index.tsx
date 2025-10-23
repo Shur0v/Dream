@@ -491,12 +491,33 @@ export default function FilteringSystem() {
     return chunks;
   };
 
-  // Get products to display (limited by visibleProducts)
-  const displayedProducts = filteredAndSortedProducts.slice(0, visibleProducts);
+  // Create infinite scroll effect by repeating products
+  const createInfiniteProducts = (products: Product[], count: number) => {
+    const infiniteProducts: Product[] = [];
+    let currentIndex = 0;
+    
+    for (let i = 0; i < count; i++) {
+      if (products.length === 0) break;
+      
+      // Create a copy of the product with unique ID for infinite scroll
+      const product = products[currentIndex % products.length];
+      infiniteProducts.push({
+        ...product,
+        id: product.id + (Math.floor(i / products.length) * 1000) // Unique ID for each cycle
+      });
+      
+      currentIndex++;
+    }
+    
+    return infiniteProducts;
+  };
+
+  // Get products to display with infinite scroll effect
+  const displayedProducts = createInfiniteProducts(filteredAndSortedProducts, visibleProducts);
   const productRows = chunkProducts(displayedProducts, 3);
   
-  // Check if there are more products to show
-  const hasMoreProducts = filteredAndSortedProducts.length > visibleProducts;
+  // Always show "Load More" button for infinite scroll effect
+  const hasMoreProducts = true;
 
   // Filter handler functions
   const handleCategoryToggle = (category: string) => {
@@ -740,18 +761,14 @@ export default function FilteringSystem() {
         <div className="lg:col-span-3">
           {/* Breadcrumbs */}
           <div className="mb-4">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Shop Now</h1>
-            <nav className="text-sm text-gray-600">
-              <span>Home</span>
-              <span className="mx-2">&gt;</span>
-              <span>Product</span>
-            </nav>
+            <h1 className="text-4xl font-semibold text-gray-900 ">Shop Now</h1>
+
           </div>
 
           {/* Results and Sorting */}
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-6 border-b border-gray-200 pb-8">
             <p className="text-gray-600">
-              Showing {displayedProducts.length > 0 ? 1 : 0}-{displayedProducts.length} of {filteredAndSortedProducts.length} results
+              Showing {displayedProducts.length} products (infinite scroll)
             </p>
             <div className="flex items-center gap-2">
               <span className="text-gray-600">Sort by:</span>
@@ -963,14 +980,14 @@ export default function FilteringSystem() {
             ))
             )}
             
-            {/* Show More Button */}
-            {hasMoreProducts && (
+            {/* Load More Button - Infinite Scroll */}
+            {hasMoreProducts && filteredAndSortedProducts.length > 0 && (
               <div className="w-full flex justify-center mt-8">
                 <button
                   onClick={showMoreProducts}
                   className="px-8 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-semibold"
                 >
-                  Show More Products ({filteredAndSortedProducts.length - visibleProducts} remaining)
+                  Load More Products
                 </button>
               </div>
             )}
