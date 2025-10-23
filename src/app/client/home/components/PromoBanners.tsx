@@ -93,7 +93,7 @@ export default function PromoBanners() {
   };
 
   return (
-    <section className="father w-full py-12 bg-white" role="banner" data-layer="father">
+    <section className="father w-full bg-white" role="banner" data-layer="father">
       {/* father = full width promotional banner section */}
       
       <div className="daughter" data-layer="daughter">
@@ -102,7 +102,7 @@ export default function PromoBanners() {
         <div className="layer-1 w-full max-w-[1320px] mx-auto" role="main" data-layer="1">
           {/* layer-1 = main content container with max width constraint */}
           
-          <div className="layer-2 w-[1320px] py-12 inline-flex flex-col justify-center items-center gap-12" data-layer="2">
+          <div className="layer-2 w-[1320px] inline-flex flex-col justify-center items-center gap-12" data-layer="2">
             {/* layer-2 = main content wrapper */}
             
             <div className="layer-3 self-stretch h-[529px] pl-6 bg-fuchsia-50 rounded-tl-3xl rounded-tr-xl rounded-bl-3xl rounded-br-xl inline-flex justify-between items-center" data-layer="3">
