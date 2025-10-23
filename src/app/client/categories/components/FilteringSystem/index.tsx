@@ -12,7 +12,7 @@ export default function FilteringSystem() {
   const [isCategoryOpen, setIsCategoryOpen] = useState(true);
   const [isBrandingOpen, setIsBrandingOpen] = useState(true);
   const [isSizeOpen, setIsSizeOpen] = useState(true);
-  
+
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -676,7 +676,7 @@ export default function FilteringSystem() {
                           checked={selectedCategories.includes(category.name)}
                           onChange={() => handleCategoryToggle(category.name)}
                         />
-                        <span className="text-gray-700">{category.name}</span>
+                      <span className="text-gray-700">{category.name}</span>
                       </div>
                       <span className="text-gray-500 text-sm">({category.count})</span>
                     </label>
@@ -985,7 +985,7 @@ export default function FilteringSystem() {
               <div className="w-full flex justify-center mt-8">
                 <button
                   onClick={showMoreProducts}
-                  className="px-8 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-semibold"
+                  className="px-6 py-3 border-2 border-fuchsia-500 text-fuchsia-500 rounded-lg hover:bg-fuchsia-50 transition-colors font-medium font-['Poppins']"
                 >
                   Load More Products
                 </button>
