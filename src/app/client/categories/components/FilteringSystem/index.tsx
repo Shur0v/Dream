@@ -19,6 +19,7 @@ export default function FilteringSystem() {
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState('default');
+  const [visibleProducts, setVisibleProducts] = useState(15);
 
   const brands = [
     'Apple',
@@ -490,7 +491,12 @@ export default function FilteringSystem() {
     return chunks;
   };
 
-  const productRows = chunkProducts(filteredAndSortedProducts, 3);
+  // Get products to display (limited by visibleProducts)
+  const displayedProducts = filteredAndSortedProducts.slice(0, visibleProducts);
+  const productRows = chunkProducts(displayedProducts, 3);
+  
+  // Check if there are more products to show
+  const hasMoreProducts = filteredAndSortedProducts.length > visibleProducts;
 
   // Filter handler functions
   const handleCategoryToggle = (category: string) => {
@@ -524,6 +530,16 @@ export default function FilteringSystem() {
     setSelectedSizes([]);
     setSortBy('default');
   };
+
+  // Show more products function
+  const showMoreProducts = () => {
+    setVisibleProducts(prev => prev + 15);
+  };
+
+  // Reset visible products when filters change
+  React.useEffect(() => {
+    setVisibleProducts(15);
+  }, [searchTerm, selectedCategories, selectedBrands, selectedSizes, sortBy]);
 
   return (
     <div className="w-full max-w-[1320px] mx-auto px-4 py-6">
@@ -735,7 +751,7 @@ export default function FilteringSystem() {
           {/* Results and Sorting */}
           <div className="flex justify-between items-center mb-6">
             <p className="text-gray-600">
-              Showing {filteredAndSortedProducts.length > 0 ? 1 : 0}-{filteredAndSortedProducts.length} of {filteredAndSortedProducts.length} results
+              Showing {displayedProducts.length > 0 ? 1 : 0}-{displayedProducts.length} of {filteredAndSortedProducts.length} results
             </p>
             <div className="flex items-center gap-2">
               <span className="text-gray-600">Sort by:</span>
@@ -757,7 +773,7 @@ export default function FilteringSystem() {
           <div className="flex flex-col justify-start items-center gap-0">
             {/* Products Grid Container */}
             
-            {filteredAndSortedProducts.length === 0 ? (
+            {displayedProducts.length === 0 ? (
               <div className="w-full text-center py-12">
                 <div className="text-gray-500 text-lg mb-4">No products found</div>
                 <p className="text-gray-400 mb-6">Try adjusting your filters or search terms</p>
@@ -945,6 +961,18 @@ export default function FilteringSystem() {
                 })}
               </div>
             ))
+            )}
+            
+            {/* Show More Button */}
+            {hasMoreProducts && (
+              <div className="w-full flex justify-center mt-8">
+                <button
+                  onClick={showMoreProducts}
+                  className="px-8 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-semibold"
+                >
+                  Show More Products ({filteredAndSortedProducts.length - visibleProducts} remaining)
+                </button>
+              </div>
             )}
           </div>
 
