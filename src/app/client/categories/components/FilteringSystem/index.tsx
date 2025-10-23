@@ -2,6 +2,8 @@
 
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { products, Product } from '@/lib/productData';
 
 /**
  * Complete Filtering System Component
@@ -9,6 +11,7 @@ import Image from 'next/image';
  * and product grid on the right with 3 products per row
  */
 export default function FilteringSystem() {
+  const router = useRouter();
   const [isCategoryOpen, setIsCategoryOpen] = useState(true);
   const [isBrandingOpen, setIsBrandingOpen] = useState(true);
   const [isSizeOpen, setIsSizeOpen] = useState(true);
@@ -31,417 +34,6 @@ export default function FilteringSystem() {
   ];
 
   const sizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', 'XXL', '3XL', '4XL'];
-
-  // Define product type
-  type Product = {
-    id: number;
-    name: string;
-    price: number;
-    originalPrice: number;
-    currency: string;
-    image: string;
-    rating: number;
-    reviews: number;
-    isVerifiedSeller: boolean;
-    category: string;
-    brand: string;
-    sizes: string[];
-  };
-
-  const products: Product[] = [
-    {
-      id: 1,
-      name: 'MacBook Pro 16-inch M3',
-      price: 809.99,
-      originalPrice: 1000,
-      currency: '৳',
-      image: '/common/allproduct/product1.png',
-      rating: 5,
-      reviews: 7,
-      isVerifiedSeller: true,
-      category: 'Electronics',
-      brand: 'Apple',
-      sizes: ['L', 'XL'],
-    },
-    {
-      id: 2,
-      name: 'Samsung Galaxy S24 Ultra',
-      price: 1299.99,
-      originalPrice: 1500,
-      currency: '৳',
-      image: '/common/allproduct/product2.png',
-      rating: 4,
-      reviews: 23,
-      isVerifiedSeller: true,
-      category: 'Electronics',
-      brand: 'Samsung',
-      sizes: ['L', 'XL'],
-    },
-    {
-      id: 3,
-      name: 'Sony WH-1000XM5',
-      price: 399.99,
-      originalPrice: 499,
-      currency: '৳',
-      image: '/common/allproduct/product3.png',
-      rating: 5,
-      reviews: 156,
-      isVerifiedSeller: true,
-      category: 'Electronics',
-      brand: 'Sony',
-      sizes: ['S', 'M', 'L'],
-    },
-    {
-      id: 4,
-      name: 'iPhone 15 Pro Max',
-      price: 1199.99,
-      originalPrice: 1399,
-      currency: '৳',
-      image: '/common/allproduct/product4.png',
-      rating: 5,
-      reviews: 89,
-      isVerifiedSeller: true,
-      category: 'Electronics',
-      brand: 'Apple',
-      sizes: ['M', 'L'],
-    },
-    {
-      id: 5,
-      name: 'Dell XPS 13',
-      price: 999.99,
-      originalPrice: 1199,
-      currency: '৳',
-      image: '/common/allproduct/product5.png',
-      rating: 4,
-      reviews: 45,
-      isVerifiedSeller: true,
-      category: 'Electronics',
-      brand: 'Samsung',
-      sizes: ['L', 'XL'],
-    },
-    {
-      id: 6,
-      name: 'AirPods Pro 2',
-      price: 249.99,
-      originalPrice: 299,
-      currency: '৳',
-      image: '/common/allproduct/product6.png',
-      rating: 5,
-      reviews: 234,
-      isVerifiedSeller: true,
-      category: 'Electronics',
-      brand: 'Apple',
-      sizes: ['M', 'L'],
-    },
-    {
-      id: 7,
-      name: 'iPad Pro 12.9',
-      price: 1099.99,
-      originalPrice: 1299,
-      currency: '৳',
-      image: '/common/allproduct/product7.png',
-      rating: 5,
-      reviews: 67,
-      isVerifiedSeller: true,
-      category: 'Electronics',
-      brand: 'Apple',
-      sizes: ['M', 'L'],
-    },
-    {
-      id: 8,
-      name: 'Surface Laptop 5',
-      price: 899.99,
-      originalPrice: 1099,
-      currency: '৳',
-      image: '/common/allproduct/product8.png',
-      rating: 4,
-      reviews: 34,
-      isVerifiedSeller: true,
-      category: 'Electronics',
-      brand: 'Samsung',
-      sizes: ['L', 'XL'],
-    },
-    {
-      id: 9,
-      name: 'MacBook Air M2',
-      price: 999.99,
-      originalPrice: 1199,
-      currency: '৳',
-      image: '/common/allproduct/product9.png',
-      rating: 5,
-      reviews: 123,
-      isVerifiedSeller: true,
-      category: 'Electronics',
-      brand: 'Apple',
-      sizes: ['M', 'L'],
-    },
-    {
-      id: 10,
-      name: 'Nike Air Max 270',
-      price: 149.99,
-      originalPrice: 199,
-      currency: '৳',
-      image: '/common/allproduct/product10.png',
-      rating: 4,
-      reviews: 89,
-      isVerifiedSeller: true,
-      category: 'Fashion',
-      brand: 'Nike',
-      sizes: ['S', 'M', 'L', 'XL'],
-    },
-    {
-      id: 11,
-      name: 'Adidas Ultraboost 22',
-      price: 179.99,
-      originalPrice: 229,
-      currency: '৳',
-      image: '/common/allproduct/product11.png',
-      rating: 5,
-      reviews: 156,
-      isVerifiedSeller: true,
-      category: 'Fashion',
-      brand: 'Adidas',
-      sizes: ['S', 'M', 'L', 'XL'],
-    },
-    {
-      id: 12,
-      name: 'Nike Dri-FIT T-Shirt',
-      price: 29.99,
-      originalPrice: 39,
-      currency: '৳',
-      image: '/common/allproduct/product12.png',
-      rating: 4,
-      reviews: 67,
-      isVerifiedSeller: true,
-      category: 'Fashion',
-      brand: 'Nike',
-      sizes: ['S', 'M', 'L', 'XL'],
-    },
-    {
-      id: 13,
-      name: 'Adidas Originals Hoodie',
-      price: 79.99,
-      originalPrice: 99,
-      currency: '৳',
-      image: '/common/allproduct/product13.png',
-      rating: 5,
-      reviews: 123,
-      isVerifiedSeller: true,
-      category: 'Fashion',
-      brand: 'Adidas',
-      sizes: ['S', 'M', 'L', 'XL'],
-    },
-    {
-      id: 14,
-      name: 'Nike Basketball Shorts',
-      price: 39.99,
-      originalPrice: 49,
-      currency: '৳',
-      image: '/common/allproduct/product14.png',
-      rating: 4,
-      reviews: 45,
-      isVerifiedSeller: true,
-      category: 'Fashion',
-      brand: 'Nike',
-      sizes: ['S', 'M', 'L', 'XL'],
-    },
-    {
-      id: 15,
-      name: 'Adidas Running Jacket',
-      price: 89.99,
-      originalPrice: 119,
-      currency: '৳',
-      image: '/common/allproduct/product15.png',
-      rating: 5,
-      reviews: 78,
-      isVerifiedSeller: true,
-      category: 'Fashion',
-      brand: 'Adidas',
-      sizes: ['S', 'M', 'L', 'XL'],
-    },
-    {
-      id: 16,
-      name: 'Smart Garden Kit',
-      price: 199.99,
-      originalPrice: 249,
-      currency: '৳',
-      image: '/common/allproduct/product16.png',
-      rating: 4,
-      reviews: 34,
-      isVerifiedSeller: true,
-      category: 'Home & Garden',
-      brand: 'Samsung',
-      sizes: ['L', 'XL'],
-    },
-    {
-      id: 17,
-      name: 'Robot Vacuum Cleaner',
-      price: 299.99,
-      originalPrice: 399,
-      currency: '৳',
-      image: '/common/allproduct/product17.png',
-      rating: 5,
-      reviews: 89,
-      isVerifiedSeller: true,
-      category: 'Home & Garden',
-      brand: 'Sony',
-      sizes: ['M', 'L'],
-    },
-    {
-      id: 18,
-      name: 'Smart LED Strip Lights',
-      price: 49.99,
-      originalPrice: 69,
-      currency: '৳',
-      image: '/common/allproduct/product18.png',
-      rating: 4,
-      reviews: 156,
-      isVerifiedSeller: true,
-      category: 'Home & Garden',
-      brand: 'Samsung',
-      sizes: ['L', 'XL'],
-    },
-    {
-      id: 19,
-      name: 'Indoor Plant Pot Set',
-      price: 39.99,
-      originalPrice: 59,
-      currency: '৳',
-      image: '/common/allproduct/product19.png',
-      rating: 5,
-      reviews: 67,
-      isVerifiedSeller: true,
-      category: 'Home & Garden',
-      brand: 'Sony',
-      sizes: ['M', 'L'],
-    },
-    {
-      id: 20,
-      name: 'Yoga Mat Premium',
-      price: 59.99,
-      originalPrice: 79,
-      currency: '৳',
-      image: '/common/allproduct/product20.png',
-      rating: 4,
-      reviews: 123,
-      isVerifiedSeller: true,
-      category: 'Sports',
-      brand: 'Nike',
-      sizes: ['S', 'M', 'L', 'XL'],
-    },
-    {
-      id: 21,
-      name: 'Dumbbell Set 20kg',
-      price: 149.99,
-      originalPrice: 199,
-      currency: '৳',
-      image: '/common/allproduct/product21.png',
-      rating: 5,
-      reviews: 89,
-      isVerifiedSeller: true,
-      category: 'Sports',
-      brand: 'Adidas',
-      sizes: ['S', 'M', 'L', 'XL'],
-    },
-    {
-      id: 22,
-      name: 'Resistance Bands Set',
-      price: 29.99,
-      originalPrice: 39,
-      currency: '৳',
-      image: '/common/allproduct/product22.png',
-      rating: 4,
-      reviews: 67,
-      isVerifiedSeller: true,
-      category: 'Sports',
-      brand: 'Nike',
-      sizes: ['S', 'M', 'L', 'XL'],
-    },
-    {
-      id: 23,
-      name: 'JavaScript Complete Guide',
-      price: 49.99,
-      originalPrice: 69,
-      currency: '৳',
-      image: '/common/allproduct/product23.png',
-      rating: 5,
-      reviews: 234,
-      isVerifiedSeller: true,
-      category: 'Books',
-      brand: 'Samsung',
-      sizes: ['L', 'XL'],
-    },
-    {
-      id: 24,
-      name: 'React Development Handbook',
-      price: 39.99,
-      originalPrice: 59,
-      currency: '৳',
-      image: '/common/allproduct/product24.png',
-      rating: 4,
-      reviews: 156,
-      isVerifiedSeller: true,
-      category: 'Books',
-      brand: 'Sony',
-      sizes: ['M', 'L'],
-    },
-    {
-      id: 25,
-      name: 'Python Programming Master',
-      price: 59.99,
-      originalPrice: 79,
-      currency: '৳',
-      image: '/common/allproduct/product25.png',
-      rating: 5,
-      reviews: 189,
-      isVerifiedSeller: true,
-      category: 'Books',
-      brand: 'Samsung',
-      sizes: ['M'],
-    },
-    {
-      id: 26,
-      name: 'Wireless Gaming Mouse',
-      price: 79.99,
-      originalPrice: 99,
-      currency: '৳',
-      image: '/common/allproduct/product26.png',
-      rating: 4,
-      reviews: 145,
-      isVerifiedSeller: true,
-      category: 'Electronics',
-      brand: 'Sony',
-      sizes: ['M', 'L'],
-    },
-    {
-      id: 27,
-      name: 'Bluetooth Speaker Pro',
-      price: 129.99,
-      originalPrice: 159,
-      currency: '৳',
-      image: '/common/allproduct/product27.png',
-      rating: 5,
-      reviews: 203,
-      isVerifiedSeller: true,
-      category: 'Electronics',
-      brand: 'Samsung',
-      sizes: ['L', 'XL'],
-    },
-    {
-      id: 28,
-      name: 'Smart Fitness Watch',
-      price: 199.99,
-      originalPrice: 249,
-      currency: '৳',
-      image: '/common/allproduct/product28.png',
-      rating: 5,
-      reviews: 167,
-      isVerifiedSeller: true,
-      category: 'Electronics',
-      brand: 'Apple',
-      sizes: ['S', 'M', 'L'],
-    },
-  ];
 
   // Calculate dynamic category counts based on current filters
   const getCategoryCounts = () => {
@@ -597,6 +189,11 @@ export default function FilteringSystem() {
   // Show more products function
   const showMoreProducts = () => {
     setVisibleProducts(prev => prev + 15);
+  };
+
+  // Handle product card click
+  const handleProductClick = (productId: number) => {
+    router.push(`/client/product-details/${productId}`);
   };
 
   // Reset visible products when filters change
@@ -856,6 +453,7 @@ export default function FilteringSystem() {
                       style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
                       role="article"
                       aria-labelledby={`product-title-${product.id}`}
+                      onClick={() => handleProductClick(product.id)}
                     >
                       {/* Individual Product Card */}
                       
@@ -883,7 +481,10 @@ export default function FilteringSystem() {
                           </div>
                         </div>
                         
-                        <div className="transform group-hover:scale-110 group-hover:rotate-12 transition-all duration-300">
+                        <div 
+                          className="transform group-hover:scale-110 group-hover:rotate-12 transition-all duration-300"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           {/* Wishlist Button Container */}
                           <Image
                             src="/card/icon/butterfly.svg"
@@ -994,6 +595,7 @@ export default function FilteringSystem() {
                           <button 
                             className="w-full h-0 opacity-0 px-7 bg-fuchsia-500 rounded-xl inline-flex justify-center items-center gap-1.5 group-hover:h-14 group-hover:py-3 group-hover:opacity-100 hover:bg-fuchsia-600 transition-all duration-500 ease-out transform translate-y-2 group-hover:translate-y-0"
                             aria-label={`Add ${product.name} to cart`}
+                            onClick={(e) => e.stopPropagation()}
                           >
                             {/* Add to Cart Button */}
                             

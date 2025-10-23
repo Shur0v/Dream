@@ -38,15 +38,16 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ images }) => {
           <div className="layer-4 self-stretch h-28 inline-flex justify-start items-start gap-4" data-layer="4">
             {/* layer-4 = thumbnails container */}
             
-            {images.map((image, index) => (
+            {/* Repeat the same image 3 times */}
+            {[0, 1, 2].map((index) => (
               <div
                 key={index}
                 className={`layer-5 flex-1 self-stretch rounded-[20px] border cursor-pointer transition-all duration-200 ${
-                  mainImage === image 
+                  mainImage === images[0] 
                     ? 'border-fuchsia-500' 
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
-                onClick={() => setMainImage(image)}
+                onClick={() => setMainImage(images[0])}
                 role="button"
                 aria-label={`View product image ${index + 1}`}
                 tabIndex={0}
@@ -55,7 +56,7 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ images }) => {
                 {/* layer-5 = individual thumbnail container */}
                 
                 <Image
-                  src={image}
+                  src={images[0]}
                   alt={`Product thumbnail ${index + 1}`}
                   width={146}
                   height={120}
