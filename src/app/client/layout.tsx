@@ -1,6 +1,7 @@
 import React from 'react';
 import Footer from '@/components/layout/Footer';
 import { MainHeader } from '@/components/layout/MainHeader';
+import FeaturesSection from './home/components/FeaturesSection';
 
 /**
  * Layout for all client pages
@@ -17,6 +18,7 @@ export default function ClientLayout({
       <main className="flex-1">
         {children}
       </main>
+      <FeaturesSection />
       <Footer />
     </div>
   );

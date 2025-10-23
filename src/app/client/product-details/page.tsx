@@ -2,8 +2,7 @@
 
 import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
-import Gallery from './components/Gallery';
-import Info from './components/Info';
+import TopPart from './components/toppart/page';
 import Reviews from './components/Reviews';
 import { sampleUsers } from '@/lib/dummyData';
 
@@ -70,16 +69,11 @@ export default function ProductDetails() {
       onUserAction={handleUserAction}
       onNewsletterSubscribe={handleNewsletterSubscribe}
     >
-      <div className="w-full max-w-[1320px] mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          {/* Product Gallery */}
-          <Gallery />
-          
-          {/* Product Information */}
-          <Info />
-        </div>
-        
-        {/* Product Reviews */}
+      {/* Top Part - Contains ProductGallery, ProductInfo, and DeliveryInfo */}
+      <TopPart />
+      
+      {/* Product Reviews Section */}
+      <div className="mt-12">
         <Reviews rating={4.5} reviewsCount={100} />
       </div>
     </MainLayout>

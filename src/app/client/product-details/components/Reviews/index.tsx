@@ -1,200 +1,277 @@
 'use client';
 
 import React, { useState } from 'react';
+import { Star, SlidersVertical, ChevronDown, MoreHorizontal, Check } from 'lucide-react';
 
-/**
- * Reviews component for product reviews and ratings
- * 
- * @description Displays customer reviews, ratings, and review form
- */
-export default function Reviews() {
-  const [newReview, setNewReview] = useState({ rating: 5, comment: '', name: '' });
+interface Review {
+  id: number;
+  author: string;
+  rating: number;
+  comment: string;
+  date: string;
+  verified: boolean;
+}
 
-  const reviews = [
+interface ReviewsProps {
+  rating: number;
+  reviewsCount: number;
+}
+
+const Reviews: React.FC<ReviewsProps> = ({ rating, reviewsCount }) => {
+  const [activeTab, setActiveTab] = useState<'details' | 'reviews' | 'qa'>('reviews');
+  const [visibleReviewsCount, setVisibleReviewsCount] = useState(4);
+
+  const reviews: Review[] = [
     {
       id: 1,
-      name: 'Sarah Johnson',
+      author: 'Samantha D.',
       rating: 5,
-      date: '2024-01-15',
-      comment: 'Excellent headphones! The sound quality is amazing and they are very comfortable to wear for long periods.',
+      comment: 'I absolutely love this t-shirt! The design is unique and the fabric feels so comfortable. As a fellow designer, I appreciate the attention to detail. It\'s become my favorite go-to shirt.',
+      date: 'Posted on August 14, 2023',
       verified: true
     },
     {
       id: 2,
-      name: 'Mike Chen',
-      rating: 4,
-      date: '2024-01-10',
-      comment: 'Great product overall. Battery life is impressive and the noise cancellation works well.',
+      author: 'Alex M.',
+      rating: 5,
+      comment: 'The t-shirt exceeded my expectations! The colors are vibrant and the print quality is top-notch. Being a UI/UX designer myself, I\'m quite picky about aesthetics, and this t-shirt definitely gets a thumbs up from me.',
+      date: 'Posted on August 15, 2023',
       verified: true
     },
     {
       id: 3,
-      name: 'Emily Davis',
-      rating: 5,
-      date: '2024-01-08',
-      comment: 'Perfect for my daily commute. The build quality feels premium and the sound is crystal clear.',
-      verified: false
+      author: 'Sarah M.',
+      rating: 4,
+      comment: 'Great quality t-shirt! The fabric is soft and comfortable. The design is exactly as shown in the pictures. Would definitely recommend to others.',
+      date: 'Posted on August 12, 2023',
+      verified: true
     },
     {
       id: 4,
-      name: 'David Wilson',
-      rating: 4,
-      date: '2024-01-05',
-      comment: 'Good value for money. The headphones look great and perform well. Would recommend.',
+      author: 'John D.',
+      rating: 5,
+      comment: 'Excellent product! Fast shipping and the t-shirt exceeded my expectations. The fit is perfect and the material feels premium. Will order again for sure.',
+      date: 'Posted on August 10, 2023',
+      verified: false
+    },
+    {
+      id: 5,
+      author: 'Emma L.',
+      rating: 5,
+      comment: 'Perfect! Exactly what I was looking for. The design is beautiful and the fabric is very comfortable. The colors are vibrant and true to the photos.',
+      date: 'Posted on August 8, 2023',
       verified: true
+    },
+    {
+      id: 6,
+      author: 'Mike R.',
+      rating: 4,
+      comment: 'Good t-shirt overall, but the sizing runs a bit small. Material quality is decent for the price. Would suggest ordering one size up.',
+      date: 'Posted on August 6, 2023',
+      verified: true
+    },
+    {
+      id: 7,
+      author: 'Lisa K.',
+      rating: 5,
+      comment: 'Amazing quality! The print is crisp and the fabric is so soft. I\'ve washed it multiple times and it still looks brand new. Highly recommend!',
+      date: 'Posted on August 4, 2023',
+      verified: true
+    },
+    {
+      id: 8,
+      author: 'David P.',
+      rating: 3,
+      comment: 'Decent t-shirt for the price. The design is nice but the fabric could be better quality. It\'s comfortable but not as durable as expected.',
+      date: 'Posted on August 2, 2023',
+      verified: false
     }
   ];
 
-  const averageRating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
-  const ratingCounts = [5, 4, 3, 2, 1].map(rating => 
-    reviews.filter(review => review.rating === rating).length
-  );
+  const displayedReviews = reviews.slice(0, visibleReviewsCount);
+  
+  const handleSeeMore = () => {
+    setVisibleReviewsCount(prev => Math.min(prev + 4, reviews.length));
+  };
+  
+  const handleHideAll = () => {
+    setVisibleReviewsCount(4);
+  };
 
-  const handleSubmitReview = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('New review:', newReview);
-    // TODO: Implement review submission
-    setNewReview({ rating: 5, comment: '', name: '' });
+  const renderStars = (rating: number) => {
+    return Array.from({ length: 5 }).map((_, i) => (
+      <Star 
+        key={i} 
+        size={20}
+        fill={i < rating ? 'currentColor' : 'none'}
+        stroke="currentColor"
+        className={`${i < rating ? 'text-amber-400' : 'text-gray-200'}`}
+      />
+    ));
+  };
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'details':
+        return (
+          <div className="w-full max-w-[1320px] mx-auto">
+            {/* Layer 4: Product Details Content */}
+            <div className="w-full">
+              <h3 className="text-2xl font-semibold text-gray-800 font-['Poppins'] mb-4">
+                Product Details
+              </h3>
+              <p className="text-gray-600 font-['Poppins']">
+                This is where the product details and description will be displayed.
+              </p>
+            </div>
+          </div>
+        );
+      case 'reviews':
+        return (
+          <div className="w-full space-y-6 max-w-[1320px] mx-auto">
+            {/* Layer 4: Review Controls */}
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <div className="text-black text-2xl font-normal font-['Poppins']">All Reviews</div>
+                <div className="text-black/60 text-base font-normal font-['Poppins']">(451)</div>
+              </div>
+              <div className="flex items-center gap-2.5">
+                {/* Filter Button */}
+                <div className="w-12 h-12 bg-zinc-100 rounded-[62px] flex justify-center items-center">
+                  <SlidersVertical size={20} className="text-black" />
+                </div>
+                {/* Sort Button */}
+                <div className="w-28 h-12 px-5 py-4 bg-zinc-100 rounded-[62px] flex justify-between items-center">
+                  <div className="text-black text-base font-normal font-['Poppins']">Latest</div>
+                  <ChevronDown size={16} className="text-black" />
+                </div>
+                {/* Write Review Button */}
+                <div className="w-40 h-12 px-5 py-4 bg-black rounded-[62px] flex justify-center items-center">
+                  <div className="text-white text-base font-normal font-['Poppins']">Write a Review</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Layer 4: Reviews Grid */}
+            <div className="grid grid-cols-2 gap-6">
+              {displayedReviews.map((review) => (
+                <div key={review.id} className="px-8 py-7 rounded-[20px] outline-1 outline-offset-[-1px] outline-black/10">
+                  {/* Layer 5: Review Card Content */}
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex-1">
+                      {/* Stars */}
+                      <div className="flex gap-1.5 mb-3.5">
+                        {renderStars(review.rating)}
+                      </div>
+                      {/* Author and Verified Badge */}
+                      <div className="flex items-center gap-1 mb-3">
+                        <div className="text-black text-xl font-bold font-['Satoshi']">{review.author}</div>
+                        {review.verified && (
+                          <div className="w-6 h-6 bg-green-600 rounded-full flex justify-center items-center">
+                            <Check size={16} className="text-white" />
+                          </div>
+                        )}
+                      </div>
+                      {/* Review Text */}
+                      <div className="text-black/60 text-base font-normal font-['Poppins'] leading-snug mb-4">
+                        "{review.comment}"
+                      </div>
+                    </div>
+                    {/* More Options */}
+                    <div className="flex items-start">
+                      <MoreHorizontal size={20} className="text-black/40" />
+                    </div>
+                  </div>
+                  {/* Date */}
+                  <div className="text-black/60 text-base font-normal font-['Poppins'] leading-snug">
+                    {review.date}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Layer 4: See More/Hide All Button */}
+            {visibleReviewsCount < reviews.length && (
+              <div className="flex justify-start mt-8">
+                <button
+                  onClick={handleSeeMore}
+                  className="px-6 py-3 border-2 border-fuchsia-500 text-fuchsia-500 rounded-lg hover:bg-fuchsia-50 transition-colors font-medium font-['Poppins']"
+                >
+                  See More Review
+                </button>
+              </div>
+            )}
+            {visibleReviewsCount >= reviews.length && visibleReviewsCount > 4 && (
+              <div className="flex justify-start mt-8">
+                <button
+                  onClick={handleHideAll}
+                  className="px-6 py-3 border-2 border-fuchsia-500 text-fuchsia-500 rounded-lg hover:bg-fuchsia-50 transition-colors font-medium font-['Poppins']"
+                >
+                  Hide All
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      case 'qa':
+        return (
+          <div className="w-full max-w-[1320px] mx-auto">
+            {/* Layer 4: Q&A Content */}
+            <div className="w-full">
+              <h3 className="text-2xl font-semibold text-gray-800 font-['Poppins'] mb-4">
+                Question & Answer
+              </h3>
+              <p className="text-gray-600 font-['Poppins']">
+                This is where the Q&A section will be displayed.
+              </p>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
-    <div className="space-y-8">
-      {/* Reviews Header */}
-      <div className="border-t pt-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Customer Reviews</h2>
-        
-        {/* Rating Summary */}
-        <div className="flex items-center gap-8 mb-8">
-          <div className="text-center">
-            <div className="text-4xl font-bold text-gray-900">{averageRating.toFixed(1)}</div>
-            <div className="flex items-center justify-center mb-2">
-              {[...Array(5)].map((_, i) => (
-                <svg
-                  key={i}
-                  className={`w-6 h-6 ${
-                    i < Math.floor(averageRating) ? 'text-yellow-400' : 'text-gray-300'
-                  }`}
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-              ))}
-            </div>
-            <div className="text-sm text-gray-600">Based on {reviews.length} reviews</div>
-          </div>
-          
-          {/* Rating Breakdown */}
-          <div className="flex-1">
-            {[5, 4, 3, 2, 1].map((rating, index) => (
-              <div key={rating} className="flex items-center gap-3 mb-2">
-                <span className="text-sm font-medium w-8">{rating}</span>
-                <div className="flex-1 bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-yellow-400 h-2 rounded-full" 
-                    style={{ width: `${(ratingCounts[index] / reviews.length) * 100}%` }}
-                  />
-                </div>
-                <span className="text-sm text-gray-600 w-8">{ratingCounts[index]}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+    <div className="w-full bg-white max-w-[1320px] mx-auto">
+      {/* Layer 1: Tab Navigation */}
+      <div className="flex items-center gap-12 border-b border-black">
+        <button
+          onClick={() => setActiveTab('details')}
+          className={`py-6 px-4 ${activeTab === 'details' 
+            ? 'border-b-2 border-fuchsia-500 text-fuchsia-500' 
+            : 'text-black/60'
+          } text-xl font-medium font-['Poppins']`}
+        >
+          Product Details
+        </button>
+        <button
+          onClick={() => setActiveTab('reviews')}
+          className={`py-6 px-4 ${activeTab === 'reviews' 
+            ? 'border-b-2 border-fuchsia-500 text-fuchsia-500' 
+            : 'text-black/60'
+          } text-xl font-medium font-['Poppins']`}
+        >
+          Rating & Reviews
+        </button>
+        <button
+          onClick={() => setActiveTab('qa')}
+          className={`py-6 px-4 ${activeTab === 'qa' 
+            ? 'border-b-2 border-fuchsia-500 text-fuchsia-500' 
+            : 'text-black/60'
+          } text-xl font-medium font-['Poppins']`}
+        >
+          Question & Answer
+        </button>
       </div>
 
-      {/* Individual Reviews */}
-      <div className="space-y-6">
-        {reviews.map((review) => (
-          <div key={review.id} className="border-b pb-6 last:border-b-0">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h4 className="font-semibold text-gray-900">{review.name}</h4>
-                  {review.verified && (
-                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium">
-                      Verified Purchase
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <svg
-                        key={i}
-                        className={`w-4 h-4 ${
-                          i < review.rating ? 'text-yellow-400' : 'text-gray-300'
-                        }`}
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                  </div>
-                  <span className="text-sm text-gray-500">{review.date}</span>
-                </div>
-              </div>
-            </div>
-            <p className="text-gray-700">{review.comment}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Write a Review Form */}
-      <div className="border-t pt-8">
-        <h3 className="text-xl font-semibold text-gray-900 mb-6">Write a Review</h3>
-        <form onSubmit={handleSubmitReview} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Your Rating</label>
-            <div className="flex gap-1">
-              {[1, 2, 3, 4, 5].map((rating) => (
-                <button
-                  key={rating}
-                  type="button"
-                  onClick={() => setNewReview(prev => ({ ...prev, rating }))}
-                  className={`w-8 h-8 ${
-                    rating <= newReview.rating ? 'text-yellow-400' : 'text-gray-300'
-                  }`}
-                >
-                  <svg fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Your Name</label>
-            <input
-              type="text"
-              value={newReview.name}
-              onChange={(e) => setNewReview(prev => ({ ...prev, name: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Your Review</label>
-            <textarea
-              value={newReview.comment}
-              onChange={(e) => setNewReview(prev => ({ ...prev, comment: e.target.value }))}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Share your experience with this product..."
-              required
-            />
-          </div>
-          
-          <button
-            type="submit"
-            className="bg-blue-600 text-white py-2 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200"
-          >
-            Submit Review
-          </button>
-        </form>
+      {/* Layer 2: Tab Content Container */}
+      <div className="w-full py-6 max-w-[1320px] mx-auto">
+        {/* Layer 3: Tab Content */}
+        {renderTabContent()}
       </div>
     </div>
   );
-}
+};
+
+export default Reviews;

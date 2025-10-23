@@ -1,10 +1,11 @@
 "use client";
 
 import React from "react";
-import ProductGallery from "../components/ProductGallery";
-import ProductInfo from "../components/ProductInfo";
-import DeliveryInfo from "../components/DeliveryInfo";
+import TopPart from "../components/toppart/page";
 import Reviews from "../components/Reviews";
+import RelatedProduct from "../components/RelatedProduct";
+import ShopInstagram from "../components/ShopInstagram";
+import ForYou from "../../home/components/ForYou";
 
 interface PageProps {
   params: { slug: string };
@@ -40,28 +41,25 @@ export default function ProductDetailsPage({ params }: PageProps) {
     <div className="father w-full bg-white flex flex-col justify-start items-center py-8" role="main" data-layer="father">
       {/* father = full width product details section */}
       
-      <div className="daughter w-full max-w-[1320px] mx-auto px-4" data-layer="daughter">
+      <div className="daughter w-full mx-auto px-4" data-layer="daughter">
         {/* daughter = design holder for entire product details section */}
         
-        <div className="layer-1 inline-flex justify-start items-start gap-8" data-layer="1">
-          {/* layer-1 = main product layout container */}
-          
-          <div className="h-[546px] flex justify-start items-start gap-8">
-            {/* Product Gallery */}
-            <ProductGallery images={product.images} />
-            
-            {/* Product Info */}
-            <ProductInfo product={product} />
-          </div>
-          
-          {/* Delivery Info Sidebar */}
-          <DeliveryInfo />
-        </div>
-        
+        {/* Top Part - Contains ProductGallery, ProductInfo, and DeliveryInfo */}
+        <TopPart product={product} images={product.images} />
+
         {/* Reviews Section */}
         <div className="mt-12">
           <Reviews rating={product.rating} reviewsCount={product.reviewsCount} />
         </div>
+
+        {/* Related Product Section */}
+        <RelatedProduct />
+
+        {/* Shop Instagram Section */}
+        <ShopInstagram />
+
+        {/* For You Section */}
+        <ForYou />
       </div>
     </div>
   );
