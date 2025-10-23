@@ -1,12 +1,23 @@
 'use client';
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 
 /**
  * Browse Categories Component
  * Displays circular category icons for easy navigation
  */
 export default function BrowseCategories() {
+  const router = useRouter();
+  
+  /**
+   * Handle category click navigation
+   */
+  const handleCategoryClick = (categoryName: string) => {
+    // Navigate to categories page
+    router.push('/client/categories');
+  };
+  
   const categories = [
     { 
       id: 1, 
@@ -89,7 +100,7 @@ export default function BrowseCategories() {
               <button 
                 key={category.id} 
                 className="layer-4 flex flex-col justify-start items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={() => console.log(`Clicked: ${category.name}`)}
+                onClick={() => handleCategoryClick(category.name)}
                 aria-label={`Browse ${category.name} category`}
                 data-layer="4"
               >
