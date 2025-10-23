@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 
 /**
@@ -9,24 +9,24 @@ import Image from 'next/image';
  * and product grid on the right with 3 products per row
  */
 export default function FilteringSystem() {
-  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [isCategoryOpen, setIsCategoryOpen] = useState(true);
   const [isBrandingOpen, setIsBrandingOpen] = useState(true);
   const [isSizeOpen, setIsSizeOpen] = useState(true);
-
-  const categories = [
-    { name: 'Hoodies', count: 20 },
-    { name: 'Jackets', count: 20 },
-    { name: 'Joggers', count: 20 },
-    { name: 'Pants', count: 20 },
-    { name: 'Shoes', count: 20 },
-  ];
+  
+  // Filter states
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState('default');
 
   const brands = [
-    'Viede',
-    'Chanel', 
-    'Hermes',
-    'Gucci'
+    'Apple',
+    'Samsung', 
+    'Sony',
+    'Nike',
+    'Adidas',
+    'Samsung'
   ];
 
   const sizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', 'XXL', '3XL', '4XL'];
@@ -42,6 +42,9 @@ export default function FilteringSystem() {
     rating: number;
     reviews: number;
     isVerifiedSeller: boolean;
+    category: string;
+    brand: string;
+    sizes: string[];
   };
 
   const products: Product[] = [
@@ -55,6 +58,9 @@ export default function FilteringSystem() {
       rating: 5,
       reviews: 7,
       isVerifiedSeller: true,
+      category: 'Electronics',
+      brand: 'Apple',
+      sizes: ['L', 'XL'],
     },
     {
       id: 2,
@@ -66,6 +72,9 @@ export default function FilteringSystem() {
       rating: 4,
       reviews: 23,
       isVerifiedSeller: true,
+      category: 'Electronics',
+      brand: 'Samsung',
+      sizes: ['M', 'L'],
     },
     {
       id: 3,
@@ -77,6 +86,9 @@ export default function FilteringSystem() {
       rating: 5,
       reviews: 156,
       isVerifiedSeller: true,
+      category: 'Electronics',
+      brand: 'Sony',
+      sizes: ['S', 'M', 'L'],
     },
     {
       id: 4,
@@ -88,6 +100,9 @@ export default function FilteringSystem() {
       rating: 5,
       reviews: 89,
       isVerifiedSeller: true,
+      category: 'Electronics',
+      brand: 'Apple',
+      sizes: ['M', 'L'],
     },
     {
       id: 5,
@@ -99,6 +114,9 @@ export default function FilteringSystem() {
       rating: 4,
       reviews: 45,
       isVerifiedSeller: true,
+      category: 'Electronics',
+      brand: 'Samsung',
+      sizes: ['L', 'XL'],
     },
     {
       id: 6,
@@ -110,6 +128,9 @@ export default function FilteringSystem() {
       rating: 5,
       reviews: 234,
       isVerifiedSeller: true,
+      category: 'Electronics',
+      brand: 'Apple',
+      sizes: ['S', 'M'],
     },
     {
       id: 7,
@@ -121,6 +142,9 @@ export default function FilteringSystem() {
       rating: 5,
       reviews: 67,
       isVerifiedSeller: true,
+      category: 'Electronics',
+      brand: 'Apple',
+      sizes: ['M', 'L'],
     },
     {
       id: 8,
@@ -132,6 +156,9 @@ export default function FilteringSystem() {
       rating: 4,
       reviews: 34,
       isVerifiedSeller: true,
+      category: 'Electronics',
+      brand: 'Samsung',
+      sizes: ['L', 'XL'],
     },
     {
       id: 9,
@@ -143,8 +170,316 @@ export default function FilteringSystem() {
       rating: 5,
       reviews: 123,
       isVerifiedSeller: true,
+      category: 'Electronics',
+      brand: 'Apple',
+      sizes: ['M', 'L'],
+    },
+    {
+      id: 10,
+      name: 'Nike Air Max 270',
+      price: 149.99,
+      originalPrice: 199,
+      currency: '৳',
+      image: '/card/image/img1.jpg',
+      rating: 4,
+      reviews: 89,
+      isVerifiedSeller: true,
+      category: 'Fashion',
+      brand: 'Nike',
+      sizes: ['S', 'M', 'L', 'XL'],
+    },
+    {
+      id: 11,
+      name: 'Adidas Ultraboost 22',
+      price: 179.99,
+      originalPrice: 229,
+      currency: '৳',
+      image: '/card/image/img1.jpg',
+      rating: 5,
+      reviews: 156,
+      isVerifiedSeller: true,
+      category: 'Fashion',
+      brand: 'Adidas',
+      sizes: ['S', 'M', 'L', 'XL'],
+    },
+    {
+      id: 12,
+      name: 'Nike Dri-FIT T-Shirt',
+      price: 29.99,
+      originalPrice: 39,
+      currency: '৳',
+      image: '/card/image/img1.jpg',
+      rating: 4,
+      reviews: 67,
+      isVerifiedSeller: true,
+      category: 'Fashion',
+      brand: 'Nike',
+      sizes: ['XS', 'S', 'M', 'L', 'XL'],
+    },
+    {
+      id: 13,
+      name: 'Adidas Originals Hoodie',
+      price: 79.99,
+      originalPrice: 99,
+      currency: '৳',
+      image: '/card/image/img1.jpg',
+      rating: 5,
+      reviews: 123,
+      isVerifiedSeller: true,
+      category: 'Fashion',
+      brand: 'Adidas',
+      sizes: ['S', 'M', 'L', 'XL', '2XL'],
+    },
+    {
+      id: 14,
+      name: 'Nike Basketball Shorts',
+      price: 39.99,
+      originalPrice: 49,
+      currency: '৳',
+      image: '/card/image/img1.jpg',
+      rating: 4,
+      reviews: 45,
+      isVerifiedSeller: true,
+      category: 'Fashion',
+      brand: 'Nike',
+      sizes: ['S', 'M', 'L', 'XL'],
+    },
+    {
+      id: 15,
+      name: 'Adidas Running Jacket',
+      price: 89.99,
+      originalPrice: 119,
+      currency: '৳',
+      image: '/card/image/img1.jpg',
+      rating: 5,
+      reviews: 78,
+      isVerifiedSeller: true,
+      category: 'Fashion',
+      brand: 'Adidas',
+      sizes: ['M', 'L', 'XL', '2XL'],
+    },
+    {
+      id: 16,
+      name: 'Smart Garden Kit',
+      price: 199.99,
+      originalPrice: 249,
+      currency: '৳',
+      image: '/card/image/img1.jpg',
+      rating: 4,
+      reviews: 34,
+      isVerifiedSeller: true,
+      category: 'Home & Garden',
+      brand: 'Samsung',
+      sizes: ['M', 'L'],
+    },
+    {
+      id: 17,
+      name: 'Robot Vacuum Cleaner',
+      price: 299.99,
+      originalPrice: 399,
+      currency: '৳',
+      image: '/card/image/img1.jpg',
+      rating: 5,
+      reviews: 89,
+      isVerifiedSeller: true,
+      category: 'Home & Garden',
+      brand: 'Sony',
+      sizes: ['L', 'XL'],
+    },
+    {
+      id: 18,
+      name: 'Smart LED Strip Lights',
+      price: 49.99,
+      originalPrice: 69,
+      currency: '৳',
+      image: '/card/image/img1.jpg',
+      rating: 4,
+      reviews: 156,
+      isVerifiedSeller: true,
+      category: 'Home & Garden',
+      brand: 'Samsung',
+      sizes: ['M', 'L'],
+    },
+    {
+      id: 19,
+      name: 'Indoor Plant Pot Set',
+      price: 39.99,
+      originalPrice: 59,
+      currency: '৳',
+      image: '/card/image/img1.jpg',
+      rating: 5,
+      reviews: 67,
+      isVerifiedSeller: true,
+      category: 'Home & Garden',
+      brand: 'Sony',
+      sizes: ['S', 'M', 'L'],
+    },
+    {
+      id: 20,
+      name: 'Yoga Mat Premium',
+      price: 59.99,
+      originalPrice: 79,
+      currency: '৳',
+      image: '/card/image/img1.jpg',
+      rating: 4,
+      reviews: 123,
+      isVerifiedSeller: true,
+      category: 'Sports',
+      brand: 'Nike',
+      sizes: ['M', 'L'],
+    },
+    {
+      id: 21,
+      name: 'Dumbbell Set 20kg',
+      price: 149.99,
+      originalPrice: 199,
+      currency: '৳',
+      image: '/card/image/img1.jpg',
+      rating: 5,
+      reviews: 89,
+      isVerifiedSeller: true,
+      category: 'Sports',
+      brand: 'Adidas',
+      sizes: ['L', 'XL'],
+    },
+    {
+      id: 22,
+      name: 'Resistance Bands Set',
+      price: 29.99,
+      originalPrice: 39,
+      currency: '৳',
+      image: '/card/image/img1.jpg',
+      rating: 4,
+      reviews: 67,
+      isVerifiedSeller: true,
+      category: 'Sports',
+      brand: 'Nike',
+      sizes: ['S', 'M', 'L'],
+    },
+    {
+      id: 23,
+      name: 'JavaScript Complete Guide',
+      price: 49.99,
+      originalPrice: 69,
+      currency: '৳',
+      image: '/card/image/img1.jpg',
+      rating: 5,
+      reviews: 234,
+      isVerifiedSeller: true,
+      category: 'Books',
+      brand: 'Samsung',
+      sizes: ['M'],
+    },
+    {
+      id: 24,
+      name: 'React Development Handbook',
+      price: 39.99,
+      originalPrice: 59,
+      currency: '৳',
+      image: '/card/image/img1.jpg',
+      rating: 4,
+      reviews: 156,
+      isVerifiedSeller: true,
+      category: 'Books',
+      brand: 'Sony',
+      sizes: ['M'],
+    },
+    {
+      id: 25,
+      name: 'Python Programming Master',
+      price: 59.99,
+      originalPrice: 79,
+      currency: '৳',
+      image: '/card/image/img1.jpg',
+      rating: 5,
+      reviews: 189,
+      isVerifiedSeller: true,
+      category: 'Books',
+      brand: 'Samsung',
+      sizes: ['M'],
     },
   ];
+
+  // Calculate dynamic category counts based on current filters
+  const getCategoryCounts = () => {
+    return [
+      { name: 'Electronics', count: products.filter(p => p.category === 'Electronics' && 
+        (!searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (selectedBrands.length === 0 || selectedBrands.includes(p.brand)) &&
+        (selectedSizes.length === 0 || selectedSizes.some(size => p.sizes.includes(size)))
+      ).length },
+      { name: 'Fashion', count: products.filter(p => p.category === 'Fashion' && 
+        (!searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (selectedBrands.length === 0 || selectedBrands.includes(p.brand)) &&
+        (selectedSizes.length === 0 || selectedSizes.some(size => p.sizes.includes(size)))
+      ).length },
+      { name: 'Home & Garden', count: products.filter(p => p.category === 'Home & Garden' && 
+        (!searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (selectedBrands.length === 0 || selectedBrands.includes(p.brand)) &&
+        (selectedSizes.length === 0 || selectedSizes.some(size => p.sizes.includes(size)))
+      ).length },
+      { name: 'Sports', count: products.filter(p => p.category === 'Sports' && 
+        (!searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (selectedBrands.length === 0 || selectedBrands.includes(p.brand)) &&
+        (selectedSizes.length === 0 || selectedSizes.some(size => p.sizes.includes(size)))
+      ).length },
+      { name: 'Books', count: products.filter(p => p.category === 'Books' && 
+        (!searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
+        (selectedBrands.length === 0 || selectedBrands.includes(p.brand)) &&
+        (selectedSizes.length === 0 || selectedSizes.some(size => p.sizes.includes(size)))
+      ).length },
+    ];
+  };
+
+  const categories = getCategoryCounts();
+
+  // Filter and sort products
+  const filteredAndSortedProducts = useMemo(() => {
+    let filtered = products.filter((product) => {
+      // Search filter
+      if (searchTerm && !product.name.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
+      }
+
+      // Category filter
+      if (selectedCategories.length > 0 && !selectedCategories.includes(product.category)) {
+        return false;
+      }
+
+      // Brand filter
+      if (selectedBrands.length > 0 && !selectedBrands.includes(product.brand)) {
+        return false;
+      }
+
+      // Size filter
+      if (selectedSizes.length > 0 && !selectedSizes.some(size => product.sizes.includes(size))) {
+        return false;
+      }
+
+      return true;
+    });
+
+    // Sort products
+    switch (sortBy) {
+      case 'price-low':
+        filtered.sort((a, b) => a.price - b.price);
+        break;
+      case 'price-high':
+        filtered.sort((a, b) => b.price - a.price);
+        break;
+      case 'rating':
+        filtered.sort((a, b) => b.rating - a.rating);
+        break;
+      case 'reviews':
+        filtered.sort((a, b) => b.reviews - a.reviews);
+        break;
+      default:
+        // Keep original order
+        break;
+    }
+
+    return filtered;
+  }, [searchTerm, selectedCategories, selectedBrands, selectedSizes, sortBy]);
 
   // Function to chunk products into rows of 3
   const chunkProducts = (products: Product[], size: number) => {
@@ -155,7 +490,40 @@ export default function FilteringSystem() {
     return chunks;
   };
 
-  const productRows = chunkProducts(products, 3);
+  const productRows = chunkProducts(filteredAndSortedProducts, 3);
+
+  // Filter handler functions
+  const handleCategoryToggle = (category: string) => {
+    setSelectedCategories(prev => 
+      prev.includes(category) 
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  const handleBrandToggle = (brand: string) => {
+    setSelectedBrands(prev => 
+      prev.includes(brand) 
+        ? prev.filter(b => b !== brand)
+        : [...prev, brand]
+    );
+  };
+
+  const handleSizeToggle = (size: string) => {
+    setSelectedSizes(prev => 
+      prev.includes(size) 
+        ? prev.filter(s => s !== size)
+        : [...prev, size]
+    );
+  };
+
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setSelectedCategories([]);
+    setSelectedBrands([]);
+    setSelectedSizes([]);
+    setSortBy('default');
+  };
 
   return (
     <div className="w-full max-w-[1320px] mx-auto px-4 py-6">
@@ -163,14 +531,16 @@ export default function FilteringSystem() {
         
         {/* Left Sidebar - Filters */}
         <div className="lg:col-span-1 w-full max-w-[280px]">
-          <div className="bg-white rounded-lg shadow-sm border p-4">
+          <div className="bg-white rounded-lg shadow-sm border p-4 sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
             
             {/* Search Bar */}
-            <div className="mb-6">
+            <div className="mb-0">
               <div className="relative">
                 <input
                   type="text"
                   placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
                 <div className="absolute right-3 top-2.5">
@@ -181,8 +551,68 @@ export default function FilteringSystem() {
               </div>
             </div>
 
+            {/* Active Filters Display */}
+            {(searchTerm || selectedCategories.length > 0 || selectedBrands.length > 0 || selectedSizes.length > 0) && (
+              <div className="mb-4">
+                <div className="text-sm text-gray-600 mb-2">Active Filters:</div>
+                {/* <div className="flex flex-wrap gap-2 mb-2">
+                  {searchTerm && (
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs flex items-center gap-1
+                    ">
+                      Search: "{searchTerm}"
+                      <button 
+                        onClick={() => setSearchTerm('')}
+                        className="hover:bg-blue-200 rounded-full p-0.5"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                  {selectedCategories.map(category => (
+                    <span key={category} className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs flex items-center gap-1">
+                      {category}
+                      <button 
+                        onClick={() => handleCategoryToggle(category)}
+                        className="hover:bg-green-200 rounded-full p-0.5"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                  {selectedBrands.map(brand => (
+                    <span key={brand} className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs flex items-center gap-1">
+                      {brand}
+                      <button 
+                        onClick={() => handleBrandToggle(brand)}
+                        className="hover:bg-purple-200 rounded-full p-0.5"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                  {selectedSizes.map(size => (
+                    <span key={size} className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs flex items-center gap-1">
+                      {size}
+                      <button 
+                        onClick={() => handleSizeToggle(size)}
+                        className="hover:bg-orange-200 rounded-full p-0.5"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div> */}
+                <button
+                  onClick={clearAllFilters}
+                  className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            )}
+
             {/* Category Filter */}
-            <div className="mb-6">
+            <div className="mb-0">
               <button
                 onClick={() => setIsCategoryOpen(!isCategoryOpen)}
                 className="w-full flex justify-between items-center py-2 text-left font-semibold text-gray-800"
@@ -199,10 +629,18 @@ export default function FilteringSystem() {
               </button>
               
               {isCategoryOpen && (
-                <div className="mt-2 space-y-2">
+                <div className=" space-y-2">
                   {categories.map((category, index) => (
                     <label key={index} className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded">
-                      <span className="text-gray-700">{category.name}</span>
+                      <div className="flex items-center">
+                        <input 
+                          type="checkbox" 
+                          className="mr-3"
+                          checked={selectedCategories.includes(category.name)}
+                          onChange={() => handleCategoryToggle(category.name)}
+                        />
+                        <span className="text-gray-700">{category.name}</span>
+                      </div>
                       <span className="text-gray-500 text-sm">({category.count})</span>
                     </label>
                   ))}
@@ -211,7 +649,7 @@ export default function FilteringSystem() {
             </div>
 
             {/* Branding Filter */}
-            <div className="mb-6">
+            <div className="mb-0">
               <button
                 onClick={() => setIsBrandingOpen(!isBrandingOpen)}
                 className="w-full flex justify-between items-center py-2 text-left font-semibold text-gray-800"
@@ -228,10 +666,15 @@ export default function FilteringSystem() {
               </button>
               
               {isBrandingOpen && (
-                <div className="mt-2 space-y-2">
+                <div className=" space-y-2">
                   {brands.map((brand, index) => (
                     <label key={index} className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                      <input type="checkbox" className="mr-3" />
+                      <input 
+                        type="checkbox" 
+                        className="mr-3"
+                        checked={selectedBrands.includes(brand)}
+                        onChange={() => handleBrandToggle(brand)}
+                      />
                       <span className="text-gray-700">{brand}</span>
                     </label>
                   ))}
@@ -240,7 +683,7 @@ export default function FilteringSystem() {
             </div>
 
             {/* Size Filter */}
-            <div className="mb-6">
+            <div className="mb-0">
               <button
                 onClick={() => setIsSizeOpen(!isSizeOpen)}
                 className="w-full flex justify-between items-center py-2 text-left font-semibold text-gray-800"
@@ -261,7 +704,12 @@ export default function FilteringSystem() {
                   {sizes.map((size, index) => (
                     <button
                       key={index}
-                      className="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-purple-50 hover:border-purple-500 transition-colors"
+                      onClick={() => handleSizeToggle(size)}
+                      className={`px-3 py-2 border rounded-lg text-sm transition-colors ${
+                        selectedSizes.includes(size)
+                          ? 'bg-purple-500 text-white border-purple-500'
+                          : 'border-gray-300 hover:bg-purple-50 hover:border-purple-500'
+                      }`}
                     >
                       {size}
                     </button>
@@ -286,14 +734,21 @@ export default function FilteringSystem() {
 
           {/* Results and Sorting */}
           <div className="flex justify-between items-center mb-6">
-            <p className="text-gray-600">Showing 1-12 of 100 results</p>
+            <p className="text-gray-600">
+              Showing {filteredAndSortedProducts.length > 0 ? 1 : 0}-{filteredAndSortedProducts.length} of {filteredAndSortedProducts.length} results
+            </p>
             <div className="flex items-center gap-2">
-              <span className="text-gray-600">Sort by Price:</span>
-              <select className="border border-gray-300 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                <option>Low to High</option>
-                <option>High to Low</option>
-                <option>Newest</option>
-                <option>Most Popular</option>
+              <span className="text-gray-600">Sort by:</span>
+              <select 
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="default">Default</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="rating">Rating</option>
+                <option value="reviews">Most Reviews</option>
               </select>
             </div>
           </div>
@@ -302,18 +757,27 @@ export default function FilteringSystem() {
           <div className="flex flex-col justify-start items-center gap-0">
             {/* Products Grid Container */}
             
-            {productRows.map((rowProducts, rowIndex) => (
+            {filteredAndSortedProducts.length === 0 ? (
+              <div className="w-full text-center py-12">
+                <div className="text-gray-500 text-lg mb-4">No products found</div>
+                <p className="text-gray-400 mb-6">Try adjusting your filters or search terms</p>
+                <button
+                  onClick={clearAllFilters}
+                  className="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            ) : (
+              productRows.map((rowProducts, rowIndex) => (
               <div key={rowIndex} className="w-full flex justify-center items-center gap-6 h-[582px]">
                 {/* Individual Product Row */}
                 
                 {rowProducts.map((product, productIndex) => {
-                  const globalIndex = rowIndex * 3 + productIndex;
                   return (
                     <div
                       key={product.id}
                       className="w-[312px] p-4 bg-sky-50 rounded-xl border border-black/10 inline-flex flex-col justify-start items-start group hover:shadow-md hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
-                      onMouseEnter={() => setHoveredCard(globalIndex)}
-                      onMouseLeave={() => setHoveredCard(null)}
                       style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
                       role="article"
                       aria-labelledby={`product-title-${product.id}`}
@@ -480,31 +944,10 @@ export default function FilteringSystem() {
                   );
                 })}
               </div>
-            ))}
+            ))
+            )}
           </div>
 
-          {/* Pagination Dots */}
-          <div className="h-2 flex justify-center items-center gap-2 mt-8" role="tablist" aria-label="Product pagination">
-            {/* Pagination Dots Container */}
-            
-            {productRows.map((_, index) => (
-              <div
-                key={index}
-                className={`h-2 rounded-[10px] transition-all duration-300 ease-in-out transform origin-center ${
-                  hoveredCard !== null && Math.floor(hoveredCard / 3) === index
-                    ? 'w-12 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500'
-                    : 'w-5 bg-neutral-200'
-                }`}
-                style={{
-                  transformOrigin: 'center',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-                }}
-                role="tab"
-                aria-selected={hoveredCard !== null && Math.floor(hoveredCard / 3) === index}
-                aria-label={`Go to row ${index + 1}`}
-              />
-            ))}
-          </div>
         </div>
       </div>
     </div>
