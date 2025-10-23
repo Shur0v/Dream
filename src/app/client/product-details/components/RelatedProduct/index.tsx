@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 /**
  * Related Product Component
- * Displays related products in a horizontal scrollable carousel
+ * Displays related products - cloned from BestSelling design
  */
 export default function RelatedProduct() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
@@ -13,7 +13,7 @@ export default function RelatedProduct() {
   const products = [
     {
       id: 1,
-      name: 'MacBook Pro 16-inch M3 Max',
+      name: 'MacBook Pro 16-inch M3',
       price: 809.99,
       originalPrice: 1000,
       currency: '৳',
@@ -24,39 +24,6 @@ export default function RelatedProduct() {
     },
     {
       id: 2,
-      name: 'iPhone 15 Pro Max 256GB',
-      price: 1399.99,
-      originalPrice: 1599,
-      currency: '৳',
-      image: '/card/image/img1.jpg',
-      rating: 5,
-      reviews: 42,
-      isVerifiedSeller: true,
-    },
-    {
-      id: 3,
-      name: 'Sony WH-1000XM5 Headphones',
-      price: 389.99,
-      originalPrice: 499,
-      currency: '৳',
-      image: '/card/image/img1.jpg',
-      rating: 5,
-      reviews: 156,
-      isVerifiedSeller: true,
-    },
-    {
-      id: 4,
-      name: 'Apple Watch Ultra 2',
-      price: 779.99,
-      originalPrice: 899,
-      currency: '৳',
-      image: '/card/image/img1.jpg',
-      rating: 4,
-      reviews: 88,
-      isVerifiedSeller: true,
-    },
-    {
-      id: 5,
       name: 'Samsung Galaxy S24 Ultra',
       price: 1299.99,
       originalPrice: 1500,
@@ -67,7 +34,18 @@ export default function RelatedProduct() {
       isVerifiedSeller: true,
     },
     {
-      id: 6,
+      id: 3,
+      name: 'Sony WH-1000XM5',
+      price: 399.99,
+      originalPrice: 499,
+      currency: '৳',
+      image: '/card/image/img1.jpg',
+      rating: 5,
+      reviews: 156,
+      isVerifiedSeller: true,
+    },
+    {
+      id: 4,
       name: 'Apple AirPods Pro 2nd',
       price: 249.99,
       originalPrice: 299,
@@ -80,14 +58,14 @@ export default function RelatedProduct() {
   ];
 
   return (
-    <section className="father w-full py-20 bg-white" role="region" aria-labelledby="related-heading" data-layer="father">
+    <section className="father w-full py-20 bg-white flex flex-col justify-start items-center gap-8" role="region" aria-labelledby="related-heading" data-layer="father">
       {/* father = full width related product section */}
       
       <div className="daughter w-full max-w-[1320px] mx-auto" data-layer="daughter">
         {/* daughter = design holder for entire related product section */}
         
         {/* Header Section */}
-        <div className="layer-1 self-stretch flex flex-col justify-start items-start gap-4 mb-8" data-layer="1">
+        <div className="layer-1 self-stretch flex flex-col justify-start items-start gap-4" data-layer="1">
           {/* layer-1 = header section container */}
           
           <div className="layer-2 self-stretch inline-flex justify-start items-start gap-8" data-layer="2">
@@ -110,123 +88,207 @@ export default function RelatedProduct() {
           </div>
         </div>
 
-        {/* Products Carousel */}
+        {/* Products Grid */}
         <div className="layer-5 self-stretch h-[532px] flex justify-between items-center my-12" data-layer="5">
-          {/* layer-5 = products carousel container */}
+          {/* layer-5 = products grid container */}
           
-          <div className="layer-6 w-full h-full overflow-x-auto scrollbar-thin scrollbar-thumb-fuchsia-500 scrollbar-track-gray-200" data-layer="6">
-            {/* layer-6 = scrollable products container */}
-            
-            <div className="layer-7 flex gap-6 pb-4" data-layer="7">
-              {/* layer-7 = products flex container */}
+          {products.map((product, index) => (
+              <div
+                key={product.id}
+                className="layer-6 w-[312px] p-4 bg-sky-50 rounded-xl border border-black/10 inline-flex flex-col justify-start items-start group hover:shadow-md hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
+                onMouseEnter={() => setHoveredCard(index)}
+                onMouseLeave={() => setHoveredCard(null)}
+                style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
+                role="article"
+                aria-labelledby={`product-title-${product.id}`}
+                data-layer="6"
+              >
+              {/* layer-6 = individual product card */}
               
-              {products.map((product) => (
-                <div
-                  key={product.id}
-                  className="layer-8 w-[312px] h-[532px] p-6 bg-white rounded-xl border border-gray-200 flex-shrink-0 flex flex-col justify-start items-start gap-4 hover:shadow-lg transition-shadow duration-300"
-                  role="article"
-                  aria-labelledby={`product-title-${product.id}`}
-                  data-layer="8"
-                  onMouseEnter={() => setHoveredCard(product.id)}
-                  onMouseLeave={() => setHoveredCard(null)}
-                >
-                  {/* layer-8 = individual product card */}
+              {/* Card Header */}
+              <div className="layer-7 self-stretch inline-flex justify-between items-center mb-2" data-layer="7">
+                {/* layer-7 = card header container */}
+                
+                <div className="layer-8 flex justify-start items-center gap-2" data-layer="8">
+                  {/* layer-8 = verified seller indicator */}
                   
-                  {/* Verified Seller Badge */}
-                  <div className="layer-9 self-stretch flex justify-start items-start" data-layer="9">
-                    {/* layer-9 = verified seller badge container */}
-                    
-                    {product.isVerifiedSeller && (
-                      <div className="layer-10 px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full" data-layer="10">
-                        {/* layer-10 = verified seller badge */}
-                        Verified Seller
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Product Image */}
-                  <div className="layer-11 w-full h-[200px] relative overflow-hidden rounded-lg" data-layer="11">
-                    {/* layer-11 = product image container */}
-                    
+                  <div className="layer-9 w-6 h-6 relative transform group-hover:scale-110 transition-transform duration-300" data-layer="9">
+                    {/* layer-9 = verified icon container */}
                     <Image
-                      src={product.image}
-                      alt={product.name}
-                      fill
-                      className="object-cover transition-transform duration-300 hover:scale-105"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      src="/card/icon/tick.svg"
+                      alt="Verified seller"
+                      width={24}
+                      height={24}
+                      loading="lazy"
                     />
                   </div>
+                  
+                  <div className="layer-10 justify-start text-neutral-600 text-sm font-semibold font-['PolySans_Trial'] leading-relaxed" data-layer="10">
+                    {/* layer-10 = verified seller text */}
+                    Verified Seller
+                  </div>
+                </div>
+                
+                <div className="layer-11 transform group-hover:scale-110 group-hover:rotate-12 transition-all duration-300" data-layer="11">
+                  {/* layer-11 = wishlist button container */}
+                  <Image
+                    src="/card/icon/butterfly.svg"
+                    alt="Add to wishlist"
+                    width={24}
+                    height={24}
+                    className="cursor-pointer"
+                    loading="lazy"
+                  />
+                </div>
+              </div>
 
-                  {/* Product Info */}
-                  <div className="layer-12 self-stretch flex flex-col justify-start items-start gap-3" data-layer="12">
-                    {/* layer-12 = product info container */}
+              {/* Product Image */}
+              <div className="layer-12 self-stretch h-72 relative mb-4 overflow-hidden rounded-lg" data-layer="12">
+                {/* layer-12 = product image container */}
+                
+                <Image
+                  src={product.image}
+                  alt={`${product.name} product image`}
+                  fill
+                  className="object-contain transform group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
+                  draggable={false}
+                  onDragStart={(e) => e.preventDefault()}
+                  style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
+                  loading="lazy"
+                />
+              </div>
+
+              {/* Product Info */}
+              <div className="layer-13 self-stretch flex flex-col justify-start items-start" data-layer="13">
+                {/* layer-13 = product info container */}
+                
+                <div className="layer-14 self-stretch pt-4 pb-5 flex flex-col justify-center items-start gap-3" data-layer="14">
+                  {/* layer-14 = product details wrapper */}
+                  
+                  {/* Product Name and Price */}
+                  <div className="layer-15 self-stretch flex flex-col justify-start items-start gap-1" data-layer="15">
+                    {/* layer-15 = product name and price container */}
                     
                     <div 
-                      className="layer-13 self-stretch text-slate-950 text-lg font-semibold font-['Poppins'] leading-6"
+                      className="layer-16 justify-start text-slate-950 text-lg font-semibold font-['Poppins'] leading-loose group-hover:text-fuchsia-600 transition-colors duration-300 truncate max-w-full" 
+                      title={product.name}
                       id={`product-title-${product.id}`}
                       role="heading"
                       aria-level={3}
-                      data-layer="13"
+                      data-layer="16"
                     >
-                      {/* layer-13 = product name */}
-                      {product.name}
+                      {/* layer-16 = product name */}
+                      {product.name.length > 24 ? `${product.name.substring(0, 24)}...` : product.name}
                     </div>
-
-                    {/* Price */}
-                    <div className="layer-14 self-stretch flex justify-start items-center gap-2" data-layer="14">
-                      {/* layer-14 = price container */}
+                    
+                    <div className="layer-17 inline-flex justify-start items-center gap-1.5" data-layer="17">
+                      {/* layer-17 = price container */}
                       
-                      <div className="layer-15 text-fuchsia-500 text-xl font-bold font-['Poppins']" data-layer="15">
-                        {/* layer-15 = current price */}
-                        {product.currency}{product.price}
+                      <div className="layer-18 flex justify-start items-center" data-layer="18">
+                        {/* layer-18 = current price */}
+                        <div className="layer-19 justify-start text-black text-2xl font-semibold font-['Poppins'] leading-9" data-layer="19">
+                          {/* layer-19 = current price display */}
+                          {product.currency}{product.price}
+                        </div>
                       </div>
-                      <div className="layer-16 text-gray-500 text-lg font-medium font-['Poppins'] line-through" data-layer="16">
-                        {/* layer-16 = original price */}
-                        {product.currency}{product.originalPrice}
-                      </div>
-                    </div>
-
-                    {/* Rating */}
-                    <div className="layer-17 self-stretch flex justify-start items-center gap-2" data-layer="17">
-                      {/* layer-17 = rating container */}
                       
-                      <div className="layer-18 flex text-yellow-400" data-layer="18">
-                        {/* layer-18 = stars container */}
-                        
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <svg
-                            key={i}
-                            className={`w-4 h-4 ${i < product.rating ? 'text-yellow-400' : 'text-gray-300'}`}
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        ))}
-                      </div>
-                      <div className="layer-19 text-gray-600 text-sm font-medium font-['Poppins']" data-layer="19">
-                        {/* layer-19 = rating text */}
-                        ({product.reviews} reviews)
+                      <div className="layer-20 justify-start" data-layer="20">
+                        {/* layer-20 = original price */}
+                        <span className="text-red-500 text-base font-normal font-['Poppins'] leading-normal">(</span>
+                        <span className="text-red-500 text-base font-normal font-['Poppins'] line-through leading-normal">
+                          ${product.originalPrice}
+                        </span>
+                        <span className="text-red-500 text-base font-normal font-['Poppins'] leading-normal">)</span>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Add to Cart Button */}
-                    <div className="layer-20 self-stretch mt-4" data-layer="20">
-                      {/* layer-20 = button container */}
+                  {/* Rating and Reviews */}
+                  <div className="layer-21 inline-flex justify-start items-center gap-1.5" data-layer="21">
+                    {/* layer-21 = rating and reviews container */}
+                    
+                    <div className="layer-22 flex justify-start items-center" role="img" aria-label={`${product.rating} out of 5 stars`} data-layer="22">
+                      {/* layer-22 = star rating */}
                       
-                      <button 
-                        className="layer-21 w-full py-3 bg-fuchsia-500 text-white rounded-lg hover:bg-fuchsia-600 transition-colors font-medium font-['Poppins']"
-                        data-layer="21"
-                      >
-                        {/* layer-21 = add to cart button */}
-                        Add to Cart
-                      </button>
+                      {[...Array(product.rating)].map((_, i) => (
+                        <svg
+                          key={i}
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="#FFC107"
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="transform group-hover:scale-110 transition-transform duration-300"
+                          style={{ transitionDelay: `${i * 50}ms` }}
+                          aria-hidden="true"
+                        >
+                          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                        </svg>
+                      ))}
+                    </div>
+                    
+                    <div className="layer-23 text-center justify-start text-neutral-400 text-sm font-normal font-['Poppins'] leading-relaxed" data-layer="23">
+                      {/* layer-23 = reviews count */}
+                      ( {product.reviews} Reviews)
                     </div>
                   </div>
                 </div>
-              ))}
+
+                {/* Add to Cart Button - Hidden by default, shown on hover */}
+                <div className="layer-24 self-stretch overflow-hidden h-0 group-hover:h-14 transition-all duration-500 ease-out" data-layer="24">
+                  {/* layer-24 = add to cart button container */}
+                  
+                  <button 
+                    className="layer-25 w-full h-0 opacity-0 px-7 bg-fuchsia-500 rounded-xl inline-flex justify-center items-center gap-1.5 group-hover:h-14 group-hover:py-3 group-hover:opacity-100 hover:bg-fuchsia-600 transition-all duration-500 ease-out transform translate-y-2 group-hover:translate-y-0"
+                    aria-label={`Add ${product.name} to cart`}
+                    data-layer="25"
+                  >
+                    {/* layer-25 = add to cart button */}
+                    
+                    <div className="layer-26 w-5 h-5 relative" data-layer="26">
+                      {/* layer-26 = cart icon container */}
+                      <Image
+                        src="/card/icon/cart.svg"
+                        alt="Cart icon"
+                        width={20}
+                        height={20}
+                        loading="lazy"
+                      />
+                    </div>
+                    
+                    <div className="layer-27 justify-start text-white text-base font-semibold font-['Poppins'] leading-none whitespace-nowrap" data-layer="27">
+                      {/* layer-27 = button text */}
+                      Add to Cart
+                    </div>
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
+          ))}
+        </div>
+
+        {/* Pagination Dots */}
+        <div className="layer-28 h-2 flex justify-center items-center gap-2 mt-8" role="tablist" aria-label="Product pagination" data-layer="28">
+          {/* layer-28 = pagination dots container */}
+          
+          {[1, 2, 3, 4].map((item, index) => (
+            <div
+              key={index}
+              className={`layer-29 h-2 rounded-[10px] transition-all duration-300 ease-in-out transform origin-center ${
+                hoveredCard === index
+                  ? 'w-12 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500'
+                  : 'w-5 bg-neutral-200'
+              }`}
+              style={{
+                transformOrigin: 'center',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+              role="tab"
+              aria-selected={hoveredCard === index}
+              aria-label={`Go to product ${index + 1}`}
+              data-layer="29"
+            />
+          ))}
         </div>
       </div>
     </section>
