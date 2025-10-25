@@ -64,7 +64,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
 }) => {
   const navigationLinks = [
     { text: "Home", active: true, href: "/" },
-    { text: "Offers", active: false, href: "/offers" },
+    { text: "All Products", active: false, href: "/client/categories" },
     { text: "Become a Seller", active: false, href: "#", onClick: () => onOpenRegisterModal?.('seller') },
     { text: "Re seller", active: false, href: "#", onClick: () => onOpenRegisterModal?.('reseller') },
   ];

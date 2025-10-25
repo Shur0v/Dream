@@ -2,7 +2,7 @@ import React from 'react';
 
 /**
  * Layout for the categories page
- * Wraps the categories page content with necessary structure
+ * Simple wrapper since MainLayout is used in the page component
  */
 export default function CategoriesLayout({
   children,
@@ -10,8 +10,8 @@ export default function CategoriesLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen">
+    <>
       {children}
-    </div>
+    </>
   );
 }
