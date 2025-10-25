@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { getBestSellingProducts } from '@/lib/productData';
 
 /**
  * Best Selling Component
@@ -10,52 +12,8 @@ import Image from 'next/image';
 export default function BestSelling() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
 
-  const products = [
-    {
-      id: 1,
-      name: 'MacBook Pro 16-inch M3',
-      price: 809.99,
-      originalPrice: 1000,
-      currency: '৳',
-      image: '/card/image/img1.jpg',
-      rating: 5,
-      reviews: 7,
-      isVerifiedSeller: true,
-    },
-    {
-      id: 2,
-      name: 'Samsung Galaxy S24 Ultra',
-      price: 1299.99,
-      originalPrice: 1500,
-      currency: '৳',
-      image: '/card/image/img1.jpg',
-      rating: 4,
-      reviews: 23,
-      isVerifiedSeller: true,
-    },
-    {
-      id: 3,
-      name: 'Sony WH-1000XM5',
-      price: 399.99,
-      originalPrice: 499,
-      currency: '৳',
-      image: '/card/image/img1.jpg',
-      rating: 5,
-      reviews: 156,
-      isVerifiedSeller: true,
-    },
-    {
-      id: 4,
-      name: 'Apple AirPods Pro 2nd',
-      price: 249.99,
-      originalPrice: 299,
-      currency: '৳',
-      image: '/card/image/img1.jpg',
-      rating: 4,
-      reviews: 89,
-      isVerifiedSeller: true,
-    },
-  ];
+  // Get best selling products from unified dataset
+  const products = getBestSellingProducts();
 
   return (
     <section className="father w-full py-20 bg-white flex flex-col justify-start items-center gap-8" role="region" aria-labelledby="best-selling-heading" data-layer="father">
@@ -93,16 +51,16 @@ export default function BestSelling() {
           {/* layer-5 = products grid container */}
           
           {products.map((product, index) => (
-              <div
-                key={product.id}
-                className="layer-6 w-[312px] p-4 bg-sky-50 rounded-xl border border-black/10 inline-flex flex-col justify-start items-start group hover:shadow-md hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
-                onMouseEnter={() => setHoveredCard(index)}
-                onMouseLeave={() => setHoveredCard(null)}
-                style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
-                role="article"
-                aria-labelledby={`product-title-${product.id}`}
-                data-layer="6"
-              >
+             <Link key={product.id} href={`/client/product-details/${product.id}`} className="block">
+               <div
+                 className="layer-6 w-[312px] p-4 bg-sky-50 rounded-xl border border-black/10 inline-flex flex-col justify-start items-start group hover:shadow-md hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
+                 onMouseEnter={() => setHoveredCard(index)}
+                 onMouseLeave={() => setHoveredCard(null)}
+                 style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
+                 role="article"
+                 aria-labelledby={`product-title-${product.id}`}
+                 data-layer="6"
+               >
               {/* layer-6 = individual product card */}
               
               {/* Card Header */}
@@ -150,7 +108,7 @@ export default function BestSelling() {
                   src={product.image}
                   alt={`${product.name} product image`}
                   fill
-                  className="object-contain transform group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
+                  className="object-cover transform group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
                   draggable={false}
                   onDragStart={(e) => e.preventDefault()}
                   style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
@@ -263,7 +221,8 @@ export default function BestSelling() {
                   </button>
                 </div>
               </div>
-            </div>
+               </div>
+             </Link>
           ))}
         </div>
 

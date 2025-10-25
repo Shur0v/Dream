@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { getFeaturedProducts } from '@/lib/productData';
 
 /**
  * Featured Products Component
@@ -36,58 +37,8 @@ export default function FeaturedProducts() {
     };
   }, []);
 
-  const products = [
-    {
-      id: 1,
-      name: 'MacBook Pro 16-inch M3',
-      price: 809.99,
-      originalPrice: 1000,
-      currency: '৳',
-      image: '/card/image/img1.jpg',
-      rating: 5,
-      reviews: 7,
-      isVerifiedSeller: true,
-    },
-    {
-      id: 2,
-      name: 'Samsung Galaxy S24 Ultra',
-      price: 1299.99,
-      originalPrice: 1500,
-      currency: '৳',
-      image: '/card/image/img1.jpg',
-      rating: 4,
-      reviews: 23,
-      isVerifiedSeller: true,
-    },
-    {
-      id: 3,
-      name: 'Sony WH-1000XM5',
-      price: 399.99,
-      originalPrice: 499,
-      currency: '৳',
-      image: '/card/image/img1.jpg',
-      rating: 5,
-      reviews: 156,
-      isVerifiedSeller: true,
-    },
-    {
-      id: 4,
-      name: 'Apple AirPods Pro 2nd',
-      price: 249.99,
-      originalPrice: 299,
-      currency: '৳',
-      image: '/card/image/img1.jpg',
-      rating: 4,
-      reviews: 89,
-      isVerifiedSeller: true,
-    },
-  ];
-
-  const toSlug = (name: string, id: number) =>
-    `${name}`
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)+/g, '') + `-${id}`;
+  // Get featured products from unified dataset
+  const products = getFeaturedProducts();
 
   return (
     <section className="father w-full pb-7 bg-white flex flex-col justify-start items-center gap-8" role="region" aria-labelledby="featured-products-heading" data-layer="father">
@@ -199,7 +150,7 @@ export default function FeaturedProducts() {
           {/* layer-13 = products grid container */}
           
           {products.map((product, index) => (
-             <Link key={product.id} href={`/client/product-details/${toSlug(product.name, product.id)}`} className="block">
+             <Link key={product.id} href={`/client/product-details/${product.id}`} className="block">
                <div
                  className="layer-14 w-[312px] p-4 bg-sky-50 rounded-xl border border-black/10 inline-flex flex-col justify-start items-start group hover:shadow-md hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
                  onMouseEnter={() => setHoveredCard(index)}
@@ -256,7 +207,7 @@ export default function FeaturedProducts() {
                    src={product.image}
                    alt={`${product.name} product image`}
                    fill
-                   className="object-contain transform group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
+                   className="object-cover transform group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
                    draggable={false}
                    onDragStart={(e) => e.preventDefault()}
                    style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
