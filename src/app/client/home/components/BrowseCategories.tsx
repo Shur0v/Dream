@@ -82,7 +82,7 @@ export default function BrowseCategories() {
                 <button 
                   key={category.id} 
                   className={`layer-5 flex-1 self-stretch p-3 bg-fuchsia-400/10 rounded-xl inline-flex flex-col justify-start items-center gap-6 cursor-pointer hover:shadow-[5px_11px_22.100000381469727px_0px_rgba(0,0,0,0.15)] transition-all duration-300 ${
-                    index === 5 ? 'bg-fuchsia-400/20' : ''
+                    index === 5 ? 'bg-fuchsia-400/10' : ''
                   }`}
                   onClick={() => handleCategoryClick(category.name)}
                   aria-label={`Browse ${category.name} category`}

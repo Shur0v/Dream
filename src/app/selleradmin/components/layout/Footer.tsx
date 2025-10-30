@@ -63,9 +63,14 @@ export default function Footer({ onOpenRegisterModal }: FooterProps = {}) {
                   <div className="layer-7 self-stretch h-auto justify-start text-white text-lg font-normal font-['Poppins'] leading-7" data-layer="7">{companyInfo.description}</div>
                 </div>
                 <div className="layer-8 inline-flex justify-start items-center gap-4" role="group" aria-label="Social media links" data-layer="8">
-                  {['facebook','instagram','twitter','linkedin'].map((name, i) => (
-                    <a key={i} href="#" className="layer-9 p-2.5 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 rounded-full inline-flex flex-col justify-start items-start gap-2.5 overflow-hidden hover:from-fuchsia-600 hover:to-fuchsia-600 transition-colors" aria-label={`Visit our ${name} page`} data-layer="9">
-                      <img src={`/footer/${name}.svg`} alt={`${name} icon`} className="w-6 h-6" />
+                  {[
+                    { name: 'facebook', file: 'facebook' },
+                    { name: 'instagram', file: 'instagram' },
+                    { name: 'twitter', file: 'twiter' },
+                    { name: 'linkedin', file: 'linkedin' },
+                  ].map((item, i) => (
+                    <a key={i} href="#" className="layer-9 p-2.5 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 rounded-full inline-flex flex-col justify-start items-start gap-2.5 overflow-hidden hover:from-fuchsia-600 hover:to-fuchsia-600 transition-colors" aria-label={`Visit our ${item.name} page`} data-layer="9">
+                      <img src={`/footer/${item.file}.svg`} alt={`${item.name} icon`} className="w-6 h-6" />
                     </a>
                   ))}
                 </div>

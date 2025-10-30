@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Header from './Header';
+
 import Footer from './Footer';
 import LoginModal from '../modals/LoginModal';
 import RegisterModal from '../modals/RegisterModal';
@@ -20,6 +20,7 @@ interface MainLayoutProps {
   onWishlistClick?: () => void;
   onUserAction?: (action: string) => void;
   onNewsletterSubscribe?: (email: string) => void;
+  showHeader?: boolean;
   showFooter?: boolean;
   className?: string;
 }
@@ -34,6 +35,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   onWishlistClick,
   onUserAction,
   onNewsletterSubscribe,
+  showHeader = true,
   showFooter = true,
   className,
 }) => {
@@ -59,17 +61,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Header
-        user={user}
-        cartCount={cartCount}
-        wishlistCount={wishlistCount}
-        onSearch={onSearch}
-        onCartClick={onCartClick}
-        onWishlistClick={onWishlistClick}
-        onUserAction={onUserAction}
-        onOpenLoginModal={handleOpenLoginModal}
-        onOpenRegisterModal={handleOpenRegisterModal}
-      />
+
       <main className={`flex-1 ${className || ''}`}>{children}</main>
       {showFooter && (
         <Footer onOpenRegisterModal={handleOpenRegisterModal} />

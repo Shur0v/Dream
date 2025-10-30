@@ -24,7 +24,7 @@ export default function BrowseCategories() {
             <div className="layer-3 self-stretch justify-start text-slate-950 text-5xl font-medium font-['Poppins'] leading-[57.60px]" id="browse-categories-heading" role="heading" aria-level={2} data-layer="3">Browse Categories</div>
             <div className="layer-4 w-[1320px] inline-flex justify-start items-center gap-6" data-layer="4">
               {categories.map((category, index) => (
-                <button key={category.id} className={`layer-5 flex-1 self-stretch p-3 bg-fuchsia-400/10 rounded-xl inline-flex flex-col justify-start items-center gap-6 cursor-pointer hover:shadow-[5px_11px_22.100000381469727px_0px_rgba(0,0,0,0.15)] transition-all duration-300 ${index === 5 ? 'bg-fuchsia-400/20' : ''}`} onClick={() => handleCategoryClick(category.name)} aria-label={`Browse ${category.name} category`} data-layer="5">
+                <button key={category.id} className={`layer-5 flex-1 self-stretch p-3 bg-fuchsia-400/10 rounded-xl inline-flex flex-col justify-start items-center gap-6 cursor-pointer hover:shadow-[5px_11px_22.100000381469727px_0px_rgba(0,0,0,0.15)] transition-all duration-300 ${index === 5 ? 'bg-fuchsia-400/10' : ''}`} onClick={() => handleCategoryClick(category.name)} aria-label={`Browse ${category.name} category`} data-layer="5">
                   <img className="layer-6 self-stretch h-40 rounded-lg" src={category.image} alt={`${category.name} category`} loading="lazy" data-layer="6" />
                   <div className="layer-7 self-stretch text-center justify-start text-black text-3xl font-medium font-['Poppins'] leading-loose" data-layer="7">{category.name}</div>
                 </button>
