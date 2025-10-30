@@ -2,7 +2,7 @@
 
 import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
-import TopPart from './components/toppart/page';
+import TopPart from './components/toppart';
 import Reviews from './components/Reviews';
 import { sampleUsers } from '@/lib/dummyData';
 

@@ -24,7 +24,6 @@ interface TopPartProps {
 }
 
 export default function TopPart({ product, images }: TopPartProps) {
-  // Default product data if not provided
   const defaultProduct = {
     id: '1',
     slug: 'premium-wireless-headphones',
@@ -42,7 +41,6 @@ export default function TopPart({ product, images }: TopPartProps) {
     inStock: true,
   };
 
-  // Default images if not provided
   const defaultImages = [
     '/images/product1.jpg',
     '/images/product2.jpg',
@@ -55,26 +53,17 @@ export default function TopPart({ product, images }: TopPartProps) {
 
   return (
     <div className="father w-full bg-white flex flex-col justify-start items-center py-8" role="main" data-layer="father">
-      {/* father = full width product details section */}
-      
       <div className="daughter w-full max-w-[1320px] mx-auto" data-layer="daughter">
-        {/* daughter = design holder for entire product details section */}
-        
         <div className="layer-1 inline-flex justify-start items-start gap-8" data-layer="1">
-          {/* layer-1 = main product layout container */}
-          
           <div className="h-[546px] flex justify-start items-start gap-8">
-            {/* Product Gallery */}
             <ProductGallery images={imageData} />
-            
-            {/* Product Info */}
             <ProductInfo product={productData} />
           </div>
-          
-          {/* Delivery Info Sidebar */}
           <DeliveryInfo />
         </div>
       </div>
     </div>
   )
 }
+
+

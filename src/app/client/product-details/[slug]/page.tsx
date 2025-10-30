@@ -1,18 +1,12 @@
-"use client";
-
 import React from "react";
-import TopPart from "../components/toppart/page";
+import TopPart from "../components/toppart";
 import Reviews from "../components/Reviews";
 import RelatedProduct from "../components/RelatedProduct";
 import ShopInstagram from "../components/ShopInstagram";
 import ForYou from "../../home/components/ForYou";
 import { getProductById } from "@/lib/productData";
 
-interface PageProps {
-  params: { slug: string };
-}
-
-export default function ProductDetailsPage({ params }: PageProps) {
+export default function ProductDetailsPage({ params }: any) {
   const { slug } = params;
   
   // Convert slug to product ID and fetch product data
