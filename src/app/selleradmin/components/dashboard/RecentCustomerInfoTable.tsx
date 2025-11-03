@@ -275,17 +275,17 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
 
                     {/* Action Menu */}
                     {openMenuIndex === index && (
-                      <div className="absolute right-0 top-full mt-2 p-1 bg-white rounded-lg shadow-lg border border-neutral-200 flex flex-col gap-1 z-50 min-w-[120px]">
+                      <div className="absolute right-0 top-full mt-2 p-2 bg-white rounded-lg shadow-lg border border-neutral-200 flex flex-col gap-1.5 z-50 min-w-[140px]">
                         <button
                           onClick={() => handleApprove(index)}
-                          className="px-4 py-2 text-sm text-green-700 hover:bg-green-50 rounded-md transition-colors text-left flex items-center gap-2"
+                          className="px-5 py-2 text-sm text-green-700 hover:bg-green-50 rounded-md transition-colors text-left flex items-center gap-2"
                         >
                           <CheckCircle2 className="w-4 h-4" />
                           Approve
                         </button>
                         <button
                           onClick={() => handleCancel(index)}
-                          className="px-4 py-2 text-sm text-red-700 hover:bg-red-50 rounded-md transition-colors text-left flex items-center gap-2"
+                          className="px-5 py-2 text-sm text-red-700 hover:bg-red-50 rounded-md transition-colors text-left flex items-center gap-2"
                         >
                           <XCircle className="w-4 h-4" />
                           Cancel

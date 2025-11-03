@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { DashboardLayout } from './components/dashboard';
+import DashboardHome from './components/dashboard/DashboardHome';
 
 /**
  * Seller Admin Dashboard Page
@@ -12,7 +13,7 @@ import { DashboardLayout } from './components/dashboard';
 export default function SellerAdminLandingFull() {
   return (
     <DashboardLayout>
-      {/* Additional dashboard content can be added here */}
+      <DashboardHome />
     </DashboardLayout>
   );
 }
