@@ -10,6 +10,7 @@ interface SimpleSelectProps<T extends string> {
   options: readonly T[];
   placeholder?: string;
   className?: string;
+  controlClassName?: string;
 }
 
 export default function SimpleSelect<T extends string>({
@@ -18,6 +19,7 @@ export default function SimpleSelect<T extends string>({
   options,
   placeholder = 'Select',
   className,
+  controlClassName,
 }: SimpleSelectProps<T>) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
@@ -35,7 +37,10 @@ export default function SimpleSelect<T extends string>({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full h-14 px-5 py-3.5 rounded-md outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-between items-center"
+        className={cn(
+          'w-full h-14 px-5 py-3.5 rounded-md outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-between items-center',
+          controlClassName
+        )}
         aria-haspopup="listbox"
         aria-expanded={open}
       >
