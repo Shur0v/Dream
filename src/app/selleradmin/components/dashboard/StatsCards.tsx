@@ -26,8 +26,8 @@ export const StatsCards: React.FC<StatsCardsProps> = ({ className }) => {
       <StatsCard
         title="Total Product"
         value="$7,000.00"
-        iconBg="bg-fuchsia-400"
-        icon={<Package className="w-20 h-20 text-white" />}
+        iconBg="bg-fuchsia-100"
+        icon={<Package className="w-20 h-20 text-fuchsia-600" />}
       />
     </div>
   );

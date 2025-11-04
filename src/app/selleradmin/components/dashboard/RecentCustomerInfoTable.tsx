@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MoreVertical, DollarSign, CheckCircle2, XCircle } from 'lucide-react';
+import { MoreVertical, DollarSign, CheckCircle2, XCircle, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { CustomerOrderItem } from '../../types/customer';
+import { Modal } from '../ui/Modal';
 
 interface RecentCustomerInfoTableProps {
   className?: string;
@@ -51,6 +52,13 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
       amount: 1299.00,
       currency: 'USD',
       status: 'approved',
+      name: 'John Doe',
+      phoneNumber: '+1 234 567 8900',
+      email: 'john.doe@example.com',
+      district: 'Dhaka',
+      upazila: 'Dhanmondi',
+      thana: 'Dhanmondi',
+      postOffice: 'Dhanmondi',
     },
     {
       id: '4',
@@ -88,6 +96,11 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
   ],
 }) => {
   const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
+  const [approvedOrders, setApprovedOrders] = useState<Set<string>>(
+    new Set(data.filter(item => item.status === 'approved').map(item => item.id))
+  );
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<CustomerOrderItem | null>(null);
 
   // Handle click outside to close menu
   useEffect(() => {
@@ -122,7 +135,20 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
   };
 
   const handleApprove = (index: number) => {
-    console.log('Approve', data[index]);
+    const order = data[index];
+    setApprovedOrders(prev => new Set([...prev, order.id]));
+    // Update status to approved
+    if (order.status !== 'approved') {
+      order.status = 'approved';
+    }
+    console.log('Approve', order);
+    setOpenMenuIndex(null);
+  };
+
+  const handleDetail = (index: number) => {
+    const order = data[index];
+    setSelectedOrder(order);
+    setDetailModalOpen(true);
     setOpenMenuIndex(null);
   };
 
@@ -276,13 +302,27 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
                     {/* Action Menu */}
                     {openMenuIndex === index && (
                       <div className="absolute right-0 top-full mt-2 p-2 bg-white rounded-lg shadow-lg border border-neutral-200 flex flex-col gap-1.5 z-50 min-w-[140px]">
+                        {/* Detail button - always visible */}
                         <button
-                          onClick={() => handleApprove(index)}
-                          className="px-5 py-2 text-sm text-green-700 hover:bg-green-50 rounded-md transition-colors text-left flex items-center gap-2"
+                          onClick={() => handleDetail(index)}
+                          className="px-5 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors text-left flex items-center gap-2"
                         >
-                          <CheckCircle2 className="w-4 h-4" />
-                          Approve
+                          <Eye className="w-4 h-4" />
+                          Detail
                         </button>
+                        
+                        {/* Approve button - only for pending orders */}
+                        {row.status !== 'approved' && !approvedOrders.has(row.id) && (
+                          <button
+                            onClick={() => handleApprove(index)}
+                            className="px-5 py-2 text-sm text-green-700 hover:bg-green-50 rounded-md transition-colors text-left flex items-center gap-2"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                            Approve
+                          </button>
+                        )}
+                        
+                        {/* Cancel button - always visible */}
                         <button
                           onClick={() => handleCancel(index)}
                           className="px-5 py-2 text-sm text-red-700 hover:bg-red-50 rounded-md transition-colors text-left flex items-center gap-2"
@@ -308,6 +348,129 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
           </div>
         </div>
       )}
+
+      {/* Detail Modal */}
+      <Modal
+        isOpen={detailModalOpen}
+        onClose={() => {
+          setDetailModalOpen(false);
+          setSelectedOrder(null);
+        }}
+        className="max-w-[960px] h-[872px]"
+      >
+        <div className="w-full h-full px-4 py-[73px] flex flex-col justify-start items-center gap-8">
+          <div className="w-full max-w-[808px] flex flex-col justify-start items-start gap-5">
+            {/* Name Field */}
+            <div className="self-stretch flex flex-col justify-start items-start gap-2">
+              <div className="self-stretch inline-flex justify-start items-start gap-2">
+                <div className="flex-1 justify-start text-neutral-800 text-base font-medium font-['Poppins'] leading-5">Name</div>
+              </div>
+              <div className="self-stretch p-3 rounded-lg outline-1 outline-offset-[-1px] outline-zinc-400 inline-flex justify-start items-center gap-1 overflow-hidden">
+                <div className="flex-1 h-6 flex justify-start items-center gap-2 overflow-hidden">
+                  <div className="justify-start text-zinc-600 text-base font-normal font-['Poppins'] leading-5">
+                    {selectedOrder?.name || 'Type category name here. . .'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Phone Number Field */}
+            <div className="self-stretch flex flex-col justify-start items-start gap-2">
+              <div className="self-stretch inline-flex justify-start items-start gap-2">
+                <div className="flex-1 justify-start text-neutral-800 text-base font-medium font-['Poppins'] leading-5">Phone Number</div>
+              </div>
+              <div className="self-stretch h-12 p-3 rounded-lg outline-1 outline-offset-[-1px] outline-zinc-400 inline-flex justify-start items-start gap-1 overflow-hidden">
+                <div className="flex-1 flex justify-start items-start gap-2 overflow-hidden">
+                  <div className="flex-1 justify-start text-zinc-600 text-base font-normal font-['Poppins'] leading-5">
+                    {selectedOrder?.phoneNumber || 'Type child category name here. . .'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Email Field */}
+            <div className="self-stretch flex flex-col justify-start items-start gap-2">
+              <div className="self-stretch inline-flex justify-start items-start gap-2">
+                <div className="flex-1 justify-start text-neutral-800 text-base font-medium font-['Poppins'] leading-5">Email</div>
+              </div>
+              <div className="self-stretch h-12 p-3 rounded-lg outline-1 outline-offset-[-1px] outline-zinc-400 inline-flex justify-start items-start gap-1 overflow-hidden">
+                <div className="flex-1 flex justify-start items-start gap-2 overflow-hidden">
+                  <div className="flex-1 justify-start text-zinc-600 text-base font-normal font-['Poppins'] leading-5">
+                    {selectedOrder?.email || 'Type child category name here. . .'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* District Field */}
+            <div className="self-stretch flex flex-col justify-start items-start gap-2">
+              <div className="self-stretch inline-flex justify-start items-start gap-2">
+                <div className="flex-1 justify-start text-neutral-800 text-base font-medium font-['Poppins'] leading-5">District</div>
+              </div>
+              <div className="self-stretch h-12 p-3 rounded-lg outline-1 outline-offset-[-1px] outline-zinc-400 inline-flex justify-start items-start gap-1 overflow-hidden">
+                <div className="flex-1 flex justify-start items-start gap-2 overflow-hidden">
+                  <div className="flex-1 justify-start text-zinc-600 text-base font-normal font-['Poppins'] leading-5">
+                    {selectedOrder?.district || 'Type child category name here. . .'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Upazila Field */}
+            <div className="self-stretch flex flex-col justify-start items-start gap-2">
+              <div className="self-stretch inline-flex justify-start items-start gap-2">
+                <div className="flex-1 justify-start text-neutral-800 text-base font-medium font-['Poppins'] leading-5">Upazila</div>
+              </div>
+              <div className="self-stretch h-12 p-3 rounded-lg outline-1 outline-offset-[-1px] outline-zinc-400 inline-flex justify-start items-start gap-1 overflow-hidden">
+                <div className="flex-1 flex justify-start items-start gap-2 overflow-hidden">
+                  <div className="flex-1 justify-start text-zinc-600 text-base font-normal font-['Poppins'] leading-5">
+                    {selectedOrder?.upazila || 'Type child category name here. . .'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Thana Field */}
+            <div className="self-stretch flex flex-col justify-start items-start gap-2">
+              <div className="self-stretch inline-flex justify-start items-start gap-2">
+                <div className="flex-1 justify-start text-neutral-800 text-base font-medium font-['Poppins'] leading-5">Thana</div>
+              </div>
+              <div className="self-stretch h-12 p-3 rounded-lg outline-1 outline-offset-[-1px] outline-zinc-400 inline-flex justify-start items-start gap-1 overflow-hidden">
+                <div className="flex-1 flex justify-start items-start gap-2 overflow-hidden">
+                  <div className="flex-1 justify-start text-zinc-600 text-base font-normal font-['Poppins'] leading-5">
+                    {selectedOrder?.thana || 'Type child category name here. . .'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Post office Field */}
+            <div className="self-stretch flex flex-col justify-start items-start gap-2">
+              <div className="self-stretch inline-flex justify-start items-start gap-2">
+                <div className="flex-1 justify-start text-neutral-800 text-base font-medium font-['Poppins'] leading-5">Post office</div>
+              </div>
+              <div className="self-stretch h-12 p-3 rounded-lg outline-1 outline-offset-[-1px] outline-zinc-400 inline-flex justify-start items-start gap-1 overflow-hidden">
+                <div className="flex-1 flex justify-start items-start gap-2 overflow-hidden">
+                  <div className="flex-1 justify-start text-zinc-600 text-base font-normal font-['Poppins'] leading-5">
+                    {selectedOrder?.postOffice || 'Type child category name here. . .'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Confirm Button */}
+            <button
+              onClick={() => {
+                setDetailModalOpen(false);
+                setSelectedOrder(null);
+              }}
+              className="self-stretch h-12 px-6 py-3 bg-fuchsia-500 rounded inline-flex justify-center items-center gap-2.5 cursor-pointer hover:bg-fuchsia-600 transition-colors"
+            >
+              <div className="justify-start text-white text-base font-medium font-['Inter'] leading-5">Confirm</div>
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

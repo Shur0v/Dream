@@ -15,6 +15,14 @@ export interface CustomerOrderItem {
   currency?: string;
   status?: 'pending' | 'approved' | 'cancelled';
   createdAt?: string;
+  // User details
+  name?: string;
+  phoneNumber?: string;
+  email?: string;
+  district?: string;
+  upazila?: string;
+  thana?: string;
+  postOffice?: string;
 }
 
 export interface CustomerOrder {
