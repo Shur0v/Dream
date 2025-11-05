@@ -10,7 +10,7 @@ interface StatsCardsProps {
 }
 
 /**
- * Stats Cards Container Component (Layer 3)
+ * Stats Cards Container Component (Lay 3)
  * 
  * @description Container for multiple statistics cards
  */
