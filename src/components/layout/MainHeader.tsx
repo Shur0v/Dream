@@ -15,7 +15,7 @@
  * @version 1.0.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ShoppingCart, Search } from 'lucide-react';
@@ -80,7 +80,27 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'bn'>('en');
   const [hoveredCategory, setHoveredCategory] = useState('');
+  const languageDropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Close language dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (languageDropdownRef.current && !languageDropdownRef.current.contains(event.target as Node)) {
+        setIsLanguageOpen(false);
+      }
+    };
+
+    if (isLanguageOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isLanguageOpen]);
   
   const categories = [
     'Electronics',
@@ -318,10 +338,17 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
                 </div>
 
                 {/* Language Selector - Hidden on mobile */}
-                <div className="layer-21 hidden md:flex justify-start items-center gap-[9px]" data-layer="21">
+                <div ref={languageDropdownRef} className="layer-21 hidden md:flex justify-start items-center gap-[9px] relative" data-layer="21">
                   {/* layer-21 = language selector container */}
                   
-                  <div className="layer-22 px-4 py-2.5 rounded-3xl border border-fuchsia-500 flex justify-center items-center gap-6 cursor-pointer hover:opacity-90 transition-opacity" role="button" aria-label="Change language" data-layer="22">
+                  <div 
+                    className="layer-22 px-4 py-2.5 rounded-3xl border border-fuchsia-500 flex justify-center items-center gap-6 cursor-pointer hover:opacity-90 transition-opacity relative" 
+                    onClick={() => setIsLanguageOpen(!isLanguageOpen)}
+                    role="button" 
+                    aria-label="Change language" 
+                    aria-expanded={isLanguageOpen}
+                    data-layer="22"
+                  >
                     {/* layer-22 = language selector button */}
                     
                     <div className="layer-23 flex justify-start items-center gap-2" data-layer="23">
@@ -330,8 +357,8 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
                       <div className="layer-24 w-3.5 h-3.5 relative overflow-hidden" data-layer="24">
                         {/* layer-24 = flag icon container */}
                         <Image
-                          src="/header/icons/usflag.svg"
-                          alt="English language flag"
+                          src={selectedLanguage === 'en' ? "/header/icons/usflag.svg" : "/header/icons/bdflag.svg"}
+                          alt={selectedLanguage === 'en' ? "English language flag" : "Bangla language flag"}
                           width={14}
                           height={14}
                           className="w-3.5 h-3.5"
@@ -341,7 +368,7 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
                       
                       <div className="layer-25 justify-center text-neutral-600 text-sm font-normal leading-[14px]" data-layer="25">
                         {/* layer-25 = language text */}
-                        En
+                        {selectedLanguage === 'en' ? 'Eng' : 'বাংলা'}
                       </div>
                     </div>
                     
@@ -352,11 +379,59 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
                         alt="Language dropdown"
                         width={14}
                         height={14}
-                        className="w-3.5 h-3.5"
+                        className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                          isLanguageOpen ? 'rotate-180' : 'rotate-0'
+                        }`}
                         loading="lazy"
                       />
                     </div>
                   </div>
+
+                  {/* Language Dropdown Menu */}
+                  {isLanguageOpen && (
+                    <div className="absolute top-full right-0 mt-2 w-48 bg-white border border-fuchsia-500 rounded-lg shadow-lg z-50">
+                      <div className="py-2">
+                        <button
+                          onClick={() => {
+                            setSelectedLanguage('en');
+                            setIsLanguageOpen(false);
+                          }}
+                          className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-fuchsia-50 transition-colors ${
+                            selectedLanguage === 'en' ? 'bg-fuchsia-50 text-fuchsia-600' : 'text-gray-700'
+                          }`}
+                        >
+                          <Image
+                            src="/header/icons/usflag.svg"
+                            alt="English"
+                            width={14}
+                            height={14}
+                            className="w-3.5 h-3.5"
+                            loading="lazy"
+                          />
+                          <span>English</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedLanguage('bn');
+                            setIsLanguageOpen(false);
+                          }}
+                          className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 hover:bg-fuchsia-50 transition-colors ${
+                            selectedLanguage === 'bn' ? 'bg-fuchsia-50 text-fuchsia-600' : 'text-gray-700'
+                          }`}
+                        >
+                          <Image
+                            src="/header/icons/bdflag.svg"
+                            alt="Bangla"
+                            width={14}
+                            height={14}
+                            className="w-3.5 h-3.5"
+                            loading="lazy"
+                          />
+                          <span>বাংলা</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
