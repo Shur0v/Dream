@@ -20,6 +20,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ShoppingCart, Search } from 'lucide-react';
 import { CartDropdown } from '../cart/CartDropdown';
+import { WishlistDropdown } from '../wishlist/WishlistDropdown';
 
 /**
  * Props interface for MainHeader component
@@ -77,6 +78,7 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const [hoveredCategory, setHoveredCategory] = useState('');
   
@@ -121,6 +123,20 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
     // Handle checkout logic here
     console.log('Proceeding to checkout');
     setIsCartOpen(false);
+  };
+
+  const handleWishlistClick = () => {
+    setIsWishlistOpen(true);
+    onWishlistClick?.();
+  };
+
+  const handleWishlistClose = () => {
+    setIsWishlistOpen(false);
+  };
+
+  const handleRemoveWishlistItem = (itemId: number) => {
+    // Handle remove wishlist item logic here
+    console.log(`Removing wishlist item ${itemId}`);
   };
   
   return (
@@ -254,7 +270,7 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
                   
                   {/* Wishlist - Hidden on small mobile */}
                   <button
-                    onClick={onWishlistClick}
+                    onClick={handleWishlistClick}
                     className="layer-16 hidden sm:block relative hover:opacity-80 transition-opacity"
                     aria-label="View wishlist"
                     data-layer="16"
@@ -370,6 +386,15 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
           onClose={handleCartClose}
           onQuantityChange={handleQuantityChange}
           onCheckout={handleCheckout}
+        />
+      </div>
+
+      {/* Wishlist Dropdown - Positioned relative to header */}
+      <div className="relative">
+        <WishlistDropdown
+          isOpen={isWishlistOpen}
+          onClose={handleWishlistClose}
+          onRemoveItem={handleRemoveWishlistItem}
         />
       </div>
     </div>
