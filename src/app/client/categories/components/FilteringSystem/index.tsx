@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { products, Product } from '@/lib/productData';
 
@@ -447,14 +448,17 @@ export default function FilteringSystem() {
                 
                 {rowProducts.map((product, productIndex) => {
                   return (
-                    <div
-                      key={product.id}
-                      className="w-[312px] p-4 bg-sky-50 rounded-xl border border-black/10 inline-flex flex-col justify-start items-start group hover:shadow-md hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
-                      style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
-                      role="article"
-                      aria-labelledby={`product-title-${product.id}`}
-                      onClick={() => handleProductClick(product.id)}
-                    >
+                    <Link key={product.id} href={`/client/product-details/${product.id}`} className="flex h-full items-center">
+                      <div
+                        className="w-[312px] p-4 bg-sky-50 rounded-xl border border-black/10 inline-flex flex-col justify-start items-start group md:hover:shadow-md md:hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
+                        style={{ transformOrigin: 'center', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
+                        role="article"
+                        aria-labelledby={`product-title-${product.id}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleProductClick(product.id);
+                        }}
+                      >
                       {/* Individual Product Card */}
                       
                       {/* Card Header */}
@@ -617,7 +621,8 @@ export default function FilteringSystem() {
                           </button>
                         </div>
                       </div>
-                    </div>
+                      </div>
+                    </Link>
                   );
                 })}
               </div>

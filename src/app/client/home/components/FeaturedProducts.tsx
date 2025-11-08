@@ -72,7 +72,7 @@ export default function FeaturedProducts() {
           </div>
 
           {/* Filter Buttons */}
-          <div className="layer-5 inline-flex justify-start items-center gap-6" ref={dropdownRef} role="group" aria-label="Product category filters" data-layer="5">
+          <div className="layer-5 inline-flex justify-start items-center gap-3 sm:gap-4 md:gap-6" ref={dropdownRef} role="group" aria-label="Product category filters" data-layer="5">
             {/* layer-5 = filter buttons container */}
             
             {filters.map((filter) => (
@@ -84,7 +84,7 @@ export default function FeaturedProducts() {
                     setActiveFilter(filter);
                     setShowDropdown(showDropdown === filter ? null : filter);
                   }}
-                  className="layer-7 p-2.5 rounded border border-stone-300 flex justify-center items-center gap-2.5 hover:bg-gray-50 transition-colors cursor-pointer"
+                  className="layer-7 p-2 sm:p-2.5 md:p-2.5 rounded border border-stone-300 flex justify-center items-center gap-1.5 sm:gap-2.5 md:gap-2.5 hover:bg-gray-50 transition-colors cursor-pointer"
                   aria-expanded={showDropdown === filter}
                   aria-haspopup="true"
                   aria-label={`Filter by ${filter} category`}
@@ -92,15 +92,15 @@ export default function FeaturedProducts() {
                 >
                   {/* layer-7 = filter button */}
                   
-                  <div className="layer-8 justify-start text-neutral-400 text-base font-normal font-['PolySans_Trial'] leading-tight" data-layer="8">
+                  <div className="layer-8 justify-start text-neutral-400 text-sm sm:text-base md:text-base font-normal font-['PolySans_Trial'] leading-tight" data-layer="8">
                     {/* layer-8 = filter button text */}
                     {filter}
                   </div>
                   
-                  <div className="layer-9 w-6 h-6 relative overflow-hidden" data-layer="9">
+                  <div className="layer-9 w-5 h-5 sm:w-6 sm:h-6 md:w-6 md:h-6 relative overflow-hidden" data-layer="9">
                     {/* layer-9 = dropdown arrow container */}
                     <svg
-                      className={`absolute left-[6.25px] top-[9.25px] transition-transform duration-200 ${
+                      className={`absolute left-[4px] top-[7px] sm:left-[6.25px] sm:top-[9.25px] md:left-[6.25px] md:top-[9.25px] transition-transform duration-200 ${
                         showDropdown === filter ? 'rotate-180' : ''
                       }`}
                       width="12"
@@ -147,16 +147,16 @@ export default function FeaturedProducts() {
         </div>
 
         {/* Products Grid - 2x2 on mobile, slider on desktop */}
-        <div className="layer-13 self-stretch md:h-[532px] grid grid-cols-2 md:flex md:justify-between md:items-center gap-4 md:gap-0 my-6 md:my-12" data-layer="13">
+        <div className="layer-13 self-stretch grid grid-cols-2 md:flex md:justify-center md:items-center md:h-[582px] gap-4 md:gap-6 my-6 md:mb-2 md:mt-5" data-layer="13">
           {/* layer-13 = products grid container */}
           
           {products.map((product, index) => (
-             <Link key={product.id} href={`/client/product-details/${product.id}`} className="block h-full">
+             <Link key={product.id} href={`/client/product-details/${product.id}`} className="block h-full md:flex md:items-center">
                <div
-                 className="layer-14 w-full md:w-[312px] h-full p-3 md:p-4 bg-sky-50 rounded-xl border border-black/10 flex flex-col justify-start items-start group hover:shadow-md hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
+                 className="layer-14 w-full md:w-[312px] h-full md:h-auto p-3 md:p-4 bg-sky-50 rounded-xl border border-black/10 flex flex-col justify-start items-start group md:hover:shadow-md md:hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
+                 style={{ transformOrigin: 'center', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
                  onMouseEnter={() => setHoveredCard(index)}
                  onMouseLeave={() => setHoveredCard(null)}
-                 style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
                  role="article"
                  aria-labelledby={`product-title-${product.id}`}
                  data-layer="14"
@@ -170,7 +170,7 @@ export default function FeaturedProducts() {
                 <div className="layer-16 flex justify-start items-center gap-2" data-layer="16">
                   {/* layer-16 = verified seller indicator */}
                   
-                  <div className="layer-17 w-6 h-6 relative transform group-hover:scale-110 transition-transform duration-300" data-layer="17">
+                  <div className="layer-17 w-6 h-6 relative transform md:group-hover:scale-110 transition-transform duration-300" data-layer="17">
                     {/* layer-17 = verified icon container */}
                     <Image
                       src="/card/icon/tick.svg"
@@ -187,7 +187,7 @@ export default function FeaturedProducts() {
                   </div>
                 </div>
                 
-                <div className="layer-19 transform group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 cursor-pointer" data-layer="19">
+                <div className="layer-19 transform md:group-hover:scale-110 md:group-hover:rotate-12 transition-all duration-300 cursor-pointer" data-layer="19">
                   {/* layer-19 = wishlist button container */}
                   <Image
                     src="/card/icon/butterfly.svg"
@@ -208,7 +208,7 @@ export default function FeaturedProducts() {
                    src={product.image}
                    alt={`${product.name} product image`}
                    fill
-                   className="object-cover transform group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
+                   className="object-cover transform md:group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
                    draggable={false}
                    onDragStart={(e) => e.preventDefault()}
                    style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
@@ -217,7 +217,7 @@ export default function FeaturedProducts() {
                </div>
 
               {/* Product Info */}
-              <div className="layer-21 self-stretch flex flex-col justify-start items-start flex-grow" data-layer="21">
+              <div className="layer-21 self-stretch flex flex-col justify-start items-start" data-layer="21">
                 {/* layer-21 = product info container */}
                 
                 <div className="layer-22 self-stretch pt-2 md:pt-4 pb-3 md:pb-5 flex flex-col justify-center items-start gap-2 md:gap-3" data-layer="22">
@@ -228,7 +228,7 @@ export default function FeaturedProducts() {
                     {/* layer-23 = product name and price container */}
                     
                     <div 
-                      className="layer-24 justify-start text-slate-950 text-sm md:text-lg font-semibold font-['Poppins'] leading-tight md:leading-loose group-hover:text-fuchsia-600 transition-colors duration-300 truncate max-w-full" 
+                      className="layer-24 justify-start text-slate-950 text-sm md:text-lg font-semibold font-['Poppins'] leading-tight md:leading-loose md:group-hover:text-fuchsia-600 transition-colors duration-300 truncate max-w-full" 
                       title={product.name}
                       id={`product-title-${product.id}`}
                       role="heading"
@@ -276,7 +276,7 @@ export default function FeaturedProducts() {
                           viewBox="0 0 24 24"
                           fill="#FFC107"
                           xmlns="http://www.w3.org/2000/svg"
-                          className="md:w-6 md:h-6 transform group-hover:scale-110 transition-transform duration-300"
+                          className="md:w-6 md:h-6 transform md:group-hover:scale-110 transition-transform duration-300"
                           style={{ transitionDelay: `${i * 50}ms` }}
                           aria-hidden="true"
                         >
@@ -293,11 +293,11 @@ export default function FeaturedProducts() {
                 </div>
 
                 {/* Add to Cart Button - Hidden by default, shown on hover */}
-                <div className="layer-32 self-stretch overflow-hidden h-0 group-hover:h-14 transition-all duration-500 ease-out" data-layer="32">
+                <div className="layer-32 self-stretch overflow-hidden h-0 md:group-hover:h-14 transition-all duration-500 ease-out" data-layer="32">
                   {/* layer-32 = add to cart button container */}
                   
                   <button 
-                    className="layer-33 w-full h-0 opacity-0 px-7 bg-fuchsia-500 rounded-xl inline-flex justify-center items-center gap-1.5 group-hover:h-14 group-hover:py-3 group-hover:opacity-100 hover:bg-fuchsia-600 transition-all duration-500 ease-out transform translate-y-2 group-hover:translate-y-0 cursor-pointer"
+                    className="layer-33 w-full h-0 opacity-0 px-7 bg-fuchsia-500 rounded-xl inline-flex justify-center items-center gap-1.5 md:group-hover:h-14 md:group-hover:py-3 md:group-hover:opacity-100 hover:bg-fuchsia-600 transition-all duration-500 ease-out transform translate-y-2 md:group-hover:translate-y-0 cursor-pointer"
                     aria-label={`Add ${product.name} to cart`}
                     data-layer="33"
                   >

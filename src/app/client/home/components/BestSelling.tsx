@@ -48,16 +48,16 @@ export default function BestSelling() {
         </div>
 
         {/* Products Grid - 2x2 on mobile, slider on desktop */}
-        <div className="layer-5 self-stretch md:h-[532px] grid grid-cols-2 md:flex md:justify-between md:items-center gap-4 md:gap-0 my-6 md:my-12" data-layer="5">
+        <div className="layer-5 self-stretch grid grid-cols-2 md:flex md:justify-center md:items-center md:h-[582px] gap-4 md:gap-6 my-6 md:my-2" data-layer="5">
           {/* layer-5 = products grid container */}
           
           {products.map((product, index) => (
-             <Link key={product.id} href={`/client/product-details/${product.id}`} className="block h-full">
+             <Link key={product.id} href={`/client/product-details/${product.id}`} className="block h-full md:flex md:items-center">
                <div
-                 className="layer-6 w-full md:w-[312px] h-full p-3 md:p-4 bg-sky-50 rounded-xl border border-black/10 flex flex-col justify-start items-start group hover:shadow-md hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
+                 className="layer-6 w-full md:w-[312px] h-full md:h-auto p-3 md:p-4 bg-sky-50 rounded-xl border border-black/10 flex flex-col justify-start items-start group md:hover:shadow-md md:hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
+                 style={{ transformOrigin: 'center', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
                  onMouseEnter={() => setHoveredCard(index)}
                  onMouseLeave={() => setHoveredCard(null)}
-                 style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
                  role="article"
                  aria-labelledby={`product-title-${product.id}`}
                  data-layer="6"
@@ -71,7 +71,7 @@ export default function BestSelling() {
                 <div className="layer-8 flex justify-start items-center gap-2" data-layer="8">
                   {/* layer-8 = verified seller indicator */}
                   
-                  <div className="layer-9 w-6 h-6 relative transform group-hover:scale-110 transition-transform duration-300" data-layer="9">
+                  <div className="layer-9 w-6 h-6 relative transform md:group-hover:scale-110 transition-transform duration-300" data-layer="9">
                     {/* layer-9 = verified icon container */}
                     <Image
                       src="/card/icon/tick.svg"
@@ -88,7 +88,7 @@ export default function BestSelling() {
                   </div>
                 </div>
                 
-                <div className="layer-11 transform group-hover:scale-110 group-hover:rotate-12 transition-all duration-300" data-layer="11">
+                <div className="layer-11 transform md:group-hover:scale-110 md:group-hover:rotate-12 transition-all duration-300" data-layer="11">
                   {/* layer-11 = wishlist button container */}
                   <Image
                     src="/card/icon/butterfly.svg"
@@ -109,7 +109,7 @@ export default function BestSelling() {
                   src={product.image}
                   alt={`${product.name} product image`}
                   fill
-                  className="object-cover transform group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
+                  className="object-cover transform md:group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
                   draggable={false}
                   onDragStart={(e) => e.preventDefault()}
                   style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
@@ -118,7 +118,7 @@ export default function BestSelling() {
               </div>
 
               {/* Product Info */}
-              <div className="layer-13 self-stretch flex flex-col justify-start items-start flex-grow" data-layer="13">
+              <div className="layer-13 self-stretch flex flex-col justify-start items-start" data-layer="13">
                 {/* layer-13 = product info container */}
                 
                 <div className="layer-14 self-stretch pt-2 md:pt-4 pb-3 md:pb-5 flex flex-col justify-center items-start gap-2 md:gap-3" data-layer="14">
@@ -129,7 +129,7 @@ export default function BestSelling() {
                     {/* layer-15 = product name and price container */}
                     
                     <div 
-                      className="layer-16 justify-start text-slate-950 text-sm md:text-lg font-semibold font-['Poppins'] leading-tight md:leading-loose group-hover:text-fuchsia-600 transition-colors duration-300 truncate max-w-full" 
+                      className="layer-16 justify-start text-slate-950 text-sm md:text-lg font-semibold font-['Poppins'] leading-tight md:leading-loose md:group-hover:text-fuchsia-600 transition-colors duration-300 truncate max-w-full" 
                       title={product.name}
                       id={`product-title-${product.id}`}
                       role="heading"
@@ -177,7 +177,7 @@ export default function BestSelling() {
                           viewBox="0 0 24 24"
                           fill="#FFC107"
                           xmlns="http://www.w3.org/2000/svg"
-                          className="md:w-6 md:h-6 transform group-hover:scale-110 transition-transform duration-300"
+                          className="md:w-6 md:h-6 transform md:group-hover:scale-110 transition-transform duration-300"
                           style={{ transitionDelay: `${i * 50}ms` }}
                           aria-hidden="true"
                         >
@@ -194,11 +194,11 @@ export default function BestSelling() {
                 </div>
 
                 {/* Add to Cart Button - Hidden by default, shown on hover */}
-                <div className="layer-24 self-stretch overflow-hidden h-0 group-hover:h-14 transition-all duration-500 ease-out" data-layer="24">
+                <div className="layer-24 self-stretch overflow-hidden h-0 md:group-hover:h-14 transition-all duration-500 ease-out" data-layer="24">
                   {/* layer-24 = add to cart button container */}
                   
                   <button 
-                    className="layer-25 w-full h-0 opacity-0 px-7 bg-fuchsia-500 rounded-xl inline-flex justify-center items-center gap-1.5 group-hover:h-14 group-hover:py-3 group-hover:opacity-100 hover:bg-fuchsia-600 transition-all duration-500 ease-out transform translate-y-2 group-hover:translate-y-0"
+                    className="layer-25 w-full h-0 opacity-0 px-7 bg-fuchsia-500 rounded-xl inline-flex justify-center items-center gap-1.5 md:group-hover:h-14 md:group-hover:py-3 md:group-hover:opacity-100 hover:bg-fuchsia-600 transition-all duration-500 ease-out transform translate-y-2 md:group-hover:translate-y-0"
                     aria-label={`Add ${product.name} to cart`}
                     data-layer="25"
                   >
