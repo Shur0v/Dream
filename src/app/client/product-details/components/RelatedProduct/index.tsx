@@ -123,7 +123,7 @@ export default function RelatedProduct() {
                     />
                   </div>
                   
-                  <div className="layer-10 justify-start text-neutral-600 text-sm font-semibold font-['PolySans_Trial'] leading-relaxed" data-layer="10">
+                  <div className="layer-10 justify-start text-neutral-600 text-sm font-semibold font-['PolySans_Trial'] leading-relaxed whitespace-nowrap" data-layer="10">
                     {/* layer-10 = verified seller text */}
                     Verified Seller
                   </div>
@@ -227,7 +227,7 @@ export default function RelatedProduct() {
                       ))}
                     </div>
                     
-                    <div className="layer-23 text-center justify-start text-neutral-400 text-sm font-normal font-['Poppins'] leading-relaxed" data-layer="23">
+                    <div className="layer-23 text-center justify-start text-neutral-400 text-sm font-normal font-['Poppins'] leading-relaxed whitespace-nowrap" data-layer="23">
                       {/* layer-23 = reviews count */}
                       ( {product.reviews} Reviews)
                     </div>

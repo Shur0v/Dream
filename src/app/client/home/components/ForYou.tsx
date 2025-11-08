@@ -82,7 +82,7 @@ export default function ForYou() {
                     />
                   </div>
                   
-                  <div className="layer-10 justify-start text-neutral-600 text-xs md:text-sm font-semibold font-['PolySans_Trial'] leading-snug md:leading-relaxed" data-layer="10">
+                  <div className="layer-10 justify-start text-neutral-600 text-xs md:text-sm font-semibold font-['PolySans_Trial'] leading-snug md:leading-relaxed whitespace-nowrap" data-layer="10">
                     {/* layer-10 = verified seller text */}
                     Verified Seller
                   </div>
@@ -186,7 +186,7 @@ export default function ForYou() {
                       ))}
                     </div>
                     
-                    <div className="layer-23 text-center justify-start text-neutral-400 text-xs md:text-sm font-normal font-['Poppins'] leading-snug md:leading-relaxed" data-layer="23">
+                    <div className="layer-23 text-center justify-start text-neutral-400 text-xs md:text-sm font-normal font-['Poppins'] leading-snug md:leading-relaxed whitespace-nowrap" data-layer="23">
                       {/* layer-23 = reviews count */}
                       ( {product.reviews} Reviews)
                     </div>

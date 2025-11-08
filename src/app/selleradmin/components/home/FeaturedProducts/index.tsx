@@ -82,7 +82,7 @@ export default function FeaturedProducts() {
                       <div className="layer-30 flex justify-start items-center" role="img" aria-label={`${product.rating} out of 5 stars`} data-layer="30">
                         {[...Array(product.rating)].map((_, i) => (<svg key={i} width="24" height="24" viewBox="0 0 24 24" fill="#FFC107" xmlns="http://www.w3.org/2000/svg" className="transform group-hover:scale-110 transition-transform duration-300" style={{ transitionDelay: `${i * 50}ms` }} aria-hidden="true"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" /></svg>))}
                       </div>
-                      <div className="layer-31 text-center justify-start text-neutral-400 text-sm font-normal font-['Poppins'] leading-relaxed" data-layer="31">( {product.reviews} Reviews)</div>
+                      <div className="layer-31 text-center justify-start text-neutral-400 text-sm font-normal font-['Poppins'] leading-relaxed whitespace-nowrap" data-layer="31">( {product.reviews} Reviews)</div>
                     </div>
                   </div>
                   <div className="layer-32 self-stretch overflow-hidden h-0 group-hover:h-14 transition-all duration-500 ease-out" data-layer="32">

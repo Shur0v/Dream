@@ -26,7 +26,7 @@ export default function BestSelling() {
                 <div className="layer-7 self-stretch inline-flex justify-between items-center mb-2" data-layer="7">
                   <div className="layer-8 flex justify-start items-center gap-2" data-layer="8">
                     <div className="layer-9 w-6 h-6 relative transform group-hover:scale-110 transition-transform duration-300" data-layer="9"><Image src="/card/icon/tick.svg" alt="Verified seller" width={24} height={24} loading="lazy" /></div>
-                    <div className="layer-10 justify-start text-neutral-600 text-sm font-semibold font-['PolySans_Trial'] leading-relaxed" data-layer="10">Verified Seller</div>
+                    <div className="layer-10 justify-start text-neutral-600 text-sm font-semibold font-['PolySans_Trial'] leading-relaxed whitespace-nowrap" data-layer="10">Verified Seller</div>
                   </div>
                   <div className="layer-11 transform group-hover:scale-110 group-hover:rotate-12 transition-all duration-300" data-layer="11"><Image src="/card/icon/butterfly.svg" alt="Add to wishlist" width={24} height={24} className="cursor-pointer" loading="lazy" /></div>
                 </div>
@@ -44,7 +44,7 @@ export default function BestSelling() {
                     </div>
                     <div className="layer-21 inline-flex justify-start items-center gap-1.5" data-layer="21">
                       <div className="layer-22 flex justify-start items-center" role="img" aria-label={`${product.rating} out of 5 stars`} data-layer="22">{[...Array(product.rating)].map((_, i) => (<svg key={i} width="24" height="24" viewBox="0 0 24 24" fill="#FFC107" xmlns="http://www.w3.org/2000/svg" className="transform group-hover:scale-110 transition-transform duration-300" style={{ transitionDelay: `${i * 50}ms` }} aria-hidden="true"><path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" /></svg>))}</div>
-                      <div className="layer-23 text-center justify-start text-neutral-400 text-sm font-normal font-['Poppins'] leading-relaxed" data-layer="23">( {product.reviews} Reviews)</div>
+                      <div className="layer-23 text-center justify-start text-neutral-400 text-sm font-normal font-['Poppins'] leading-relaxed whitespace-nowrap" data-layer="23">( {product.reviews} Reviews)</div>
                     </div>
                   </div>
                   <div className="layer-24 self-stretch overflow-hidden h-0 group-hover:h-14 transition-all duration-500 ease-out" data-layer="24">

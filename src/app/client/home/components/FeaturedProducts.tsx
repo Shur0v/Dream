@@ -181,7 +181,7 @@ export default function FeaturedProducts() {
                     />
                   </div>
                   
-                  <div className="layer-18 justify-start text-neutral-600 text-xs md:text-sm font-semibold font-['PolySans_Trial'] leading-snug md:leading-relaxed" data-layer="18">
+                  <div className="layer-18 justify-start text-neutral-600 text-xs md:text-sm font-semibold font-['PolySans_Trial'] leading-snug md:leading-relaxed whitespace-nowrap" data-layer="18">
                     {/* layer-18 = verified seller text */}
                     Verified Seller
                   </div>
@@ -285,7 +285,7 @@ export default function FeaturedProducts() {
                       ))}
                     </div>
                     
-                    <div className="layer-31 text-center justify-start text-neutral-400 text-xs md:text-sm font-normal font-['Poppins'] leading-snug md:leading-relaxed" data-layer="31">
+                    <div className="layer-31 text-center justify-start text-neutral-400 text-xs md:text-sm font-normal font-['Poppins'] leading-snug md:leading-relaxed whitespace-nowrap" data-layer="31">
                       {/* layer-31 = reviews count */}
                       ( {product.reviews} Reviews)
                     </div>
