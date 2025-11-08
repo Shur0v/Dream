@@ -211,7 +211,11 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
 
             {/* Hamburger Menu Button - Mobile Only, Right Side */}
             <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsMobileMenuOpen(!isMobileMenuOpen);
+              }}
               className="lg:hidden p-2 hover:opacity-80 transition-opacity"
               aria-label="Toggle mobile menu"
               aria-expanded={isMobileMenuOpen}
@@ -514,13 +518,13 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-xs bg-opacity-50 z-40 lg:hidden" onClick={() => setIsMobileMenuOpen(false)} />
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-xs bg-opacity-50 z-[100] lg:hidden" onClick={() => setIsMobileMenuOpen(false)} />
       )}
 
       {/* Mobile Menu Drawer - Slides in from right */}
       <div
         ref={mobileMenuRef}
-        className={`fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${
+        className={`fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-[101] transform transition-transform duration-300 ease-in-out lg:hidden ${
           isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
