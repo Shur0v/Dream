@@ -52,7 +52,7 @@ export default function BrowseCategories() {
   ];
 
   return (
-    <section className="father w-full pt-10 pb-24 bg-white overflow-x-hidden" role="region" aria-labelledby="browse-categories-heading" data-layer="father">
+    <section className="father w-full pt-4 pb-8 sm:pt-6 sm:pb-12 md:pt-8 md:pb-16 lg:pt-10 lg:pb-24 bg-white overflow-x-hidden" role="region" aria-labelledby="browse-categories-heading" data-layer="father">
       {/* father = full width browse categories section */}
       
       <div className="daughter px-2 md:px-0 overflow-x-hidden" data-layer="daughter">
@@ -61,7 +61,7 @@ export default function BrowseCategories() {
         <div className="layer-1 w-full max-w-[1320px] mx-auto overflow-x-hidden" role="main" data-layer="1">
           {/* layer-1 = main content container with max width constraint */}
           
-          <div className="layer-2 self-stretch inline-flex flex-col justify-start items-start gap-4 md:gap-8 overflow-x-hidden" data-layer="2">
+          <div className="layer-2 self-stretch inline-flex flex-col justify-start items-start gap-2 sm:gap-3 md:gap-5 lg:gap-8 overflow-x-hidden" data-layer="2">
             {/* layer-2 = content wrapper */}
             
             <div 

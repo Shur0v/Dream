@@ -55,9 +55,9 @@ export default function Hero() {
   };
 
   return (
-    <section className="w-full py-8 bg-white">
+    <section className="w-full py-2.5 sm:py-4 md:py-5 lg:py-8 bg-white">
       <div className="w-full max-w-[1320px] mx-auto px-2 md:px-0">
-        <div className="flex flex-col md:flex-row justify-start items-start gap-6">
+        <div className="flex flex-col md:flex-row justify-start items-start gap-2.5 sm:gap-4 md:gap-6">
           {/* Left Side - Main Slider with Auto-play - Maintains 804/513 aspect ratio */}
           <div className="w-full md:w-[804px] md:flex-shrink-0 relative rounded-xl overflow-hidden bg-gray-100 group" style={{ aspectRatio: '804/513' }}>
             {/* Slider Images */}

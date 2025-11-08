@@ -102,7 +102,7 @@ export default function PromoBanners() {
         <div className="layer-1 w-full max-w-[1320px] mx-auto" role="main" data-layer="1">
           {/* layer-1 = main content container with max width constraint */}
           
-          <div className="layer-2 w-full lg:w-[1320px] inline-flex flex-col justify-center items-center gap-6 sm:gap-8 lg:gap-12" data-layer="2">
+          <div className="layer-2 w-full lg:w-[1320px] inline-flex flex-col justify-center items-center gap-2.5 sm:gap-5 md:gap-7 lg:gap-12" data-layer="2">
             {/* layer-2 = main content wrapper */}
             
             <div className="layer-3 self-stretch min-h-[400px] sm:min-h-[450px] lg:h-[529px] px-4 sm:px-5 lg:pl-6 lg:pr-0 py-6 sm:py-8 lg:py-0 bg-fuchsia-50 rounded-tl-3xl rounded-tr-xl rounded-bl-3xl rounded-br-xl flex flex-col lg:inline-flex lg:flex-row lg:justify-between items-center gap-4 sm:gap-6 lg:gap-0" data-layer="3">

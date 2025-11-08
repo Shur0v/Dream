@@ -17,14 +17,14 @@ export default function ForYou() {
   const products = allProducts.slice(0, 4);
 
   return (
-    <section className="father w-full py-20 bg-white flex flex-col justify-start items-center gap-8" role="region" aria-labelledby="for-you-heading" data-layer="father">
+    <section className="father w-full py-6 sm:py-10 md:py-14 lg:py-20 bg-white flex flex-col justify-start items-center gap-2.5 sm:gap-5 md:gap-6 lg:gap-8" role="region" aria-labelledby="for-you-heading" data-layer="father">
       {/* father = full width for you section */}
       
       <div className="daughter w-full max-w-[1320px] mx-auto px-2 md:px-0" data-layer="daughter">
         {/* daughter = design holder for entire for you section */}
         
         {/* Header Section */}
-        <div className="layer-1 self-stretch flex flex-col justify-start items-start gap-4" data-layer="1">
+        <div className="layer-1 self-stretch flex flex-col justify-start items-start gap-1.5 sm:gap-2.5 md:gap-3 lg:gap-4" data-layer="1">
           {/* layer-1 = header section container */}
           
           <div className="layer-2 self-stretch inline-flex justify-start items-start gap-8" data-layer="2">

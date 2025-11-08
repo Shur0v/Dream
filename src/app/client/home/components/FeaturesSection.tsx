@@ -40,7 +40,7 @@ export default function FeaturesSection() {
   ];
 
   return (
-    <section className="father w-full py-12 sm:py-16 lg:py-24 relative bg-fuchsia-500 overflow-hidden" role="region" aria-labelledby="features-heading" data-layer="father">
+    <section className="father w-full py-4 sm:py-8 md:py-12 lg:py-24 relative bg-fuchsia-500 overflow-hidden" role="region" aria-labelledby="features-heading" data-layer="father">
       {/* father = full width features section with background */}
       
       <div className="daughter px-2 lg:px-0" data-layer="daughter">

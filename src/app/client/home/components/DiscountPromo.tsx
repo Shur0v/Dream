@@ -270,7 +270,7 @@ export default function DiscountPromo() {
   };
 
   return (
-    <section className="father w-full py-8 bg-white" role="region" aria-labelledby="discount-promo-heading" data-layer="father">
+    <section className="father w-full py-2.5 sm:py-4 md:py-5 lg:py-8 bg-white" role="region" aria-labelledby="discount-promo-heading" data-layer="father">
       {/* father = full width discount promo section */}
       
       <div className="daughter px-2" data-layer="daughter">
