@@ -56,10 +56,10 @@ export default function Hero() {
 
   return (
     <section className="w-full py-8 bg-white">
-      <div className="w-full max-w-[1320px] mx-auto">
-        <div className="flex flex-col lg:flex-row justify-start items-start gap-6">
-          {/* Left Side - Main Slider with Auto-play */}
-          <div className="w-full lg:w-[804px] lg:flex-shrink-0 h-[513px] relative rounded-xl overflow-hidden bg-gray-100 group">
+      <div className="w-full max-w-[1320px] mx-auto px-2 md:px-0">
+        <div className="flex flex-col md:flex-row justify-start items-start gap-6">
+          {/* Left Side - Main Slider with Auto-play - Maintains 804/513 aspect ratio */}
+          <div className="w-full md:w-[804px] md:flex-shrink-0 relative rounded-xl overflow-hidden bg-gray-100 group" style={{ aspectRatio: '804/513' }}>
             {/* Slider Images */}
             <div className="relative w-full h-full">
               {sliderImages.map((image, index) => (
@@ -117,8 +117,8 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Right Side - 3 Images Grid (Static) */}
-          <div className="w-full lg:w-[492px] lg:flex-shrink-0 flex flex-col justify-start items-start gap-6">
+          {/* Right Side - 3 Images Grid (Static) - Hidden on mobile, visible from tab and above */}
+          <div className="hidden md:flex w-full md:w-[492px] md:flex-shrink-0 flex-col justify-start items-start gap-6">
             {/* Top Image - Full Width */}
             <img 
               className="w-full h-[229px] rounded-xl object-cover cursor-pointer hover:opacity-90 transition-opacity" 

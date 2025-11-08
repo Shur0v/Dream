@@ -37,14 +37,15 @@ export default function FeaturedProducts() {
     };
   }, []);
 
-  // Get featured products from unified dataset
-  const products = getFeaturedProducts();
+  // Get featured products from unified dataset - Limit to 4 for responsive grid
+  const allProducts = getFeaturedProducts();
+  const products = allProducts.slice(0, 4);
 
   return (
     <section className="father w-full pb-7 bg-white flex flex-col justify-start items-center gap-8" role="region" aria-labelledby="featured-products-heading" data-layer="father">
       {/* father = full width featured products section */}
       
-      <div className="daughter w-full max-w-[1320px] mx-auto" data-layer="daughter">
+      <div className="daughter w-full max-w-[1320px] mx-auto px-2 md:px-0" data-layer="daughter">
         {/* daughter = design holder for entire featured products section */}
         
         {/* Header Section */}
@@ -58,7 +59,7 @@ export default function FeaturedProducts() {
               {/* layer-3 = title container */}
               
               <div 
-                className="layer-4 justify-start text-slate-950 text-5xl font-medium font-['Poppins'] leading-[57.60px]"
+                className="layer-4 justify-start text-slate-950 text-2xl md:text-3xl lg:text-5xl font-medium font-['Poppins'] leading-tight md:leading-normal lg:leading-[57.60px]"
                 id="featured-products-heading"
                 role="heading"
                 aria-level={2}
@@ -145,14 +146,14 @@ export default function FeaturedProducts() {
           </div>
         </div>
 
-        {/* Products Grid */}
-        <div className="layer-13 self-stretch h-[532px] flex justify-between items-center my-12" data-layer="13">
+        {/* Products Grid - 2x2 on mobile, slider on desktop */}
+        <div className="layer-13 self-stretch md:h-[532px] grid grid-cols-2 md:flex md:justify-between md:items-center gap-4 md:gap-0 my-6 md:my-12" data-layer="13">
           {/* layer-13 = products grid container */}
           
           {products.map((product, index) => (
-             <Link key={product.id} href={`/client/product-details/${product.id}`} className="block">
+             <Link key={product.id} href={`/client/product-details/${product.id}`} className="block h-full">
                <div
-                 className="layer-14 w-[312px] p-4 bg-sky-50 rounded-xl border border-black/10 inline-flex flex-col justify-start items-start group hover:shadow-md hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
+                 className="layer-14 w-full md:w-[312px] h-full p-3 md:p-4 bg-sky-50 rounded-xl border border-black/10 flex flex-col justify-start items-start group hover:shadow-md hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
                  onMouseEnter={() => setHoveredCard(index)}
                  onMouseLeave={() => setHoveredCard(null)}
                  style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
@@ -180,7 +181,7 @@ export default function FeaturedProducts() {
                     />
                   </div>
                   
-                  <div className="layer-18 justify-start text-neutral-600 text-sm font-semibold font-['PolySans_Trial'] leading-relaxed" data-layer="18">
+                  <div className="layer-18 justify-start text-neutral-600 text-xs md:text-sm font-semibold font-['PolySans_Trial'] leading-snug md:leading-relaxed" data-layer="18">
                     {/* layer-18 = verified seller text */}
                     Verified Seller
                   </div>
@@ -200,7 +201,7 @@ export default function FeaturedProducts() {
               </div>
 
                {/* Product Image */}
-               <div className="layer-20 self-stretch h-72 relative mb-4 overflow-hidden rounded-lg" data-layer="20">
+               <div className="layer-20 self-stretch h-48 md:h-72 relative mb-4 overflow-hidden rounded-lg" data-layer="20">
                  {/* layer-20 = product image container */}
                  
                  <Image
@@ -216,10 +217,10 @@ export default function FeaturedProducts() {
                </div>
 
               {/* Product Info */}
-              <div className="layer-21 self-stretch flex flex-col justify-start items-start" data-layer="21">
+              <div className="layer-21 self-stretch flex flex-col justify-start items-start flex-grow" data-layer="21">
                 {/* layer-21 = product info container */}
                 
-                <div className="layer-22 self-stretch pt-4 pb-5 flex flex-col justify-center items-start gap-3" data-layer="22">
+                <div className="layer-22 self-stretch pt-2 md:pt-4 pb-3 md:pb-5 flex flex-col justify-center items-start gap-2 md:gap-3" data-layer="22">
                   {/* layer-22 = product details wrapper */}
                   
                   {/* Product Name and Price */}
@@ -227,7 +228,7 @@ export default function FeaturedProducts() {
                     {/* layer-23 = product name and price container */}
                     
                     <div 
-                      className="layer-24 justify-start text-slate-950 text-lg font-semibold font-['Poppins'] leading-loose group-hover:text-fuchsia-600 transition-colors duration-300 truncate max-w-full" 
+                      className="layer-24 justify-start text-slate-950 text-sm md:text-lg font-semibold font-['Poppins'] leading-tight md:leading-loose group-hover:text-fuchsia-600 transition-colors duration-300 truncate max-w-full" 
                       title={product.name}
                       id={`product-title-${product.id}`}
                       role="heading"
@@ -238,12 +239,12 @@ export default function FeaturedProducts() {
                       {product.name.length > 24 ? `${product.name.substring(0, 24)}...` : product.name}
                     </div>
                     
-                    <div className="layer-25 inline-flex justify-start items-center gap-1.5" data-layer="25">
+                    <div className="layer-25 inline-flex justify-start items-center gap-1 md:gap-1.5" data-layer="25">
                       {/* layer-25 = price container */}
                       
                       <div className="layer-26 flex justify-start items-center" data-layer="26">
                         {/* layer-26 = current price */}
-                        <div className="layer-27 justify-start text-black text-2xl font-semibold font-['Poppins'] leading-9" data-layer="27">
+                        <div className="layer-27 justify-start text-black text-lg md:text-2xl font-semibold font-['Poppins'] leading-6 md:leading-9" data-layer="27">
                           {/* layer-27 = current price display */}
                           {product.currency}{product.price}
                         </div>
@@ -251,31 +252,31 @@ export default function FeaturedProducts() {
                       
                       <div className="layer-28 justify-start" data-layer="28">
                         {/* layer-28 = original price */}
-                        <span className="text-red-500 text-base font-normal font-['Poppins'] leading-normal">(</span>
-                        <span className="text-red-500 text-base font-normal font-['Poppins'] line-through leading-normal">
+                        <span className="text-red-500 text-xs md:text-base font-normal font-['Poppins'] leading-normal">(</span>
+                        <span className="text-red-500 text-xs md:text-base font-normal font-['Poppins'] line-through leading-normal">
                           ${product.originalPrice}
                         </span>
-                        <span className="text-red-500 text-base font-normal font-['Poppins'] leading-normal">)</span>
+                        <span className="text-red-500 text-xs md:text-base font-normal font-['Poppins'] leading-normal">)</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Rating and Reviews */}
-                  <div className="layer-29 inline-flex justify-start items-center gap-1.5" data-layer="29">
+                  <div className="layer-29 inline-flex justify-start items-center gap-1 md:gap-1.5" data-layer="29">
                     {/* layer-29 = rating and reviews container */}
                     
-                    <div className="layer-30 flex justify-start items-center" role="img" aria-label={`${product.rating} out of 5 stars`} data-layer="30">
+                    <div className="layer-30 flex justify-start items-center gap-0.5 md:gap-0" role="img" aria-label={`${product.rating} out of 5 stars`} data-layer="30">
                       {/* layer-30 = star rating */}
                       
                       {[...Array(product.rating)].map((_, i) => (
                         <svg
                           key={i}
-                          width="24"
-                          height="24"
+                          width="16"
+                          height="16"
                           viewBox="0 0 24 24"
                           fill="#FFC107"
                           xmlns="http://www.w3.org/2000/svg"
-                          className="transform group-hover:scale-110 transition-transform duration-300"
+                          className="md:w-6 md:h-6 transform group-hover:scale-110 transition-transform duration-300"
                           style={{ transitionDelay: `${i * 50}ms` }}
                           aria-hidden="true"
                         >
@@ -284,7 +285,7 @@ export default function FeaturedProducts() {
                       ))}
                     </div>
                     
-                    <div className="layer-31 text-center justify-start text-neutral-400 text-sm font-normal font-['Poppins'] leading-relaxed" data-layer="31">
+                    <div className="layer-31 text-center justify-start text-neutral-400 text-xs md:text-sm font-normal font-['Poppins'] leading-snug md:leading-relaxed" data-layer="31">
                       {/* layer-31 = reviews count */}
                       ( {product.reviews} Reviews)
                     </div>
@@ -325,8 +326,8 @@ export default function FeaturedProducts() {
           ))}
         </div>
 
-        {/* Pagination Dots */}
-        <div className="layer-36 h-2 flex justify-center items-center gap-2 mt-8" role="tablist" aria-label="Product pagination" data-layer="36">
+        {/* Pagination Dots - Hidden on mobile */}
+        <div className="layer-36 h-2 hidden md:flex justify-center items-center gap-2 mt-8" role="tablist" aria-label="Product pagination" data-layer="36">
           {/* layer-36 = pagination dots container */}
           
           {[1, 2, 3, 4].map((item, index) => (
