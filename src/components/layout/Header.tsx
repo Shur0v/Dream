@@ -127,9 +127,9 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="daughter" data-layer="daughter">
         {/* daughter = design holder for entire header section */}
         
-        {/* Top Information Bar - Ultra-stable animation */}
+        {/* Top Information Bar - Ultra-stable animation - Hidden on mobile */}
         <div 
-          className={`layer-1 transition-all duration-500 ease-in-out overflow-hidden ${
+          className={`layer-1 hidden lg:block transition-all duration-500 ease-in-out overflow-hidden ${
             shouldShowTopBar 
               ? 'translate-y-0 opacity-100 max-h-screen' 
               : '-translate-y-full opacity-0 max-h-0'
@@ -154,9 +154,9 @@ export const Header: React.FC<HeaderProps> = ({
           />
         </div>
         
-        {/* Bottom Navigation Bar - Ultra-stable animation */}
+        {/* Bottom Navigation Bar - Ultra-stable animation - Hidden on mobile */}
         <div 
-          className={`layer-3 transition-all duration-500 ease-in-out ${
+          className={`layer-3 hidden lg:block transition-all duration-500 ease-in-out ${
             shouldShowBottomNav 
               ? 'translate-y-0 opacity-100' 
               : 'translate-y-full opacity-0'

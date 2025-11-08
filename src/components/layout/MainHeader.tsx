@@ -18,7 +18,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingCart, Search } from 'lucide-react';
+import { ShoppingCart, Search, Menu, X } from 'lucide-react';
 import { CartDropdown } from '../cart/CartDropdown';
 import { WishlistDropdown } from '../wishlist/WishlistDropdown';
 
@@ -83,7 +83,9 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
   const [isLanguageOpen, setIsLanguageOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'bn'>('en');
   const [hoveredCategory, setHoveredCategory] = useState('');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const languageDropdownRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
   
   // Close language dropdown when clicking outside
   useEffect(() => {
@@ -91,16 +93,31 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
       if (languageDropdownRef.current && !languageDropdownRef.current.contains(event.target as Node)) {
         setIsLanguageOpen(false);
       }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
+        setIsMobileMenuOpen(false);
+      }
     };
 
-    if (isLanguageOpen) {
+    if (isLanguageOpen || isMobileMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isLanguageOpen]);
+  }, [isLanguageOpen, isMobileMenuOpen]);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
   
   const categories = [
     'Electronics',
@@ -158,23 +175,31 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
     // Handle remove wishlist item logic here
     console.log(`Removing wishlist item ${itemId}`);
   };
+
+  const navigationLinks = [
+    { text: "Home", href: "/" },
+    { text: "All Products", href: "/client/categories" },
+    { text: "Become a Seller", href: "#", onClick: () => { onOpenRegisterModal?.('seller'); setIsMobileMenuOpen(false); } },
+    { text: "Re seller", href: "#", onClick: () => { onOpenRegisterModal?.('reseller'); setIsMobileMenuOpen(false); } },
+  ];
   
   return (
     <div className="father w-full bg-white" role="banner" data-layer="father">
       {/* father = full width main header section */}
       
-      <div className="daughter max-w-[1320px] mx-auto py-3.5" data-layer="daughter">
+      <div className="daughter max-w-[1320px] mx-auto py-1.5 px-2" data-layer="daughter">
         {/* daughter = design holder for entire main header section */}
         
-        <div className="layer-1 flex flex-col lg:flex-row justify-between items-center gap-4 lg:gap-0" data-layer="1">
+        <div className="layer-1 flex flex-col lg:flex-row justify-between items-center lg:gap-0" data-layer="1">
           {/* layer-1 = main header content container */}
           
-          {/* Logo */}
-          <div className="layer-2 w-[190.5px] h-[69.3px] flex-shrink-0" data-layer="2">
+          {/* Logo - Left side on mobile, normal on desktop */}
+          <div className="layer-2 w-full lg:w-[190.5px] h-[69.3px] flex items-center justify-between lg:justify-start" data-layer="2">
             {/* layer-2 = logo container */}
-            <Link href="/" aria-label="DreamShop homepage">
+            
+            <Link href="/" aria-label="DreamShop homepage" className="flex-shrink-0">
               <Image
-                className="w-full h-[69.3px] object-contain"
+                className="w-[190.5px] h-[69.3px] object-contain"
                 src="/common/logo.svg"
                 alt="DreamShop logo"
                 width={190}
@@ -183,14 +208,28 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
                 loading="eager"
               />
             </Link>
+
+            {/* Hamburger Menu Button - Mobile Only, Right Side */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="lg:hidden p-2 hover:opacity-80 transition-opacity"
+              aria-label="Toggle mobile menu"
+              aria-expanded={isMobileMenuOpen}
+            >
+              {isMobileMenuOpen ? (
+                <X className="w-6 h-6 text-neutral-800" strokeWidth={2.5} />
+              ) : (
+                <Menu className="w-6 h-6 text-neutral-800" strokeWidth={2.5} />
+              )}
+            </button>
           </div>
 
           {/* Search and Actions Container */}
           <div className="layer-3 w-full lg:w-auto lg:flex-1 lg:max-w-[974px] flex flex-col lg:flex-row justify-between items-center gap-4" data-layer="3">
             {/* layer-3 = search and actions container */}
             
-            {/* Search Bar */}
-            <div className="layer-4 w-full lg:w-[519px] bg-white rounded-xl border border-fuchsia-500" data-layer="4">
+            {/* Search Bar - Hidden on mobile */}
+            <div className="layer-4 hidden lg:block w-full lg:w-[519px] bg-white rounded-xl border border-fuchsia-500" data-layer="4">
               {/* layer-4 = search bar container */}
               
               <form onSubmit={handleSearch} className="layer-5 flex items-center" data-layer="5">
@@ -278,8 +317,8 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
               </form>
             </div>
 
-            {/* Right Actions */}
-            <div className="layer-13 flex justify-center items-center gap-4 sm:gap-6 lg:gap-8" data-layer="13">
+            {/* Right Actions - Hidden on mobile */}
+            <div className="layer-13 hidden lg:flex justify-center items-center gap-4 sm:gap-6 lg:gap-8" data-layer="13">
               {/* layer-13 = right actions container */}
               
               <div className="layer-14 flex justify-start items-center gap-4 sm:gap-6 lg:gap-7" data-layer="14">
@@ -471,6 +510,120 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
           onClose={handleWishlistClose}
           onRemoveItem={handleRemoveWishlistItem}
         />
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-xs bg-opacity-50 z-40 lg:hidden" onClick={() => setIsMobileMenuOpen(false)} />
+      )}
+
+      {/* Mobile Menu Drawer - Slides in from right */}
+      <div
+        ref={mobileMenuRef}
+        className={`fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out lg:hidden ${
+          isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        <div className="flex flex-col h-full">
+          {/* Mobile Menu Header */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <h2 className="text-lg font-semibold text-neutral-800">Menu</h2>
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-2 hover:opacity-80 transition-opacity"
+              aria-label="Close mobile menu"
+            >
+              <X className="w-6 h-6 text-neutral-800" strokeWidth={2.5} />
+            </button>
+          </div>
+
+          {/* Mobile Menu Content */}
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex flex-col gap-2">
+              {/* Shop Button */}
+              <Link
+                href="/client/categories"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-full px-4 py-3 bg-gradient-to-r from-fuchsia-500 to-fuchsia-600 text-white rounded-lg font-semibold text-center hover:opacity-90 transition-opacity"
+              >
+                Shop
+              </Link>
+
+              {/* Navigation Links */}
+              <div className="flex flex-col gap-1 mt-4">
+                {navigationLinks.map((link, index) => {
+                  if (link.onClick) {
+                    return (
+                      <button
+                        key={index}
+                        onClick={link.onClick}
+                        className="w-full px-4 py-3 text-left text-neutral-800 font-medium hover:bg-gray-100 rounded-lg transition-colors"
+                      >
+                        {link.text}
+                      </button>
+                    );
+                  }
+                  return (
+                    <Link
+                      key={index}
+                      href={link.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="w-full px-4 py-3 text-left text-neutral-800 font-medium hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      {link.text}
+                    </Link>
+                  );
+                })}
+              </div>
+
+              {/* Cart and Wishlist in Mobile Menu */}
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    handleWishlistClick();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full px-4 py-3 text-left text-neutral-800 font-medium hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-3"
+                >
+                  <Image
+                    className="w-5 h-5"
+                    src="/header/icons/fly.svg"
+                    alt="Wishlist"
+                    width={20}
+                    height={20}
+                  />
+                  Wishlist
+                </button>
+                <button
+                  onClick={() => {
+                    handleCartClick();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full px-4 py-3 text-left text-neutral-800 font-medium hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-3 mt-2"
+                >
+                  <ShoppingCart className="w-5 h-5 text-neutral-800" strokeWidth={2} />
+                  Cart
+                  {cartCount > 0 && (
+                    <span className="ml-auto bg-orange-500 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                      {cartCount > 99 ? '99+' : cartCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* Sign In Button in Mobile Menu */}
+              <button
+                onClick={() => {
+                  onOpenLoginModal?.('client');
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full mt-4 px-4 py-3 bg-fuchsia-500 text-white rounded-lg font-semibold hover:opacity-90 transition-opacity"
+              >
+                Sign in
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
