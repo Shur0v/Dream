@@ -189,7 +189,7 @@ export default function BrowseCategories() {
                 {loopedCategories.map((category, index) => (
                   <button 
                     key={`${category.id}-${index}`}
-                    className="layer-5 flex-shrink-0 w-auto md:w-auto md:flex-1 self-stretch p-3 bg-fuchsia-400/10 rounded-xl inline-flex flex-col justify-start items-center gap-6 cursor-pointer select-none"
+                    className="layer-5 flex-shrink-0 w-auto md:w-auto md:flex-1 self-stretch p-1.5 md:p-3 bg-fuchsia-400/10 rounded-xl inline-flex flex-col justify-start items-center gap-1.5 md:gap-6 cursor-pointer select-none"
                     style={{ 
                       width: 'auto',
                       minWidth: 'fit-content',
@@ -211,7 +211,7 @@ export default function BrowseCategories() {
                     {/* layer-5 = individual category button */}
                     
                     <img 
-                      className="layer-6 self-stretch h-40 rounded-lg object-cover select-none pointer-events-none" 
+                      className="layer-6 self-stretch h-20 md:h-40 rounded-lg object-cover select-none pointer-events-none" 
                       src={category.image} 
                       alt={`${category.name} category`}
                       loading="lazy"
@@ -221,7 +221,7 @@ export default function BrowseCategories() {
                     />
                     {/* layer-6 = category image */}
                     
-                    <div className="layer-7 self-stretch text-center justify-start text-black text-3xl font-medium font-['Poppins'] leading-loose select-none pointer-events-none" data-layer="7">
+                    <div className="layer-7 self-stretch text-center justify-start text-black text-sm md:text-3xl font-medium font-['Poppins'] leading-tight md:leading-loose select-none pointer-events-none" data-layer="7">
                       {/* layer-7 = category name */}
                       {category.name}
                     </div>
