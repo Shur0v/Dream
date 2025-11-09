@@ -18,7 +18,7 @@ interface ReviewsProps {
 }
 
 const Reviews: React.FC<ReviewsProps> = ({ rating, reviewsCount }) => {
-  const [activeTab, setActiveTab] = useState<'details' | 'reviews' | 'qa'>('reviews');
+  const [activeTab, setActiveTab] = useState<'details' | 'reviews'>('reviews');
   const [visibleReviewsCount, setVisibleReviewsCount] = useState(4);
 
   const reviews: Review[] = [
@@ -213,20 +213,6 @@ const Reviews: React.FC<ReviewsProps> = ({ rating, reviewsCount }) => {
             )}
           </div>
         );
-      case 'qa':
-        return (
-          <div className="w-full max-w-[1320px] mx-auto">
-            {/* Layer 4: Q&A Content */}
-            <div className="w-full">
-              <h3 className="text-2xl font-semibold text-gray-800 font-['Poppins'] mb-4">
-                Question & Answer
-              </h3>
-              <p className="text-gray-600 font-['Poppins']">
-                This is where the Q&A section will be displayed.
-              </p>
-            </div>
-          </div>
-        );
       default:
         return null;
     }
@@ -253,15 +239,6 @@ const Reviews: React.FC<ReviewsProps> = ({ rating, reviewsCount }) => {
           } text-xl font-medium font-['Poppins']`}
         >
           Rating & Reviews
-        </button>
-        <button
-          onClick={() => setActiveTab('qa')}
-          className={`py-6 px-4 ${activeTab === 'qa' 
-            ? 'border-b-2 border-fuchsia-500 text-fuchsia-500' 
-            : 'text-black/60'
-          } text-xl font-medium font-['Poppins']`}
-        >
-          Question & Answer
         </button>
       </div>
 
