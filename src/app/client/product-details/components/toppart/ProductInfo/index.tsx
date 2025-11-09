@@ -42,6 +42,20 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
     White: 'bg-white ring-1 ring-gray-300',
   };
 
+  // Color code mapping
+  const colorCodeMap: Record<string, string> = {
+    Lemon: '#FCD34D',
+    Red: '#EF4444',
+    Green: '#16A34A',
+    Yellow: '#FDE047',
+    Blue: '#3B82F6',
+    Black: '#000000',
+    White: '#FFFFFF',
+    Platinum: '#E5E4E2',
+    'Matte Black': '#28282B',
+    Sage: '#87AE73',
+  };
+
   return (
     <div className="w-[468px] p-6 bg-sky-50 rounded-xl inline-flex flex-col justify-center items-end gap-12 overflow-hidden">
       <div className="self-stretch flex flex-col justify-start items-start gap-4">
@@ -91,7 +105,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
             </div>
             
             {/* Product Details */}
-            <div className="self-stretch h-20 flex flex-col justify-between items-center">
+            <div className="self-stretch flex flex-col justify-start items-start gap-0">
               <div className="self-stretch justify-start text-neutral-700 text-base font-normal font-['Poppins'] leading-tight tracking-tight">
                 Category: {product.category}
               </div>
@@ -111,36 +125,39 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
             <div className="self-stretch justify-start text-zinc-600 text-sm font-normal font-['Poppins'] leading-tight">Color:</div>
             <div className="self-stretch overflow-x-auto">
               <div className="flex gap-4 pb-2 min-w-max">
-                {product.colors.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => setSelectedColor(color)}
-                    className={`group relative flex flex-col items-center gap-2 transition-colors cursor-pointer ${
-                      selectedColor === color ? 'border-b-2 border-fuchsia-500' : 'border-b-2 border-transparent'
-                    }`}
-                    aria-pressed={selectedColor === color}
-                  >
-                    <div
-                      className={`w-8 h-8 rounded border-2 ${
-                        colorDotClass[color] ?? 'bg-gray-300'
-                      } ${
-                        selectedColor === color ? 'border-fuchsia-500' : 'border-gray-300'
+                {product.colors.map((color) => {
+                  const colorCode = colorCodeMap[color] || '#CCCCCC';
+                  const truncatedName = color.length > 3 ? `${color.substring(0, 3)}..` : color;
+                  return (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setSelectedColor(color)}
+                      className={`group relative flex flex-col items-center gap-2 transition-colors cursor-pointer ${
+                        selectedColor === color ? 'border-b-2 border-fuchsia-500' : 'border-b-2 border-transparent'
                       }`}
-                    />
-                    <span className={`text-xs font-normal font-['Poppins'] whitespace-nowrap ${
-                      selectedColor === color ? 'text-zinc-900' : 'text-zinc-900/80 group-hover:text-zinc-900'
-                    }`}>
-                      {color}
-                    </span>
-                  </button>
-                ))}
+                      aria-pressed={selectedColor === color}
+                    >
+                      <div
+                        className={`w-12 h-12 rounded border-2 ${
+                          selectedColor === color ? 'border-fuchsia-500' : 'border-gray-300'
+                        }`}
+                        style={{ backgroundColor: colorCode }}
+                      />
+                      <span className={`text-xs font-normal font-['Poppins'] whitespace-nowrap text-center ${
+                        selectedColor === color ? 'text-zinc-900' : 'text-zinc-900/80 group-hover:text-zinc-900'
+                      }`}>
+                        {truncatedName}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
           
-          {/* Size and Quantity **/}
-          <div className="self-stretch inline-flex justify-between items-center">
+          {/* Size Selection */}
+          <div className="self-stretch flex flex-col justify-start items-start gap-2">
             <div className="flex justify-start items-center gap-6">
               <div className="justify-start text-black text-xl font-normal font-['Poppins'] leading-tight tracking-wide">Size:</div>
               <div className="flex justify-start items-start gap-3">
@@ -163,7 +180,10 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
                 ))}
               </div>
             </div>
-            
+          </div>
+          
+          {/* Quantity and Action Buttons Row */}
+          <div className="self-stretch inline-flex justify-between items-center gap-6">
             {/* Quantity Controls */}
             <div className="flex justify-start items-start">
               <button
@@ -186,27 +206,29 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product }) => {
                 <Plus className="w-3 h-3 text-white" />
               </button>
             </div>
+            
+            {/* Add to Cart and Wishlist */}
+            <div className="flex justify-start items-center gap-6">
+              <button className="px-4 py-2.5 bg-fuchsia-500 rounded flex justify-center items-center gap-1.5 hover:bg-fuchsia-600 transition-colors">
+                <ShoppingCart className="w-5 h-5 text-white" />
+                <div className="justify-start text-white text-base font-medium font-['Poppins'] leading-none">
+                  Add to Cart
+                </div>
+              </button>
+              <button className="w-10 h-10 relative rounded outline-1 outline-black/50 overflow-hidden hover:bg-gray-50 transition-colors flex-shrink-0">
+                <Heart className="w-8 h-8 left-[4px] top-[4px] absolute text-black" />
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
-      
-      {/* Action Buttons */}
-      <div className="self-stretch flex flex-col justify-center items-start gap-6">
-        <div className="inline-flex justify-start items-center gap-6">
-          <button className="px-12 py-2.5 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 rounded flex justify-center items-center gap-2.5 hover:from-fuchsia-600 hover:to-fuchsia-600 transition-colors">
-            <div className="justify-start text-neutral-50 text-base font-medium font-['Poppins'] leading-normal">
-              Buy Now
-            </div>
-          </button>
-          <button className="w-40 self-stretch px-4 py-2.5 bg-fuchsia-500 rounded flex justify-center items-center gap-1.5 hover:bg-fuchsia-600 transition-colors">
-            <ShoppingCart className="w-5 h-5 text-white" />
-            <div className="justify-start text-white text-base font-medium font-['Poppins'] leading-none">
-              Add to Cart
-            </div>
-          </button>
-          <button className="w-10 h-10 relative rounded outline-1 outline-black/50 overflow-hidden hover:bg-gray-50 transition-colors">
-            <Heart className="w-8 h-8 left-[4px] top-[4px] absolute text-black" />
-          </button>
+          
+          {/* Buy Now Button */}
+          <div className="self-stretch flex flex-col justify-center items-start">
+            <button className="self-stretch px-4 py-2.5 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 rounded flex justify-center items-center gap-2.5 hover:from-fuchsia-600 hover:to-fuchsia-600 transition-colors">
+              <div className="justify-start text-neutral-50 text-base font-medium font-['Poppins'] leading-normal">
+                Buy Now
+              </div>
+            </button>
+          </div>
         </div>
       </div>
     </div>
