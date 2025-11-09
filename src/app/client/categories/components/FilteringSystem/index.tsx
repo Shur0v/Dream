@@ -562,7 +562,7 @@ export default function FilteringSystem() {
                           </div>
 
                           {/* Rating and Reviews */}
-                          <div className="inline-flex justify-start items-center gap-1.5">
+                          <div className="flex flex-col md:flex-row md:inline-flex justify-start items-start md:items-center gap-1.5">
                             {/* Rating and Reviews Container */}
                             
                             <div className="flex justify-start items-center" role="img" aria-label={`${product.rating} out of 5 stars`}>
@@ -585,9 +585,16 @@ export default function FilteringSystem() {
                               ))}
                             </div>
                             
-                            <div className="text-center justify-start text-neutral-400 text-sm font-normal font-['Poppins'] leading-relaxed">
+                            {/* Review count - hidden on mobile, shown on desktop next to stars */}
+                            <div className="hidden md:block text-center justify-start text-neutral-400 text-sm font-normal font-['Poppins'] leading-relaxed">
                               {/* Reviews Count */}
-                              ( {product.reviews} Reviews)
+                              ( {product.reviews} Reviews )
+                            </div>
+                            
+                            {/* Review count box - shown on mobile below stars */}
+                            <div className="md:hidden self-stretch px-2 py-1 bg-neutral-100 rounded-md text-center justify-start text-neutral-400 text-xs font-normal font-['Poppins'] leading-snug">
+                              {/* Reviews Count Box for Mobile */}
+                              ( {product.reviews} Reviews )
                             </div>
                           </div>
                         </div>

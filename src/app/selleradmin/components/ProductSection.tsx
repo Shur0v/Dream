@@ -60,7 +60,7 @@ export default function ProductSection({ title, products, onAddClick }: ProductS
                       </svg>
                     ))}
                   </div>
-                  <div className="text-neutral-400 text-sm">( {product.reviews} Reviews)</div>
+                  <div className="text-neutral-400 text-sm">( {product.reviews} Reviews )</div>
                 </div>
               </div>
             </div>

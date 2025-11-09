@@ -162,7 +162,7 @@ export default function AdminSection({ title, products, onAddClick }: AdminSecti
                           </svg>
                         ))}
                       </div>
-                      <div className="layer-31 text-center justify-start text-neutral-400 text-sm font-normal font-['Poppins'] leading-relaxed whitespace-nowrap" data-layer="31">( {product.reviews} Reviews)</div>
+                      <div className="layer-31 text-center justify-start text-neutral-400 text-sm font-normal font-['Poppins'] leading-relaxed whitespace-nowrap" data-layer="31">( {product.reviews} Reviews )</div>
                     </div>
                   </div>
                   <div className="layer-32 self-stretch overflow-hidden h-0 group-hover:h-14 transition-all duration-500 ease-out" data-layer="32">

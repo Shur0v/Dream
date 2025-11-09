@@ -163,7 +163,7 @@ export default function BestSelling() {
                   </div>
 
                   {/* Rating and Reviews */}
-                  <div className="layer-21 inline-flex justify-start items-center gap-1 md:gap-1.5" data-layer="21">
+                  <div className="layer-21 flex flex-col md:flex-row md:inline-flex justify-start items-start md:items-center gap-1 md:gap-1.5" data-layer="21">
                     {/* layer-21 = rating and reviews container */}
                     
                     <div className="layer-22 flex justify-start items-center gap-0.5 md:gap-0" role="img" aria-label={`${product.rating} out of 5 stars`} data-layer="22">
@@ -186,9 +186,16 @@ export default function BestSelling() {
                       ))}
                     </div>
                     
-                    <div className="layer-23 text-center justify-start text-neutral-400 text-xs md:text-sm font-normal font-['Poppins'] leading-snug md:leading-relaxed whitespace-nowrap" data-layer="23">
+                    {/* Review count - hidden on mobile, shown on desktop next to stars */}
+                    <div className="layer-23 hidden md:block text-center justify-start text-neutral-400 text-xs md:text-sm font-normal font-['Poppins'] leading-snug md:leading-relaxed whitespace-nowrap" data-layer="23">
                       {/* layer-23 = reviews count */}
-                      ( {product.reviews} Reviews)
+                      ( {product.reviews} Reviews )
+                    </div>
+                    
+                    {/* Review count box - shown on mobile below stars */}
+                    <div className="layer-23-mobile md:hidden self-stretch px-2 py-1 bg-neutral-100 rounded-md text-center justify-start text-neutral-400 text-xs font-normal font-['Poppins'] leading-snug" data-layer="23-mobile">
+                      {/* layer-23-mobile = reviews count box for mobile */}
+                      ( {product.reviews} Reviews )
                     </div>
                   </div>
                 </div>
