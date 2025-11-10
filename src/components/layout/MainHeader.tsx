@@ -229,11 +229,11 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
           </div>
 
           {/* Search and Actions Container */}
-          <div className="layer-3 w-full lg:w-auto lg:flex-1 lg:max-w-[974px] flex flex-col lg:flex-row justify-between items-center gap-4" data-layer="3">
+          <div className="layer-3 w-full lg:w-auto lg:flex-1 lg:max-w-[974px] flex flex-col lg:flex-row justify-between items-center gap-4 lg:justify-end xl:justify-between" data-layer="3">
             {/* layer-3 = search and actions container */}
             
             {/* Search Bar - Hidden on mobile */}
-            <div className="layer-4 hidden lg:block w-full lg:w-[519px] bg-white rounded-xl border border-fuchsia-500" data-layer="4">
+            <div className="layer-4 hidden xl:block w-full xl:w-[519px] bg-white rounded-xl border border-fuchsia-500" data-layer="4">
               {/* layer-4 = search bar container */}
               
               <form onSubmit={handleSearch} className="layer-5 flex items-center" data-layer="5">
