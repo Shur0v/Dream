@@ -112,3 +112,18 @@ p, span, div, a, button, input, textarea, select, label {
   touch-action: pan-x; /* Enable horizontal panning */
   overscroll-behavior-x: contain; /* Prevent scroll chaining */
 }
+
+@keyframes scroll-horizontal {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll-horizontal {
+  animation: scroll-horizontal linear infinite;
+  display: inline-flex;
+  will-change: transform;
+}

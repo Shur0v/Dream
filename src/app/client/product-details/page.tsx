@@ -4,6 +4,7 @@ import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import TopPart from './components/toppart';
 import Reviews from './components/Reviews';
+import DeliveryInfo from './components/toppart/DeliveryInfo';
 import { sampleUsers } from '@/lib/dummyData';
 
 /**
@@ -76,6 +77,11 @@ export default function ProductDetails() {
         {/* Product Reviews Section */}
         <section className="w-full max-w-[1320px] mx-auto px-2">
           <Reviews rating={4.5} reviewsCount={100} />
+        </section>
+
+        {/* Mobile Delivery Info */}
+        <section className="lg:hidden w-full max-w-[1320px] mx-auto px-2">
+          <DeliveryInfo />
         </section>
       </div>
     </MainLayout>

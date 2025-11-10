@@ -63,7 +63,7 @@ export default function TopPart({ product, images }: TopPartProps) {
             <ProductGallery images={imageData} className="lg:flex-1" />
             <ProductInfo product={productData} className="lg:flex-1" />
           </div>
-          <div className="lg:flex-[0.45] w-full">
+          <div className="hidden lg:block lg:flex-[0.45] w-full">
             <DeliveryInfo />
           </div>
         </div>

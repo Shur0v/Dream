@@ -4,6 +4,7 @@ import Reviews from "../components/Reviews";
 import RelatedProduct from "../components/RelatedProduct";
 import ShopInstagram from "../components/ShopInstagram";
 import ForYou from "../../home/components/ForYou";
+import DeliveryInfo from "../components/toppart/DeliveryInfo";
 import { getProductById } from "@/lib/productData";
 
 export default function ProductDetailsPage({ params }: any) {
@@ -66,6 +67,11 @@ export default function ProductDetailsPage({ params }: any) {
 
       {/* For You Section */}
       <ForYou />
+
+      {/* Mobile Delivery Info */}
+      <section className="lg:hidden w-full max-w-[1320px] mx-auto px-2">
+        <DeliveryInfo />
+      </section>
     </div>
   );
 }
