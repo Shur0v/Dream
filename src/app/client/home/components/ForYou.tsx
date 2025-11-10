@@ -20,7 +20,7 @@ export default function ForYou() {
     <section className="father w-full py-6 sm:py-10 md:py-14 lg:py-20 bg-white flex flex-col justify-start items-center gap-2.5 sm:gap-5 md:gap-6 lg:gap-8" role="region" aria-labelledby="for-you-heading" data-layer="father">
       {/* father = full width for you section */}
       
-      <div className="daughter w-full max-w-[1320px] mx-auto px-2 md:px-0" data-layer="daughter">
+      <div className="daughter w-full max-w-[1320px] mx-auto px-2" data-layer="daughter">
         {/* daughter = design holder for entire for you section */}
         
         {/* Header Section */}

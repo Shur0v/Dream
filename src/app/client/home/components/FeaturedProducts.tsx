@@ -45,7 +45,7 @@ export default function FeaturedProducts() {
     <section className="father w-full pb-2.5 sm:pb-4 md:pb-5 lg:pb-7 bg-white flex flex-col justify-start items-center gap-2.5 sm:gap-5 md:gap-6 lg:gap-8" role="region" aria-labelledby="featured-products-heading" data-layer="father">
       {/* father = full width featured products section */}
       
-      <div className="daughter w-full max-w-[1320px] mx-auto px-2 md:px-0" data-layer="daughter">
+      <div className="daughter w-full max-w-[1320px] mx-auto px-2" data-layer="daughter">
         {/* daughter = design holder for entire featured products section */}
         
         {/* Header Section */}

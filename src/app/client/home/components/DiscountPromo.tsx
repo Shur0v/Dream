@@ -92,7 +92,7 @@ export default function DiscountPromo() {
     return (
       <div
         key={banner.id}
-        className={`layer-3 ${index === 0 ? 'w-full lg:w-[648px]' : 'w-full lg:flex-1'} aspect-[648/400] bg-black/30 rounded-xl relative overflow-hidden`}
+        className={`layer-3 w-full ${index === 0 ? 'md:basis-[49%] md:max-w-[648px]' : 'md:basis-[51%] md:max-w-[648px] md:flex-1'} md:min-w-0 aspect-[648/400] bg-black/30 rounded-xl relative overflow-hidden`}
         role="article"
         aria-labelledby={`promo-title-${banner.id}`}
         data-layer="3"
@@ -111,14 +111,14 @@ export default function DiscountPromo() {
         </div>
         
         {/* Content Overlay - Vertically Centered */}
-        <div className={`layer-5 absolute inset-0 z-10 flex flex-col justify-center items-start ${index === 0 ? 'px-4 sm:px-6 lg:px-9' : 'px-4 sm:px-6 lg:px-[38.41px]'} ${index === 0 ? 'py-4 sm:py-6 lg:py-10' : 'py-4 sm:py-6 lg:py-[40.50px]'} gap-2.5 sm:gap-3.5 lg:gap-6`} data-layer="5">
+        <div className={`layer-5 absolute inset-0 z-10 flex flex-col justify-center items-start ${index === 0 ? 'px-4 sm:px-6 md:px-9' : 'px-4 sm:px-6 md:px-[38.41px]'} ${index === 0 ? 'py-4 sm:py-6 md:py-10' : 'py-4 sm:py-6 md:py-[40.50px]'} gap-2.5 sm:gap-3.5 md:gap-6`} data-layer="5">
           {/* layer-5 = content overlay container */}
           
-          <div className={`layer-6 ${index === 0 ? 'w-full max-w-[572px]' : 'w-full lg:w-[572px]'} flex flex-col justify-start items-start gap-2 sm:gap-2.5 lg:gap-3`} data-layer="6">
+          <div className={`layer-6 ${index === 0 ? 'w-full max-w-[572px]' : 'w-full md:w-[572px]'} flex flex-col justify-start items-start gap-2 sm:gap-2.5 md:gap-3`} data-layer="6">
             {/* layer-6 = banner content wrapper */}
             
             <div 
-              className="layer-7 w-full justify-start text-white text-base sm:text-xl lg:text-3xl font-semibold font-['Poppins'] leading-tight sm:leading-7 lg:leading-10"
+              className="layer-7 w-full justify-start text-white text-base sm:text-xl md:text-3xl font-semibold font-['Poppins'] leading-tight sm:leading-7 md:leading-10"
               id={`promo-title-${banner.id}`}
               role="heading"
               aria-level={3}
@@ -128,126 +128,126 @@ export default function DiscountPromo() {
               {banner.title}
             </div>
             
-            <div className="layer-8 self-stretch flex flex-col justify-start items-start gap-0.5 sm:gap-1 lg:gap-1" data-layer="8">
+            <div className="layer-8 self-stretch flex flex-col justify-start items-start gap-0.5 sm:gap-1 md:gap-1" data-layer="8">
               {/* layer-8 = price information container */}
               
-              <div className="layer-9 self-stretch justify-start text-red-500 text-xs sm:text-sm lg:text-base font-semibold font-['Poppins'] leading-5 sm:leading-6 lg:leading-7" data-layer="9">
+              <div className="layer-9 self-stretch justify-start text-red-500 text-xs sm:text-sm md:text-base font-semibold font-['Poppins'] leading-5 sm:leading-6 md:leading-7" data-layer="9">
                 {/* layer-9 = starting bid label */}
                 {banner.startingBid}
               </div>
               
-              <div className="layer-10 self-stretch justify-start text-white text-lg sm:text-2xl lg:text-3xl font-semibold font-['Poppins']" data-layer="10">
+              <div className="layer-10 self-stretch justify-start text-white text-lg sm:text-2xl md:text-3xl font-semibold font-['Poppins']" data-layer="10">
                 {/* layer-10 = price display */}
                 {banner.price}
               </div>
             </div>
             
-            <div className="layer-11 self-stretch flex flex-col justify-start items-start gap-2 sm:gap-2.5 lg:gap-4" role="timer" aria-live="polite" data-layer="11">
+            <div className="layer-11 self-stretch flex flex-col justify-start items-start gap-2 sm:gap-2.5 md:gap-4" role="timer" aria-live="polite" data-layer="11">
               {/* layer-11 = countdown timer container */}
               
-              <div className="layer-12 flex flex-col justify-start items-center gap-1 sm:gap-1.5 lg:gap-2" data-layer="12">
+              <div className="layer-12 flex flex-col justify-start items-center gap-1 sm:gap-1.5 md:gap-2" data-layer="12">
                 {/* layer-12 = timer display wrapper */}
                 
-                <div className="layer-13 inline-flex justify-start items-start gap-1 sm:gap-1.5 lg:gap-2" data-layer="13">
+                <div className="layer-13 inline-flex justify-start items-start gap-1 sm:gap-1.5 md:gap-2" data-layer="13">
                   {/* layer-13 = timer elements container */}
                   
                   {/* Days */}
-                  <div className="layer-14 inline-flex flex-col justify-start items-center gap-1 sm:gap-1.5 lg:gap-1.5" data-layer="14">
+                  <div className="layer-14 inline-flex flex-col justify-start items-center gap-1 sm:gap-1.5 md:gap-1.5" data-layer="14">
                     {/* layer-14 = days timer unit */}
                     
-                    <div className="layer-15 w-10 sm:w-12 lg:w-14 inline-flex justify-start items-center gap-0.5 sm:gap-1 lg:gap-1.5" data-layer="15">
+                    <div className="layer-15 w-10 sm:w-12 md:w-14 inline-flex justify-start items-center gap-0.5 sm:gap-1 md:gap-1.5" data-layer="15">
                       {/* layer-15 = days display container */}
                       
-                      <div className="layer-16 w-9 h-7 sm:w-10 sm:h-8 lg:w-12 lg:h-10 p-1 sm:p-1.5 lg:p-2.5 bg-white rounded flex justify-center items-center" data-layer="16">
+                      <div className="layer-16 w-9 h-7 sm:w-10 sm:h-8 md:w-12 md:h-10 p-1 sm:p-1.5 md:p-2.5 bg-white rounded flex justify-center items-center" data-layer="16">
                         {/* layer-16 = days value box */}
-                        <div className="text-center justify-start text-blue-700 text-xs sm:text-sm lg:text-lg font-semibold font-['PolySans_Trial']">
+                        <div className="text-center justify-start text-blue-700 text-xs sm:text-sm md:text-lg font-semibold font-['PolySans_Trial']">
                           {formatTime(timeLeft.days)}
                         </div>
                       </div>
                       
-                      <div className="layer-17 inline-flex flex-col justify-start items-start gap-0.5 sm:gap-1 lg:gap-1.5" data-layer="17">
+                      <div className="layer-17 inline-flex flex-col justify-start items-start gap-0.5 sm:gap-1 md:gap-1.5" data-layer="17">
                         {/* layer-17 = separator dots */}
-                        <div className="w-0.5 h-0.5 sm:w-0.5 sm:h-0.5 lg:w-1 lg:h-1 bg-neutral-800 rounded-full" />
-                        <div className="w-0.5 h-0.5 sm:w-0.5 sm:h-0.5 lg:w-1 lg:h-1 bg-neutral-800 rounded-full" />
+                        <div className="w-0.5 h-0.5 sm:w-0.5 sm:h-0.5 md:w-1 md:h-1 bg-neutral-800 rounded-full" />
+                        <div className="w-0.5 h-0.5 sm:w-0.5 sm:h-0.5 md:w-1 md:h-1 bg-neutral-800 rounded-full" />
                       </div>
                     </div>
                     
-                    <div className="layer-18 justify-start text-white text-[9px] sm:text-[10px] lg:text-xs font-medium font-['Poppins']" data-layer="18">
+                    <div className="layer-18 justify-start text-white text-[9px] sm:text-[10px] md:text-xs font-medium font-['Poppins']" data-layer="18">
                       {/* layer-18 = days label */}
                       DAYS
                     </div>
                   </div>
                   
                   {/* Hours */}
-                  <div className="layer-19 inline-flex flex-col justify-start items-center gap-1 sm:gap-1.5 lg:gap-1.5" data-layer="19">
+                  <div className="layer-19 inline-flex flex-col justify-start items-center gap-1 sm:gap-1.5 md:gap-1.5" data-layer="19">
                     {/* layer-19 = hours timer unit */}
                     
-                    <div className="layer-20 w-10 sm:w-12 lg:w-14 inline-flex justify-start items-center gap-0.5 sm:gap-1 lg:gap-1.5" data-layer="20">
+                    <div className="layer-20 w-10 sm:w-12 md:w-14 inline-flex justify-start items-center gap-0.5 sm:gap-1 md:gap-1.5" data-layer="20">
                       {/* layer-20 = hours display container */}
                       
-                      <div className="layer-21 w-9 h-7 sm:w-10 sm:h-8 lg:w-12 lg:h-10 p-1 sm:p-1.5 lg:p-2.5 bg-white rounded flex justify-center items-center" data-layer="21">
+                      <div className="layer-21 w-9 h-7 sm:w-10 sm:h-8 md:w-12 md:h-10 p-1 sm:p-1.5 md:p-2.5 bg-white rounded flex justify-center items-center" data-layer="21">
                         {/* layer-21 = hours value box */}
-                        <div className="text-center justify-start text-blue-700 text-xs sm:text-sm lg:text-lg font-semibold font-['PolySans_Trial']">
+                        <div className="text-center justify-start text-blue-700 text-xs sm:text-sm md:text-lg font-semibold font-['PolySans_Trial']">
                           {formatTime(timeLeft.hours)}
                         </div>
                       </div>
                       
-                      <div className="layer-22 inline-flex flex-col justify-start items-start gap-0.5 sm:gap-1 lg:gap-1.5" data-layer="22">
+                      <div className="layer-22 inline-flex flex-col justify-start items-start gap-0.5 sm:gap-1 md:gap-1.5" data-layer="22">
                         {/* layer-22 = separator dots */}
-                        <div className="w-0.5 h-0.5 sm:w-0.5 sm:h-0.5 lg:w-1 lg:h-1 bg-neutral-800 rounded-full" />
-                        <div className="w-0.5 h-0.5 sm:w-0.5 sm:h-0.5 lg:w-1 lg:h-1 bg-neutral-800 rounded-full" />
+                        <div className="w-0.5 h-0.5 sm:w-0.5 sm:h-0.5 md:w-1 md:h-1 bg-neutral-800 rounded-full" />
+                        <div className="w-0.5 h-0.5 sm:w-0.5 sm:h-0.5 md:w-1 md:h-1 bg-neutral-800 rounded-full" />
                       </div>
                     </div>
                     
-                    <div className="layer-23 justify-start text-white text-[9px] sm:text-[10px] lg:text-xs font-medium font-['Poppins']" data-layer="23">
+                    <div className="layer-23 justify-start text-white text-[9px] sm:text-[10px] md:text-xs font-medium font-['Poppins']" data-layer="23">
                       {/* layer-23 = hours label */}
                       HOURS
                     </div>
                   </div>
                   
                   {/* Minutes */}
-                  <div className="layer-24 inline-flex flex-col justify-start items-center gap-1 sm:gap-1.5 lg:gap-1.5" data-layer="24">
+                  <div className="layer-24 inline-flex flex-col justify-start items-center gap-1 sm:gap-1.5 md:gap-1.5" data-layer="24">
                     {/* layer-24 = minutes timer unit */}
                     
-                    <div className="layer-25 w-10 sm:w-12 lg:w-14 inline-flex justify-start items-center gap-0.5 sm:gap-1 lg:gap-1.5" data-layer="25">
+                    <div className="layer-25 w-10 sm:w-12 md:w-14 inline-flex justify-start items-center gap-0.5 sm:gap-1 md:gap-1.5" data-layer="25">
                       {/* layer-25 = minutes display container */}
                       
-                      <div className="layer-26 w-9 h-7 sm:w-10 sm:h-8 lg:w-12 lg:h-10 p-1 sm:p-1.5 lg:p-2.5 bg-white rounded flex justify-center items-center" data-layer="26">
+                      <div className="layer-26 w-9 h-7 sm:w-10 sm:h-8 md:w-12 md:h-10 p-1 sm:p-1.5 md:p-2.5 bg-white rounded flex justify-center items-center" data-layer="26">
                         {/* layer-26 = minutes value box */}
-                        <div className="text-center justify-start text-blue-700 text-xs sm:text-sm lg:text-lg font-semibold font-['PolySans_Trial']">
+                        <div className="text-center justify-start text-blue-700 text-xs sm:text-sm md:text-lg font-semibold font-['PolySans_Trial']">
                           {formatTime(timeLeft.minutes)}
                         </div>
                       </div>
                       
-                      <div className="layer-27 inline-flex flex-col justify-start items-start gap-0.5 sm:gap-1 lg:gap-1.5" data-layer="27">
+                      <div className="layer-27 inline-flex flex-col justify-start items-start gap-0.5 sm:gap-1 md:gap-1.5" data-layer="27">
                         {/* layer-27 = separator dots */}
-                        <div className="w-0.5 h-0.5 sm:w-0.5 sm:h-0.5 lg:w-1 lg:h-1 bg-neutral-800 rounded-full" />
-                        <div className="w-0.5 h-0.5 sm:w-0.5 sm:h-0.5 lg:w-1 lg:h-1 bg-neutral-800 rounded-full" />
+                        <div className="w-0.5 h-0.5 sm:w-0.5 sm:h-0.5 md:w-1 md:h-1 bg-neutral-800 rounded-full" />
+                        <div className="w-0.5 h-0.5 sm:w-0.5 sm:h-0.5 md:w-1 md:h-1 bg-neutral-800 rounded-full" />
                       </div>
                     </div>
                     
-                    <div className="layer-28 justify-start text-white text-[9px] sm:text-[10px] lg:text-xs font-medium font-['Poppins']" data-layer="28">
+                    <div className="layer-28 justify-start text-white text-[9px] sm:text-[10px] md:text-xs font-medium font-['Poppins']" data-layer="28">
                       {/* layer-28 = minutes label */}
                       MINS
                     </div>
                   </div>
                   
                   {/* Seconds */}
-                  <div className="layer-29 inline-flex flex-col justify-start items-center gap-1 sm:gap-1.5 lg:gap-1.5" data-layer="29">
+                  <div className="layer-29 inline-flex flex-col justify-start items-center gap-1 sm:gap-1.5 md:gap-1.5" data-layer="29">
                     {/* layer-29 = seconds timer unit */}
                     
-                    <div className="layer-30 w-10 sm:w-12 lg:w-14 inline-flex justify-start items-center gap-0.5 sm:gap-1 lg:gap-1.5" data-layer="30">
+                    <div className="layer-30 w-10 sm:w-12 md:w-14 inline-flex justify-start items-center gap-0.5 sm:gap-1 md:gap-1.5" data-layer="30">
                       {/* layer-30 = seconds display container */}
                       
-                      <div className="layer-31 w-9 h-7 sm:w-10 sm:h-8 lg:w-12 lg:h-10 p-1 sm:p-1.5 lg:p-2.5 bg-white rounded flex justify-center items-center" data-layer="31">
+                      <div className="layer-31 w-9 h-7 sm:w-10 sm:h-8 md:w-12 md:h-10 p-1 sm:p-1.5 md:p-2.5 bg-white rounded flex justify-center items-center" data-layer="31">
                         {/* layer-31 = seconds value box */}
-                        <div className="text-center justify-start text-blue-700 text-xs sm:text-sm lg:text-lg font-semibold font-['PolySans_Trial']">
+                        <div className="text-center justify-start text-blue-700 text-xs sm:text-sm md:text-lg font-semibold font-['PolySans_Trial']">
                           {formatTime(timeLeft.seconds)}
                         </div>
                       </div>
                     </div>
                     
-                    <div className="layer-32 justify-start text-white text-[9px] sm:text-[10px] lg:text-xs font-medium font-['Poppins']" data-layer="32">
+                    <div className="layer-32 justify-start text-white text-[9px] sm:text-[10px] md:text-xs font-medium font-['Poppins']" data-layer="32">
                       {/* layer-32 = seconds label */}
                       SECS
                     </div>
@@ -256,9 +256,9 @@ export default function DiscountPromo() {
               </div>
             </div>
             
-            <div className="layer-33 h-8 sm:h-9 lg:h-11 px-4 sm:px-6 lg:px-8 py-1.5 sm:py-2 lg:py-3 bg-fuchsia-500 hover:bg-fuchsia-600 rounded-xl inline-flex justify-center items-center cursor-pointer transition-colors duration-300" role="button" aria-label={`Buy now for ${banner.title}`} data-layer="33">
+            <div className="layer-33 h-8 sm:h-9 md:h-11 px-4 sm:px-6 md:px-8 py-1.5 sm:py-2 md:py-3 bg-fuchsia-500 hover:bg-fuchsia-600 rounded-xl inline-flex justify-center items-center cursor-pointer transition-colors duration-300" role="button" aria-label={`Buy now for ${banner.title}`} data-layer="33">
               {/* layer-33 = buy now button */}
-              <div className="layer-34 justify-start text-white text-xs sm:text-sm lg:text-base font-semibold font-['Poppins'] leading-none" data-layer="34">
+              <div className="layer-34 justify-start text-white text-xs sm:text-sm md:text-base font-semibold font-['Poppins'] leading-none" data-layer="34">
                 {/* layer-34 = button text */}
                 Buy Now
               </div>
@@ -270,7 +270,7 @@ export default function DiscountPromo() {
   };
 
   return (
-    <section className="father w-full py-2.5 sm:py-4 md:py-5 lg:py-8 bg-white" role="region" aria-labelledby="discount-promo-heading" data-layer="father">
+    <section className="father w-full py-2.5 sm:py-4 md:py-8 bg-white" role="region" aria-labelledby="discount-promo-heading" data-layer="father">
       {/* father = full width discount promo section */}
       
       <div className="daughter px-2" data-layer="daughter">
@@ -280,11 +280,11 @@ export default function DiscountPromo() {
           {/* layer-1 = main content container with max width constraint */}
           
           {/* Mobile: Slider with dots, Desktop: 2 cards side by side */}
-          <div className="layer-2 w-full flex flex-col lg:flex-row justify-center items-center gap-6 lg:gap-6" data-layer="2">
+          <div className="layer-2 w-full flex flex-col md:flex-row justify-center md:justify-start items-center md:items-stretch gap-6 md:gap-6" data-layer="2">
             {/* layer-2 = promo banner container */}
             
             {/* Mobile: Show only current slide, Desktop: Show all cards */}
-            <div className="lg:hidden w-full flex flex-col justify-center items-center gap-6">
+            <div className="md:hidden w-full flex flex-col justify-center items-center gap-6">
               {/* Mobile Slider */}
               {renderBannerCard(banners[currentSlide], currentSlide)}
               
@@ -314,7 +314,7 @@ export default function DiscountPromo() {
             </div>
             
             {/* Desktop: Show both cards side by side */}
-            <div className="hidden lg:flex w-full justify-start items-center gap-6">
+            <div className="hidden md:flex w-full justify-start items-stretch gap-6">
               {banners.map((banner, index) => renderBannerCard(banner, index))}
             </div>
           </div>
