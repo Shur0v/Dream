@@ -3,6 +3,8 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --desktop-max-width: 1320px;
+  --desktop-fluid-padding: 8px;
 }
 
 @theme inline {
@@ -22,6 +24,48 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-poppins), sans-serif;
+}
+
+.desktop-fluid-shell {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.desktop-fluid-content {
+  width: 100%;
+  margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+  .desktop-fluid-shell {
+    display: flex;
+    justify-content: center;
+  }
+
+  .desktop-fluid-content {
+    width: var(--desktop-max-width);
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1319px) {
+  .desktop-fluid-shell {
+    padding-left: var(--desktop-fluid-padding);
+    padding-right: var(--desktop-fluid-padding);
+  }
+
+  .desktop-fluid-content {
+    width: var(--desktop-max-width);
+    transform-origin: top center;
+    transform: scale(calc((100vw - (var(--desktop-fluid-padding) * 2)) / var(--desktop-max-width)));
+    will-change: transform;
+  }
+}
+
+@media (min-width: 1320px) {
+  .desktop-fluid-content {
+    width: var(--desktop-max-width);
+    transform: none;
+  }
 }
 
 /* Apply Poppins to all headings */

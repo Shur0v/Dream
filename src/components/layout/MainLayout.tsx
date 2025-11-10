@@ -183,32 +183,36 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      {/* Header */}
-      <Header
-        user={user}
-        cartCount={cartCount}
-        wishlistCount={wishlistCount}
-        onSearch={onSearch}
-        onCartClick={onCartClick}
-        onWishlistClick={onWishlistClick}
-        onUserAction={onUserAction}
-        onOpenLoginModal={handleOpenLoginModal}
-        onOpenRegisterModal={handleOpenRegisterModal}
-      />
-      
-      {/* Main Content */}
-      <main className={`flex-1 ${className || ''}`}>
-        {children}
-      </main>
-      
-      {/* Footer */}
-      {showFooter && (
-        <Footer 
-          onOpenLoginModal={handleOpenLoginModal}
-          onOpenRegisterModal={handleOpenRegisterModal}
-        />
-      )}
+    <div className="desktop-fluid-shell">
+      <div className="desktop-fluid-content">
+        <div className="min-h-screen flex flex-col bg-white">
+          {/* Header */}
+          <Header
+            user={user}
+            cartCount={cartCount}
+            wishlistCount={wishlistCount}
+            onSearch={onSearch}
+            onCartClick={onCartClick}
+            onWishlistClick={onWishlistClick}
+            onUserAction={onUserAction}
+            onOpenLoginModal={handleOpenLoginModal}
+            onOpenRegisterModal={handleOpenRegisterModal}
+          />
+          
+          {/* Main Content */}
+          <main className={`flex-1 ${className || ''}`}>
+            {children}
+          </main>
+          
+          {/* Footer */}
+          {showFooter && (
+            <Footer 
+              onOpenLoginModal={handleOpenLoginModal}
+              onOpenRegisterModal={handleOpenRegisterModal}
+            />
+          )}
+        </div>
+      </div>
 
       {/* Login Modal */}
       <LoginModal
