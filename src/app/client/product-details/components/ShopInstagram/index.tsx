@@ -40,7 +40,7 @@ export default function ShopInstagram() {
     <section className="father w-full py-20 bg-sky-50" role="region" aria-labelledby="instagram-heading" data-layer="father">
       {/* father = full width shop instagram section */}
       
-      <div className="daughter w-full max-w-[1320px] mx-auto" data-layer="daughter">
+      <div className="daughter w-full max-w-[1320px] mx-auto px-2" data-layer="daughter">
         {/* daughter = design holder for entire shop instagram section */}
         
         {/* Header Section */}
@@ -54,7 +54,7 @@ export default function ShopInstagram() {
               {/* layer-3 = title container */}
               
               <div 
-                className="layer-4 justify-start text-black text-5xl font-medium font-['Poppins'] leading-[48px]"
+                className="layer-4 justify-start text-black text-2xl sm:text-3xl lg:text-5xl font-medium font-['Poppins'] leading-tight sm:leading-[48px]"
                 id="instagram-heading"
                 role="heading"
                 aria-level={2}

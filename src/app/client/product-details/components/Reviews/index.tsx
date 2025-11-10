@@ -130,34 +130,34 @@ const Reviews: React.FC<ReviewsProps> = ({ rating, reviewsCount }) => {
         return (
           <div className="w-full space-y-6 max-w-[1320px] mx-auto">
             {/* Layer 4: Review Controls */}
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-2">
                 <div className="text-black text-2xl font-normal font-['Poppins']">All Reviews</div>
                 <div className="text-black/60 text-base font-normal font-['Poppins']">(451)</div>
               </div>
-              <div className="flex items-center gap-2.5">
+              <div className="flex flex-wrap items-center gap-2.5">
                 {/* Filter Button */}
                 <div className="w-12 h-12 bg-zinc-100 rounded-[62px] flex justify-center items-center">
                   <SlidersVertical size={20} className="text-black" />
                 </div>
                 {/* Sort Button */}
-                <div className="w-28 h-12 px-5 py-4 bg-zinc-100 rounded-[62px] flex justify-between items-center">
+                <div className="min-w-[112px] h-12 px-5 py-4 bg-zinc-100 rounded-[62px] flex justify-between items-center">
                   <div className="text-black text-base font-normal font-['Poppins']">Latest</div>
                   <ChevronDown size={16} className="text-black" />
                 </div>
                 {/* Write Review Button */}
-                <div className="w-40 h-12 px-5 py-4 bg-black rounded-[62px] flex justify-center items-center">
+                <div className="h-12 px-5 py-4 bg-black rounded-[62px] flex justify-center items-center">
                   <div className="text-white text-base font-normal font-['Poppins']">Write a Review</div>
                 </div>
               </div>
             </div>
 
             {/* Layer 4: Reviews Grid */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {displayedReviews.map((review) => (
-                <div key={review.id} className="px-8 py-7 rounded-[20px] outline-1 outline-offset-[-1px] outline-black/10">
+                <div key={review.id} className="px-6 sm:px-8 py-6 sm:py-7 rounded-[20px] outline-1 outline-offset-[-1px] outline-black/10">
                   {/* Layer 5: Review Card Content */}
-                  <div className="flex justify-between items-start mb-4">
+                  <div className="flex justify-between items-start gap-4 mb-4">
                     <div className="flex-1">
                       {/* Stars */}
                       <div className="flex gap-1.5 mb-3.5">
@@ -219,12 +219,12 @@ const Reviews: React.FC<ReviewsProps> = ({ rating, reviewsCount }) => {
   };
 
   return (
-    <div className="w-full bg-white max-w-[1320px] mx-auto">
+    <section className="w-full bg-white max-w-[1320px] mx-auto px-2">
       {/* Layer 1: Tab Navigation */}
-      <div className="flex items-center gap-12 border-b border-black">
+      <div className="flex flex-wrap items-center gap-4 sm:gap-8 border-b border-black">
         <button
           onClick={() => setActiveTab('details')}
-          className={`py-6 px-4 ${activeTab === 'details' 
+          className={`py-4 sm:py-6 px-2 sm:px-4 ${activeTab === 'details' 
             ? 'border-b-2 border-fuchsia-500 text-fuchsia-500' 
             : 'text-black/60'
           } text-xl font-medium font-['Poppins']`}
@@ -233,7 +233,7 @@ const Reviews: React.FC<ReviewsProps> = ({ rating, reviewsCount }) => {
         </button>
         <button
           onClick={() => setActiveTab('reviews')}
-          className={`py-6 px-4 ${activeTab === 'reviews' 
+          className={`py-4 sm:py-6 px-2 sm:px-4 ${activeTab === 'reviews' 
             ? 'border-b-2 border-fuchsia-500 text-fuchsia-500' 
             : 'text-black/60'
           } text-xl font-medium font-['Poppins']`}
@@ -243,11 +243,11 @@ const Reviews: React.FC<ReviewsProps> = ({ rating, reviewsCount }) => {
       </div>
 
       {/* Layer 2: Tab Content Container */}
-      <div className="w-full py-6 max-w-[1320px] mx-auto">
+      <div className="w-full py-6">
         {/* Layer 3: Tab Content */}
         {renderTabContent()}
       </div>
-    </div>
+    </section>
   );
 };
 

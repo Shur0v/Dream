@@ -58,28 +58,19 @@ const ProductDetailsContainer: React.FC<ProductDetailsContainerProps> = ({
   const imageData = images || defaultImages;
 
   return (
-    <div className="w-full bg-white flex flex-col justify-start items-center py-8" role="main">
-      {/* Main Product Details Container */}
-      <div className="w-full mx-auto px-4 max-w-7xl">
-        {/* Product Layout Container */}
-        <div className="flex justify-start items-start gap-8">
-          {/* Left Side - Product Gallery */}
-          <div className="flex-shrink-0">
-            <ProductGallery images={imageData} />
+    <section className="w-full bg-white flex flex-col items-center py-6 sm:py-8" role="main">
+      <div className="w-full max-w-[1320px] mx-auto px-2">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+          <div className="flex flex-col gap-6 lg:flex-row lg:flex-[1.1]">
+            <ProductGallery images={imageData} className="lg:flex-1" />
+            <ProductInfo product={productData} className="lg:flex-1" />
           </div>
-          
-          {/* Center - Product Information */}
-          <div className="flex-shrink-0">
-            <ProductInfo product={productData} />
-          </div>
-          
-          {/* Right Side - Delivery Information */}
-          <div className="flex-shrink-0">
+          <div className="lg:flex-[0.45] w-full">
             <DeliveryInfo />
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

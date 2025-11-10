@@ -49,29 +49,23 @@ export default function ProductDetailsPage({ params }: any) {
   };
 
   return (
-    <div className="father w-full bg-white flex flex-col justify-start items-center py-8" role="main" data-layer="father">
-      {/* father = full width product details section */}
-      
-      <div className="daughter w-full mx-auto px-4" data-layer="daughter">
-        {/* daughter = design holder for entire product details section */}
-        
-        {/* Top Part - Contains ProductGallery, ProductInfo, and DeliveryInfo */}
-        <TopPart product={productData} images={productData.images} />
+    <div className="w-full bg-white flex flex-col justify-start items-center gap-10 py-6 sm:py-8">
+      {/* Top Part - Contains ProductGallery, ProductInfo, and DeliveryInfo */}
+      <TopPart product={productData} images={productData.images} />
 
-        {/* Reviews Section */}
-        <div className="mt-12">
-          <Reviews rating={productData.rating} reviewsCount={productData.reviewsCount} />
-        </div>
+      {/* Reviews Section */}
+      <section className="w-full max-w-[1320px] mx-auto px-2">
+        <Reviews rating={productData.rating} reviewsCount={productData.reviewsCount} />
+      </section>
 
-        {/* Related Product Section */}
-        <RelatedProduct />
+      {/* Related Product Section */}
+      <RelatedProduct />
 
-        {/* Shop Instagram Section */}
-        <ShopInstagram />
+      {/* Shop Instagram Section */}
+      <ShopInstagram />
 
-        {/* For You Section */}
-        <ForYou />
-      </div>
+      {/* For You Section */}
+      <ForYou />
     </div>
   );
 }

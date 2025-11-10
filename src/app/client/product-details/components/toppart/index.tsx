@@ -52,17 +52,23 @@ export default function TopPart({ product, images }: TopPartProps) {
   const imageData = images || defaultImages;
 
   return (
-    <div className="father w-full bg-white flex flex-col justify-start items-center py-8" role="main" data-layer="father">
-      <div className="daughter w-full max-w-[1320px] mx-auto" data-layer="daughter">
-        <div className="layer-1 inline-flex justify-start items-start gap-8" data-layer="1">
-          <div className="h-[546px] flex justify-start items-start gap-8">
-            <ProductGallery images={imageData} />
-            <ProductInfo product={productData} />
+    <section
+      className="father w-full bg-white flex flex-col justify-start items-center py-6 sm:py-8"
+      role="main"
+      data-layer="father"
+    >
+      <div className="daughter w-full max-w-[1320px] mx-auto px-2" data-layer="daughter">
+        <div className="layer-1 flex flex-col gap-6 lg:flex-row lg:items-start" data-layer="1">
+          <div className="flex flex-col gap-6 lg:flex-row lg:flex-[1.1]">
+            <ProductGallery images={imageData} className="lg:flex-1" />
+            <ProductInfo product={productData} className="lg:flex-1" />
           </div>
-          <DeliveryInfo />
+          <div className="lg:flex-[0.45] w-full">
+            <DeliveryInfo />
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   )
 }
 
