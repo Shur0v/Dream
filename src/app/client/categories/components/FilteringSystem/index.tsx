@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
@@ -16,6 +16,7 @@ export default function FilteringSystem() {
   const [isCategoryOpen, setIsCategoryOpen] = useState(true);
   const [isBrandingOpen, setIsBrandingOpen] = useState(true);
   const [isSizeOpen, setIsSizeOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(false); // drawer for <1320px
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,7 +24,7 @@ export default function FilteringSystem() {
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState('default');
-  const [visibleProducts, setVisibleProducts] = useState(15);
+  const [visibleProducts, setVisibleProducts] = useState(18);
 
   const brands = [
     'Apple',
@@ -189,7 +190,7 @@ export default function FilteringSystem() {
 
   // Show more products function
   const showMoreProducts = () => {
-    setVisibleProducts(prev => prev + 15);
+    setVisibleProducts(prev => prev + 18);
   };
 
   // Handle product card click
@@ -199,218 +200,206 @@ export default function FilteringSystem() {
 
   // Reset visible products when filters change
   React.useEffect(() => {
-    setVisibleProducts(15);
+    setVisibleProducts(18);
   }, [searchTerm, selectedCategories, selectedBrands, selectedSizes, sortBy]);
+
+  const renderFilterPanel = () => (
+    <div className="bg-white rounded-lg shadow-sm border p-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
+      {/* Search Bar */}
+      <div className="mb-0">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search products..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+          />
+          <div className="absolute right-3 top-2.5">
+            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      {/* Clear All */}
+      {(searchTerm || selectedCategories.length > 0 || selectedBrands.length > 0 || selectedSizes.length > 0) && (
+        <div className="my-4">
+          <button
+            onClick={clearAllFilters}
+            className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
+          >
+            Clear All Filters
+          </button>
+        </div>
+      )}
+
+      {/* Category Filter */}
+      <div className="mb-0">
+        <button
+          onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+          className="w-full flex justify-between items-center py-2 text-left font-semibold text-gray-800"
+        >
+          Category
+          <svg 
+            className={`w-5 h-5 transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`}
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        
+        {isCategoryOpen && (
+          <div className=" space-y-2">
+            {categories.map((category, index) => (
+              <label key={index} className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded">
+                <div className="flex items-center">
+                  <input 
+                    type="checkbox" 
+                    className="mr-3"
+                    checked={selectedCategories.includes(category.name)}
+                    onChange={() => handleCategoryToggle(category.name)}
+                  />
+                <span className="text-gray-700">{category.name}</span>
+                </div>
+                <span className="text-gray-500 text-sm">({category.count})</span>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Branding Filter */}
+      <div className="mb-0">
+        <button
+          onClick={() => setIsBrandingOpen(!isBrandingOpen)}
+          className="w-full flex justify-between items-center py-2 text-left font-semibold text-gray-800"
+        >
+          Branding
+          <svg 
+            className={`w-5 h-5 transition-transform ${isBrandingOpen ? 'rotate-180' : ''}`}
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        
+        {isBrandingOpen && (
+          <div className=" space-y-2">
+            {brands.map((brand, index) => (
+              <label key={index} className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
+                <input 
+                  type="checkbox" 
+                  className="mr-3"
+                  checked={selectedBrands.includes(brand)}
+                  onChange={() => handleBrandToggle(brand)}
+                />
+                <span className="text-gray-700">{brand}</span>
+              </label>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Size Filter */}
+      <div className="mb-0">
+        <button
+          onClick={() => setIsSizeOpen(!isSizeOpen)}
+          className="w-full flex justify-between items-center py-2 text-left font-semibold text-gray-800"
+        >
+          Size
+          <svg 
+            className={`w-5 h-5 transition-transform ${isSizeOpen ? 'rotate-180' : ''}`}
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        
+        {isSizeOpen && (
+          <div className="mt-2 grid grid-cols-3 gap-2">
+            {sizes.map((size, index) => (
+              <button
+                key={index}
+                onClick={() => handleSizeToggle(size)}
+                className={`px-3 py-2 border rounded-lg text-sm transition-colors ${
+                  selectedSizes.includes(size)
+                    ? 'bg-purple-500 text-white border-purple-500'
+                    : 'border-gray-300 hover:bg-purple-50 hover:border-purple-500'
+                }`}
+              >
+                {size}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="w-full max-w-[1320px] mx-auto px-4 py-6">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+      {/* Drawer for filters on <1320px */}
+      {isFilterOpen && (
+        <div className="fixed inset-0 z-50 hidden max-[1319px]:block">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setIsFilterOpen(false)} />
+          <div className="absolute left-0 top-0 h-full w-[300px] bg-white p-4 shadow-xl overflow-y-auto">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-lg font-semibold">Filters</div>
+              <button
+                onClick={() => setIsFilterOpen(false)}
+                className="p-2 rounded hover:bg-gray-100"
+                aria-label="Close filters"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {renderFilterPanel()}
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 min-[1320px]:grid-cols-4 gap-6">
         
         {/* Left Sidebar - Filters */}
-        <div className="lg:col-span-1 w-full max-w-[280px]">
-          <div className="bg-white rounded-lg shadow-sm border p-4 sticky top-4 max-h-[calc(100vh-2rem)] overflow-y-auto">
-            
-            {/* Search Bar */}
-            <div className="mb-0">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-                <div className="absolute right-3 top-2.5">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            {/* Active Filters Display */}
-            {(searchTerm || selectedCategories.length > 0 || selectedBrands.length > 0 || selectedSizes.length > 0) && (
-              <div className="mb-4">
-                <div className="text-sm text-gray-600 mb-2">Active Filters:</div>
-                {/* <div className="flex flex-wrap gap-2 mb-2">
-                  {searchTerm && (
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs flex items-center gap-1
-                    ">
-                      Search: "{searchTerm}"
-                      <button 
-                        onClick={() => setSearchTerm('')}
-                        className="hover:bg-blue-200 rounded-full p-0.5"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  )}
-                  {selectedCategories.map(category => (
-                    <span key={category} className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs flex items-center gap-1">
-                      {category}
-                      <button 
-                        onClick={() => handleCategoryToggle(category)}
-                        className="hover:bg-green-200 rounded-full p-0.5"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                  {selectedBrands.map(brand => (
-                    <span key={brand} className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs flex items-center gap-1">
-                      {brand}
-                      <button 
-                        onClick={() => handleBrandToggle(brand)}
-                        className="hover:bg-purple-200 rounded-full p-0.5"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                  {selectedSizes.map(size => (
-                    <span key={size} className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs flex items-center gap-1">
-                      {size}
-                      <button 
-                        onClick={() => handleSizeToggle(size)}
-                        className="hover:bg-orange-200 rounded-full p-0.5"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-                </div> */}
-                <button
-                  onClick={clearAllFilters}
-                  className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm"
-                >
-                  Clear All Filters
-                </button>
-              </div>
-            )}
-
-            {/* Category Filter */}
-            <div className="mb-0">
-              <button
-                onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                className="w-full flex justify-between items-center py-2 text-left font-semibold text-gray-800"
-              >
-                Category
-                <svg 
-                  className={`w-5 h-5 transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`}
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              
-              {isCategoryOpen && (
-                <div className=" space-y-2">
-                  {categories.map((category, index) => (
-                    <label key={index} className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded">
-                      <div className="flex items-center">
-                        <input 
-                          type="checkbox" 
-                          className="mr-3"
-                          checked={selectedCategories.includes(category.name)}
-                          onChange={() => handleCategoryToggle(category.name)}
-                        />
-                      <span className="text-gray-700">{category.name}</span>
-                      </div>
-                      <span className="text-gray-500 text-sm">({category.count})</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Branding Filter */}
-            <div className="mb-0">
-              <button
-                onClick={() => setIsBrandingOpen(!isBrandingOpen)}
-                className="w-full flex justify-between items-center py-2 text-left font-semibold text-gray-800"
-              >
-                Branding
-                <svg 
-                  className={`w-5 h-5 transition-transform ${isBrandingOpen ? 'rotate-180' : ''}`}
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              
-              {isBrandingOpen && (
-                <div className=" space-y-2">
-                  {brands.map((brand, index) => (
-                    <label key={index} className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                      <input 
-                        type="checkbox" 
-                        className="mr-3"
-                        checked={selectedBrands.includes(brand)}
-                        onChange={() => handleBrandToggle(brand)}
-                      />
-                      <span className="text-gray-700">{brand}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Size Filter */}
-            <div className="mb-0">
-              <button
-                onClick={() => setIsSizeOpen(!isSizeOpen)}
-                className="w-full flex justify-between items-center py-2 text-left font-semibold text-gray-800"
-              >
-                Size
-                <svg 
-                  className={`w-5 h-5 transition-transform ${isSizeOpen ? 'rotate-180' : ''}`}
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              
-              {isSizeOpen && (
-                <div className="mt-2 grid grid-cols-3 gap-2">
-                  {sizes.map((size, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleSizeToggle(size)}
-                      className={`px-3 py-2 border rounded-lg text-sm transition-colors ${
-                        selectedSizes.includes(size)
-                          ? 'bg-purple-500 text-white border-purple-500'
-                          : 'border-gray-300 hover:bg-purple-50 hover:border-purple-500'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+        <div className="min-[1320px]:block hidden">
+          <div className="w-full max-w-[280px] sticky top-4">
+            {renderFilterPanel()}
           </div>
         </div>
 
         {/* Right Side - Product Display */}
-        <div className="lg:col-span-3">
+        <div className="min-[1320px]:col-span-3">
           {/* Breadcrumbs */}
           <div className="mb-4">
             <h1 className="text-4xl font-semibold text-gray-900 ">Shop Now</h1>
 
           </div>
 
-          {/* Results and Sorting */}
+          {/* Results, Filter trigger (<1320px), and Sorting */}
           <div className="flex justify-between items-center mb-6 border-b border-gray-200 pb-8">
             <p className="text-gray-600">
               Showing {displayedProducts.length} products (infinite scroll)
             </p>
             <div className="flex items-center gap-2">
+              {/* Filter button appears before Sort By on widths below 1320px */}
+              <button
+                onClick={() => setIsFilterOpen(true)}
+                className="px-4 py-2 rounded-md bg-fuchsia-500 text-white font-medium min-[1320px]:hidden"
+                aria-label="Open filters"
+              >
+                Filter
+              </button>
               <span className="text-gray-600">Sort by:</span>
               <select 
                 value={sortBy}
@@ -426,8 +415,8 @@ export default function FilteringSystem() {
             </div>
           </div>
 
-          {/* Products Grid - Multiple Rows */}
-          <div className="flex flex-col justify-start items-center gap-0">
+          {/* Products Rows - maintain large-screen ratio (3 cards per row) using fluid scale for >=768px */}
+          <div className="hidden md:flex md:flex-col md:justify-start md:items-center md:gap-0">
             {/* Products Grid Container */}
             
             {displayedProducts.length === 0 ? (
@@ -649,8 +638,79 @@ export default function FilteringSystem() {
             )}
           </div>
 
+          {/* Products Grid - Mobile only (2 per row) */}
+          <div className="md:hidden grid grid-cols-2 gap-4">
+            {displayedProducts.map((product) => (
+              <Link key={product.id} href={`/client/product-details/${product.id}`}>
+                <div
+                  className="p-3 bg-sky-50 rounded-xl border border-black/10 flex flex-col justify-start items-start group transition-all duration-300 ease-in-out cursor-pointer select-none"
+                  role="article"
+                  aria-labelledby={`product-title-${product.id}`}
+                >
+                  {/* Card Header */}
+                  <div className="self-stretch inline-flex justify-between items-center mb-2">
+                    <div className="flex justify-start items-center gap-2">
+                      <div className="w-6 h-6 relative">
+                        <Image src="/card/icon/tick.svg" alt="Verified seller" width={24} height={24} loading="lazy" />
+                      </div>
+                      <div className="text-neutral-600 text-xs font-semibold font-['PolySans_Trial'] leading-snug whitespace-nowrap">
+                        Verified Seller
+                      </div>
+                    </div>
+                    <div className="cursor-pointer">
+                      <Image src="/card/icon/butterfly.svg" alt="Add to wishlist" width={24} height={24} loading="lazy" />
+                    </div>
+                  </div>
+                  {/* Product Image */}
+                  <div className="self-stretch h-40 relative mb-3 overflow-hidden rounded-lg">
+                    <Image
+                      src={product.image}
+                      alt={`${product.name} product image`}
+                      fill
+                      className="object-cover select-none pointer-events-none"
+                      draggable={false}
+                      loading="lazy"
+                    />
+                  </div>
+                  {/* Info */}
+                  <div className="self-stretch flex flex-col justify-start items-start gap-2">
+                    <div 
+                      className="justify-start text-slate-950 text-sm font-semibold font-['Poppins'] leading-tight truncate max-w-full"
+                      id={`product-title-${product.id}`}
+                      role="heading"
+                      aria-level={3}
+                    >
+                      {product.name.length > 24 ? `${product.name.substring(0, 24)}...` : product.name}
+                    </div>
+                    <div className="inline-flex justify-start items-center gap-1.5">
+                      <div className="justify-start text-black text-lg font-semibold font-['Poppins'] leading-6">
+                        {product.currency}{product.price}
+                      </div>
+                      <div className="justify-start">
+                        <span className="text-red-500 text-xs font-normal font-['Poppins'] leading-normal">(</span>
+                        <span className="text-red-500 text-xs font-normal font-['Poppins'] line-through leading-normal">
+                          ${product.originalPrice}
+                        </span>
+                        <span className="text-red-500 text-xs font-normal font-['Poppins'] leading-normal">)</span>
+                      </div>
+                    </div>
+                    {/* Stars */}
+                    <div className="flex justify-start items-center">
+                      {[...Array(product.rating)].map((_, i) => (
+                        <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="#FFC107" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                        </svg>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+
         </div>
       </div>
     </div>
   );
 }
+
