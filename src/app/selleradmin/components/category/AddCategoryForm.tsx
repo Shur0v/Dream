@@ -1,19 +1,36 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { Plus, ImagePlus } from 'lucide-react';
+import { Plus, ImagePlus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+interface Category {
+  id: number;
+  name: string;
+  image: string;
+}
 
 interface AddCategoryFormProps {
   onCancel?: () => void;
   onConfirm?: (data: { category: string; childCategory: string; image?: string | null }) => void;
+  onDelete?: (id: number) => void;
 }
 
-export default function AddCategoryForm({ onCancel, onConfirm }: AddCategoryFormProps) {
+export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCategoryFormProps) {
   const [category, setCategory] = useState('');
   const [childCategory, setChildCategory] = useState('');
   const [image, setImage] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
+
+  // Existing categories - in a real app, this would come from an API/state management
+  const [categories, setCategories] = useState<Category[]>([
+    { id: 1, name: 'Jacket', image: '/categories/image/category1.png' },
+    { id: 2, name: 'Trousers', image: '/categories/image/category2.png' },
+    { id: 3, name: 'Hoodie', image: '/categories/image/category3.png' },
+    { id: 4, name: 'Muffler', image: '/categories/image/category4.png' },
+    { id: 5, name: 'Combo', image: '/categories/image/category5.png' },
+    { id: 6, name: 'Shoe', image: '/categories/image/category6.png' },
+  ]);
 
   const handleChoose = () => fileRef.current?.click();
 
@@ -31,10 +48,33 @@ export default function AddCategoryForm({ onCancel, onConfirm }: AddCategoryForm
   };
 
   const handleConfirm = () => {
-    onConfirm?.({ category, childCategory, image });
+    if (category.trim() && image) {
+      // Add new category to the list (at the beginning)
+      const newCategory: Category = {
+        id: Math.max(...categories.map(c => c.id), 0) + 1,
+        name: category,
+        image: image,
+      };
+      setCategories((prev) => [newCategory, ...prev]);
+      
+      // Call the onConfirm callback
+      onConfirm?.({ category, childCategory, image });
+      
+      // Reset form
+      setCategory('');
+      setChildCategory('');
+      setImage(null);
+    }
   };
 
-  const canConfirm = category.trim().length > 0;
+  const handleDelete = (id: number) => {
+    if (window.confirm('Are you sure you want to delete this category?')) {
+      setCategories((prev) => prev.filter((cat) => cat.id !== id));
+      onDelete?.(id);
+    }
+  };
+
+  const canConfirm = category.trim().length > 0 && image !== null;
 
   return (
     <div className="w-full flex flex-col gap-6">
@@ -140,6 +180,44 @@ export default function AddCategoryForm({ onCancel, onConfirm }: AddCategoryForm
           Confirm
         </button>
       </div>
+
+      {/* Existing Categories Section */}
+      {categories.length > 0 && (
+        <div className="w-full flex flex-col gap-4">
+          <h3 className="text-slate-950 text-xl md:text-2xl font-medium font-['Poppins']">Existing Categories</h3>
+          <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
+            {categories.map((cat) => (
+              <div
+                key={cat.id}
+                className="relative group p-1.5 md:p-3 bg-fuchsia-400/10 rounded-xl flex flex-col justify-start items-center gap-1.5 md:gap-6 hover:shadow-[5px_11px_22.1px_0px_rgba(0,0,0,0.15)] transition-all duration-300"
+              >
+                {/* Delete Button */}
+                <button
+                  type="button"
+                  onClick={() => handleDelete(cat.id)}
+                  className="absolute top-2 right-2 z-10 p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                  aria-label={`Delete ${cat.name} category`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+
+                {/* Category Image */}
+                <img
+                  className="w-full h-20 md:h-40 rounded-lg object-cover"
+                  src={cat.image}
+                  alt={`${cat.name} category`}
+                  loading="lazy"
+                />
+
+                {/* Category Name */}
+                <div className="w-full text-center text-black text-sm md:text-lg font-medium font-['Poppins'] leading-tight md:leading-normal">
+                  {cat.name}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

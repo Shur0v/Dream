@@ -9,7 +9,11 @@ export default function AddCategoryPage() {
   const router = useRouter();
   return (
     <DashboardLayout>
-      <AddCategoryForm onCancel={() => router.back()} onConfirm={(d) => console.log('Category saved', d)} />
+      <AddCategoryForm
+        onCancel={() => router.back()}
+        onConfirm={(d) => console.log('Category saved', d)}
+        onDelete={(id) => console.log('Category deleted', id)}
+      />
     </DashboardLayout>
   );
 }
