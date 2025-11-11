@@ -75,13 +75,13 @@ export default function TopPart() {
       <div className="daughter" data-layer="daughter">
         {/* daughter = design holder for entire promo banner */}
         
-        <div className="layer-1 w-full max-w-[1320px] mx-auto" role="main" data-layer="1">
+        <div className="layer-1 w-full max-w-[1320px] mx-auto px-2 md:px-0" role="main" data-layer="1">
           {/* layer-1 = main content container with max width constraint */}
           
-          <div className="layer-2 w-[1320px] inline-flex flex-col justify-center items-center" data-layer="2">
+          <div className="layer-2 w-full inline-flex flex-col justify-center items-center" data-layer="2">
             {/* layer-2 = main content wrapper */}
             
-            <div className="layer-3 self-stretch h-[512px] relative overflow-hidden rounded-tl-3xl rounded-tr-xl rounded-bl-3xl rounded-br-xl my-10" data-layer="3">
+            <div className="layer-3 self-stretch h-[300px] sm:h-[380px] md:h-[450px] lg:h-[512px] relative overflow-hidden rounded-tl-3xl rounded-tr-xl rounded-bl-3xl rounded-br-xl my-6 md:my-8 lg:my-10" data-layer="3">
               {/* layer-3 = main promotional card with slider */}
               
               {/* Full-width sliding image */}
@@ -100,27 +100,30 @@ export default function TopPart() {
 
               {/* Overlay content */}
               <div className="absolute inset-0 flex items-center justify-center z-10">
-                <div className="text-center text-white">
-                  <h1 className="text-6xl font-bold mb-4 text-yellow-300">
+                <div className="text-center text-white px-3 sm:px-4">
+                  <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-3 md:mb-4 text-yellow-300">
                     {banners[currentSlide].title}
                   </h1>
-                  <h2 className="text-4xl font-semibold mb-6">
+                  <h2 className="text-2xl md:text-3xl lg:text-4xl font-semibold mb-4 md:mb-6">
                     {banners[currentSlide].subtitle}
                   </h2>
                   
-                  {/* Promotional Badge */}
-                  <div className="bg-yellow-400 text-black px-8 py-4 rounded-lg inline-block mb-8">
-                    <div className="text-2xl font-bold">UP TO {banners[currentSlide].discount}</div>
-                    <div className="text-lg">{banners[currentSlide].emi}</div>
+                  {/* Promotional Badge - glassmorphism */}
+                  <div className="px-4 md:px-6 py-2.5 md:py-3 rounded-xl inline-block mb-6 md:mb-8 bg-white/10 border border-white/20 backdrop-blur-md shadow-sm">
+                    <div className="text-base md:text-xl font-semibold text-white/90">UP TO {banners[currentSlide].discount}</div>
+                    <div className="text-xs md:text-sm text-white/80">{banners[currentSlide].emi}</div>
                   </div>
 
                   {/* App Exclusive Coupons */}
                   <div className="space-y-3">
-                    <h3 className="text-xl font-semibold mb-4">APP EXCLUSIVE COUPON</h3>
-                    <div className="flex justify-center gap-4">
+                    <h3 className="text-sm md:text-base font-semibold mb-3 md:mb-4 text-white/90">APP EXCLUSIVE COUPON</h3>
+                    <div className="flex justify-center gap-2 md:gap-3">
                       {banners[currentSlide].coupons.map((coupon, index) => (
-                        <div key={index} className="bg-yellow-400 text-black px-6 py-3 rounded-lg font-medium">
-                          {coupon.code} save upto {coupon.amount}
+                        <div
+                          key={index}
+                          className="px-3 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-xs md:text-sm text-white/90 bg-white/10 border border-white/20 backdrop-blur-md shadow-sm"
+                        >
+                          {coupon.code} • save upto {coupon.amount}
                         </div>
                       ))}
                     </div>
