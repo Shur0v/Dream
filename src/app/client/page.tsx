@@ -9,7 +9,6 @@ import PromoBanners from './home/components/DiscountPromo';
 import BestSelling from './home/components/BestSelling';
 import DiscountPromo from './home/components/PromoBanners';
 import ForYou from './home/components/ForYou';
-import FeaturesSection from './home/components/FeaturesSection';
 import { sampleUsers } from '@/lib/dummyData';
 
 /**
@@ -95,9 +94,6 @@ export default function ClientLandingPage() {
 
       {/* For You Section */}
       <ForYou />
-
-      {/* Features Section */}
-      <FeaturesSection />
     </MainLayout>
   );
 }

@@ -41,6 +41,7 @@ body {
   .desktop-fluid-shell {
     display: flex;
     justify-content: center;
+    background-color: #ffffff;
   }
 
   .desktop-fluid-content {

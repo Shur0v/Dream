@@ -13,17 +13,24 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="desktop-fluid-shell">
-      <div className="desktop-fluid-content">
-        <div className="min-h-screen bg-white flex flex-col">
-          <MainHeader />
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Header - full width */}
+      <MainHeader />
+
+      {/* Main - fluid/scaled container */}
+      <div className="desktop-fluid-shell">
+        <div className="desktop-fluid-content">
           <main className="flex-1">
             {children}
           </main>
-          <FeaturesSection />
-          <Footer />
         </div>
       </div>
+
+      {/* Features - full width */}
+      <FeaturesSection />
+
+      {/* Footer - full width */}
+      <Footer />
     </div>
   );
 }

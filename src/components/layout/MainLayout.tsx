@@ -18,6 +18,7 @@ import Header from './Header';
 import Footer from './Footer';
 import LoginModal from '@/components/modals/LoginModal';
 import RegisterModal from '@/components/modals/RegisterModal';
+import FeaturesSection from '@/app/client/home/components/FeaturesSection';
 
 /**
  * Props interface for MainLayout component
@@ -183,36 +184,39 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   };
 
   return (
-    <div className="desktop-fluid-shell">
-      <div className="desktop-fluid-content">
-        <div className="min-h-screen flex flex-col bg-white">
-          {/* Header */}
-          <Header
-            user={user}
-            cartCount={cartCount}
-            wishlistCount={wishlistCount}
-            onSearch={onSearch}
-            onCartClick={onCartClick}
-            onWishlistClick={onWishlistClick}
-            onUserAction={onUserAction}
-            onOpenLoginModal={handleOpenLoginModal}
-            onOpenRegisterModal={handleOpenRegisterModal}
-          />
-          
-          {/* Main Content */}
+    <div className="min-h-screen flex flex-col bg-white">
+      {/* Header - full width */}
+      <Header
+        user={user}
+        cartCount={cartCount}
+        wishlistCount={wishlistCount}
+        onSearch={onSearch}
+        onCartClick={onCartClick}
+        onWishlistClick={onWishlistClick}
+        onUserAction={onUserAction}
+        onOpenLoginModal={handleOpenLoginModal}
+        onOpenRegisterModal={handleOpenRegisterModal}
+      />
+
+      {/* Main Content - fluid/scaled container */}
+      <div className="desktop-fluid-shell">
+        <div className="desktop-fluid-content">
           <main className={`flex-1 ${className || ''}`}>
             {children}
           </main>
-          
-          {/* Footer */}
-          {showFooter && (
-            <Footer 
-              onOpenLoginModal={handleOpenLoginModal}
-              onOpenRegisterModal={handleOpenRegisterModal}
-            />
-          )}
         </div>
       </div>
+
+      {/* Features Section - full width */}
+      <FeaturesSection />
+
+      {/* Footer - full width */}
+      {showFooter && (
+        <Footer 
+          onOpenLoginModal={handleOpenLoginModal}
+          onOpenRegisterModal={handleOpenRegisterModal}
+        />
+      )}
 
       {/* Login Modal */}
       <LoginModal
