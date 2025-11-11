@@ -60,8 +60,8 @@ export default function AddProductForm({ onBack, onSave }: AddProductFormProps) 
     return (form.name?.trim() ?? '') !== '';
   }, [form]);
 
-  const handleChange = <K extends keyof Product>(key: K, value: Product[K]) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+  const handleChange = <K extends keyof Product>(key: K, value: Product[K] | undefined) => {
+    setForm((prev) => ({ ...prev, [key]: value as Product[K] }));
   };
 
   const handleImagePick = () => fileInputRef.current?.click();

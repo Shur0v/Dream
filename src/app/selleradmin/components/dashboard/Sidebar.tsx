@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Plus, FolderPlus, TrendingUp, Star, LogOut, Palette } from 'lucide-react';
+import { LayoutDashboard, Plus, FolderPlus, TrendingUp, Star, LogOut, Palette, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -46,6 +46,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       label: 'Add Color', 
       href: '/selleradmin/add-color',
       icon: <Palette className="w-6 h-6" />
+    },
+    { 
+      label: 'Add Banner', 
+      href: '/selleradmin/add-banner',
+      icon: <ImageIcon className="w-6 h-6" />
     },
     { 
       label: 'Best selling', 
