@@ -92,7 +92,7 @@ export const Modal: React.FC<ModalProps> = ({
       {/* Modal content */}
       <div
         className={`
-          relative w-full max-w-4xl h-full max-h-[90vh] 
+          relative w-full max-w-4xl h-full max-h-[70vh] md:max-h-[90vh]
           bg-white rounded-3xl shadow-2xl
           overflow-hidden transform transition-all duration-300
           ${className}
