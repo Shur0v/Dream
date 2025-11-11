@@ -49,7 +49,7 @@ export default function FeaturesSection() {
         <div className="layer-1 w-full max-w-[1320px] mx-auto relative z-10" role="main" data-layer="1">
           {/* layer-1 = main content container with max width constraint */}
           
-          <div className="layer-2 w-full flex flex-col sm:flex-row sm:flex-wrap lg:flex-nowrap lg:justify-between items-stretch gap-4 sm:gap-5 lg:gap-6" data-layer="2">
+          <div className="layer-2 w-full flex flex-col sm:flex-row sm:flex-wrap lg:flex-nowrap lg:justify-between items-stretch gap-4 sm:gap-5 lg:gap-6 px-3" data-layer="2">
             {/* layer-2 = features grid container */}
             
             {features.map((feature) => (

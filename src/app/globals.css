@@ -127,3 +127,26 @@ p, span, div, a, button, input, textarea, select, label {
   display: inline-flex;
   will-change: transform;
 }
+
+.product-fluid-shell {
+  width: 100%;
+}
+
+.product-fluid-content {
+  width: 100%;
+}
+
+@media (max-width: 767px) {
+  .product-fluid-shell {
+    display: flex;
+    justify-content: center;
+    overflow-x: hidden;
+  }
+
+  .product-fluid-content {
+    width: 767px;
+    transform-origin: top center;
+    transform: scale(calc(100vw / 767));
+    will-change: transform;
+  }
+}

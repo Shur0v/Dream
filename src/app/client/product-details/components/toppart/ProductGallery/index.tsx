@@ -23,10 +23,10 @@ const ProductGallery: React.FC<ProductGalleryProps> = ({ images, className }) =>
       {/* father = full width product gallery section */}
       <div className="daughter w-full" data-layer="daughter">
         {/* daughter = design holder for entire product gallery section */}
-        <div className="layer-1 w-full flex flex-col justify-center items-start gap-6" role="main" data-layer="1">
+        <div className="layer-1 w-full flex flex-col lg:justify-start lg:items-start justify-start items-start gap-6" role="main" data-layer="1">
           {/* layer-1 = main gallery container */}
           <div
-            className="layer-2 w-full rounded-[20px] bg-gray-100 relative overflow-hidden aspect-[471/384] max-w-full md:max-w-[471px]"
+            className="layer-2 w-full rounded-[20px] bg-gray-100 relative overflow-hidden aspect-[471/384] max-w-full md:max-w-[471px] lg:mt-0"
             data-layer="2"
           >
             {/* layer-2 = main image container */}

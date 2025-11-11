@@ -58,12 +58,12 @@ export default function TopPart({ product, images }: TopPartProps) {
       data-layer="father"
     >
       <div className="daughter w-full max-w-[1320px] mx-auto px-2" data-layer="daughter">
-        <div className="layer-1 flex flex-col gap-6 lg:flex-row lg:items-start" data-layer="1">
-          <div className="flex flex-col gap-6 lg:flex-row lg:flex-[1.1]">
-            <ProductGallery images={imageData} className="lg:flex-1" />
-            <ProductInfo product={productData} className="lg:flex-1" />
+        <div className="layer-1 flex flex-col gap-6 md:flex-row md:items-start" data-layer="1">
+          <div className="flex flex-col gap-6 md:flex-row md:flex-[1.1] md:items-start">
+            <ProductGallery images={imageData} className="md:flex-1" />
+            <ProductInfo product={productData} className="md:flex-1" />
           </div>
-          <div className="hidden lg:block lg:flex-[0.45] w-full">
+          <div className="hidden min-[1200px]:block min-[1200px]:flex-[0.45] w-full">
             <DeliveryInfo />
           </div>
         </div>

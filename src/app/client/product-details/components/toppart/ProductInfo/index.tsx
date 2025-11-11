@@ -25,8 +25,8 @@ interface ProductInfoProps {
 
 const ProductInfo: React.FC<ProductInfoProps> = ({ product, className }) => {
   const [quantity, setQuantity] = useState(2);
-  const [selectedColor, setSelectedColor] = useState('Lemon');
-  const [selectedSize, setSelectedSize] = useState('M');
+  const [selectedColor, setSelectedColor] = useState(product.colors?.[0] ?? 'Default');
+  const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] ?? 'M');
 
   const handleQuantityChange = (amount: number) => {
     setQuantity((prev) => Math.max(1, prev + amount));
@@ -39,26 +39,33 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, className }) => {
     Green: '#16A34A',
     Yellow: '#FDE047',
     Blue: '#3B82F6',
-    Black: '#000000',
-    White: '#FFFFFF',
+    Black: '#0B0B0B',
+    White: '#F8FAFC',
     Platinum: '#E5E4E2',
-    'Matte Black': '#28282B',
+    'Matte Black': '#1F1F20',
     Sage: '#87AE73',
+    Silver: '#C5C9CC',
+    'Space Gray': '#868686',
+    'Space Grey': '#868686',
+    Starlight: '#F7F0E5',
+    Midnight: '#1C273A',
+    Graphite: '#4A4A4A',
+    'Core Black': '#111111',
   };
 
   return (
     <div
-      className={`w-full bg-sky-50 rounded-xl flex flex-col gap-8 p-4 sm:p-6 ${className || ''}`}
+      className={`w-full bg-sky-50 rounded-xl flex flex-col gap-6 p-4 sm:p-6 ${className || ''}`}
     >
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
+        <div className="flex flex-col gap-3">
           {/* Product Title */}
-          <div className="text-black text-2xl font-semibold font-['Poppins'] leading-normal tracking-wide">
+          <div className="text-black text-2xl sm:text-[28px] font-semibold font-['Poppins'] leading-snug tracking-wide">
             {product.name}
           </div>
 
           {/* Rating and Stock */}
-          <div className="flex flex-wrap items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
             <div className="flex items-center gap-2">
               <div className="flex text-yellow-400">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -71,68 +78,70 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, className }) => {
                   />
                 ))}
               </div>
-              <div className="opacity-50 text-black text-sm font-normal font-['Poppins'] leading-tight">
+              <div className="opacity-60 text-black text-sm font-normal font-['Poppins'] leading-tight">
                 ({product.reviewsCount} Reviews)
               </div>
             </div>
-            <div className="flex items-center gap-4 border-l border-black/50 pl-4">
-              <div className="opacity-60 text-green-500 text-sm font-normal font-['Poppins'] leading-tight">
+            <div className="hidden sm:flex items-center gap-3 border-l border-black/20 pl-3">
+              <div className="text-green-500 text-sm font-medium font-['Poppins'] leading-tight">
                 {product.inStock ? 'In Stock' : 'Out of Stock'}
               </div>
             </div>
           </div>
+          <div className="sm:hidden text-green-500 text-sm font-medium font-['Poppins'] leading-tight">
+            {product.inStock ? 'In Stock' : 'Out of Stock'}
+          </div>
         </div>
 
         {/* Description */}
-        <div className="text-black text-sm font-normal font-['Poppins'] leading-tight">
+        <div className="text-black text-sm font-normal font-['Poppins'] leading-relaxed">
           {product.description}
         </div>
 
         {/* Price */}
-        <div className="text-black text-2xl font-medium font-['Poppins'] leading-normal tracking-wide">
+        <div className="text-black text-[26px] sm:text-3xl font-semibold font-['Poppins'] leading-tight tracking-wide">
           ${product.price.toFixed(2)}
         </div>
 
         {/* Product Details */}
-        <div className="flex flex-col gap-1 text-neutral-700 text-base font-normal font-['Poppins'] leading-tight tracking-tight">
+        <div className="flex flex-col gap-1.5 text-neutral-700 text-sm sm:text-base font-medium font-['Poppins'] leading-relaxed">
           <div>Category: {product.category}</div>
           <div>Order id: {product.orderId}</div>
           <div>Seller: {product.seller}</div>
         </div>
 
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-5">
           {/* Color Selection */}
-          <div className="flex flex-col gap-2">
-            <div className="text-zinc-600 text-sm font-normal font-['Poppins'] leading-tight">
+          <div className="flex flex-col gap-2.5">
+            <div className="text-zinc-600 text-sm font-medium font-['Poppins'] leading-tight">
               Color:
             </div>
             <div className="overflow-x-auto">
-              <div className="flex gap-4 pb-2 min-w-max">
+              <div className="flex gap-3 pb-1.5 min-w-max">
                 {product.colors.map((color) => {
-                  const colorCode = colorCodeMap[color] || '#CCCCCC';
-                  const truncatedName = color.length > 3 ? `${color.substring(0, 3)}..` : color;
+                  const colorCode = colorCodeMap[color] || colorCodeMap[color.trim()] || '#B0B0B0';
                   return (
                     <button
                       key={color}
                       type="button"
                       onClick={() => setSelectedColor(color)}
-                      className={`group relative flex flex-col items-center gap-2 transition-colors cursor-pointer ${
-                        selectedColor === color ? 'border-b-2 border-fuchsia-500' : 'border-b-2 border-transparent'
+                      className={`group relative flex flex-col items-center gap-1.5 transition-colors cursor-pointer ${
+                        selectedColor === color ? 'border-b border-fuchsia-500' : 'border-b border-transparent'
                       }`}
                       aria-pressed={selectedColor === color}
                     >
                       <div
-                        className={`w-12 h-12 rounded border-2 ${
-                          selectedColor === color ? 'border-fuchsia-500' : 'border-gray-300'
+                        className={`w-11 h-11 rounded-md border ${
+                          selectedColor === color ? 'border-fuchsia-500 shadow-[0_0_0_2px_rgba(236,72,153,0.25)]' : 'border-gray-300'
                         }`}
                         style={{ backgroundColor: colorCode }}
                       />
                       <span
-                        className={`text-xs font-normal font-['Poppins'] whitespace-nowrap text-center ${
+                        className={`px-1 text-xs font-medium font-['Poppins'] whitespace-nowrap text-center ${
                           selectedColor === color ? 'text-zinc-900' : 'text-zinc-900/80 group-hover:text-zinc-900'
                         }`}
                       >
-                        {truncatedName}
+                        {color}
                       </span>
                     </button>
                   );
@@ -143,8 +152,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, className }) => {
 
           {/* Size Selection */}
           <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="text-black text-xl font-normal font-['Poppins'] leading-tight tracking-wide">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+              <div className="text-black text-lg sm:text-xl font-semibold font-['Poppins'] leading-tight tracking-wide">
                 Size:
               </div>
               <div className="flex flex-wrap items-center gap-3">
@@ -152,14 +161,14 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, className }) => {
                   <button
                     key={size}
                     type="button"
-                    className={`w-9 h-9 rounded flex items-center justify-center transition-colors ${
+                    className={`w-9 h-9 rounded-md flex items-center justify-center transition-colors ${
                       selectedSize === size
-                        ? 'bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 text-neutral-50'
-                        : 'outline outline-1 outline-black/50 text-black'
+                        ? 'bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 text-neutral-50 shadow-[0_4px_12px_rgba(236,72,153,0.25)]'
+                        : 'border border-black/30 text-black/80 bg-white hover:bg-gray-50'
                     }`}
                     onClick={() => setSelectedSize(size)}
                   >
-                    <span className="text-base font-medium font-['Poppins'] leading-tight">{size}</span>
+                    <span className="text-sm sm:text-base font-medium font-['Poppins'] leading-tight">{size}</span>
                   </button>
                 ))}
               </div>
@@ -167,19 +176,19 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, className }) => {
           </div>
 
           {/* Quantity and Action Buttons Row */}
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center gap-4 w-full justify-between">
+          <div className="flex flex-col gap-3 sm:gap-4">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 w-full justify-between">
               {/* Quantity Controls */}
               <div className="flex items-center">
                 <button
                   onClick={() => handleQuantityChange(-1)}
-                  className="w-8 h-9 rounded-l border border-black/50 border-r-0 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  className="w-8 h-9 rounded-l border border-black/40 border-r-0 flex items-center justify-center hover:bg-gray-50 transition-colors"
                   aria-label="Decrease quantity"
                   type="button"
                 >
                   <Minus className="w-3 h-3 text-black" />
                 </button>
-                <div className="w-12 h-9 border border-black/50 flex items-center justify-center text-black text-base font-medium font-['Poppins']">
+                <div className="w-12 h-9 border border-black/40 flex items-center justify-center text-black text-base font-medium font-['Poppins']">
                   {quantity.toString().padStart(2, '0')}
                 </div>
                 <button
@@ -193,20 +202,20 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, className }) => {
               </div>
 
               {/* Add to Cart and Wishlist */}
-              <div className="flex flex-wrap items-center gap-4 ml-auto justify-end">
-                <button className="px-4 py-2.5 bg-fuchsia-500 rounded flex items-center gap-1.5 hover:bg-fuchsia-600 transition-colors">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 ml-auto justify-end">
+                <button className="px-4 py-2.5 bg-fuchsia-500 rounded-md flex items-center gap-1.5 hover:bg-fuchsia-600 transition-colors shadow-[0_4px_12px_rgba(236,72,153,0.25)]">
                   <ShoppingCart className="w-5 h-5 text-white" />
                   <span className="text-white text-base font-medium font-['Poppins'] leading-none">Add to Cart</span>
                 </button>
-                <button className="w-10 h-10 rounded border border-black/50 flex items-center justify-center hover:bg-gray-50 transition-colors flex-shrink-0">
+                <button className="w-10 h-10 rounded-md border border-black/40 flex items-center justify-center hover:bg-gray-50 transition-colors flex-shrink-0 bg-white">
                   <Heart className="w-5 h-5 text-black" />
                 </button>
               </div>
             </div>
 
             {/* Buy Now Button */}
-            <button className="w-full px-4 py-3 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 rounded flex justify-center items-center gap-2.5 hover:from-fuchsia-600 hover:to-fuchsia-600 transition-colors">
-              <span className="text-neutral-50 text-base font-medium font-['Poppins'] leading-normal">Buy Now</span>
+            <button className="w-full px-4 py-3 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 rounded-md flex justify-center items-center gap-2.5 hover:from-fuchsia-600 hover:to-fuchsia-600 transition-colors shadow-[0_6px_18px_rgba(236,72,153,0.25)]">
+              <span className="text-neutral-50 text-base font-semibold font-['Poppins'] leading-normal">Buy Now</span>
             </button>
           </div>
         </div>

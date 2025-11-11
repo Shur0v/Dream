@@ -70,19 +70,23 @@ export default function ProductDetails() {
       onUserAction={handleUserAction}
       onNewsletterSubscribe={handleNewsletterSubscribe}
     >
-      <div className="flex flex-col gap-10 lg:gap-12">
-        {/* Top Part - Contains ProductGallery, ProductInfo, and DeliveryInfo */}
-        <TopPart />
-        
-        {/* Product Reviews Section */}
-        <section className="w-full max-w-[1320px] mx-auto px-2">
-          <Reviews rating={4.5} reviewsCount={100} />
-        </section>
+      <div className="product-fluid-shell">
+        <div className="product-fluid-content">
+          <div className="flex flex-col gap-10 lg:gap-12">
+            {/* Top Part - Contains ProductGallery, ProductInfo, and DeliveryInfo */}
+            <TopPart />
+            
+            {/* Product Reviews Section */}
+            <section className="w-full max-w-[1320px] mx-auto px-2">
+              <Reviews rating={4.5} reviewsCount={100} />
+            </section>
 
-        {/* Mobile Delivery Info */}
-        <section className="lg:hidden w-full max-w-[1320px] mx-auto px-2">
-          <DeliveryInfo />
-        </section>
+            {/* Mobile Delivery Info */}
+            <section className="max-[1199px]:block hidden w-full max-w-[1320px] mx-auto px-2">
+              <DeliveryInfo />
+            </section>
+          </div>
+        </div>
       </div>
     </MainLayout>
   );

@@ -7,8 +7,8 @@ import ForYou from "../../home/components/ForYou";
 import DeliveryInfo from "../components/toppart/DeliveryInfo";
 import { getProductById } from "@/lib/productData";
 
-export default function ProductDetailsPage({ params }: any) {
-  const { slug } = params;
+export default async function ProductDetailsPage({ params }: any) {
+  const { slug } = await params;
   
   // Convert slug to product ID and fetch product data
   const productId = parseInt(slug);
