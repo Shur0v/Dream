@@ -39,22 +39,28 @@ export default function ShopInstagram() {
         className="object-cover rounded-sm"
         sizes="(max-width: 640px) 80vw, (max-width: 768px) 60vw, (max-width: 1024px) 40vw, 20vw"
       />
-      {index === 3 && (
-        <div className="absolute inset-0 bg-black/50 rounded-sm">
-          <div className="absolute top-1/2 left-1/2 w-8 h-8 -translate-x-1/2 -translate-y-1/2">
-            <div className="w-8 h-8 absolute" />
-            <div className="w-2.5 h-2.5 absolute left-[11.69px] top-[11.69px] outline-1 outline-offset-[-0.50px] outline-white" />
-            <div className="w-6 h-6 absolute left-[4.25px] top-[4.25px] outline-1 outline-offset-[-0.50px] outline-white" />
-            <div className="w-[2.66px] h-[2.66px] absolute left-[22.58px] top-[8.77px] bg-white" />
-          </div>
-        </div>
-      )}
+      <div className="pointer-events-none absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 ease-out rounded-sm flex items-center justify-center">
+        {/* Instagram icon */}
+        <svg
+          aria-hidden="true"
+          width="36"
+          height="36"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="text-white drop-shadow-sm"
+        >
+          <rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" strokeWidth="1.8"/>
+          <circle cx="12" cy="12" r="3.8" stroke="currentColor" strokeWidth="1.8"/>
+          <circle cx="17.5" cy="6.5" r="1.2" fill="currentColor"/>
+        </svg>
+      </div>
     </a>
   );
 
   return (
     <section className="father w-full py-20 bg-sky-50" role="region" aria-labelledby="instagram-heading">
-      <div className="daughter w-full max-w-[1320px] mx-auto px-2 lg:px-0">
+      <div className="daughter w-full max-w-none mx-auto px-2 lg:px-8">
         {/* Header */}
         <div className="flex flex-col gap-4 mb-8">
           <div className="inline-flex items-center gap-8">

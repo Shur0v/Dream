@@ -6,6 +6,7 @@ import TopPart from './components/toppart';
 import Reviews from './components/Reviews';
 import DeliveryInfo from './components/toppart/DeliveryInfo';
 import { sampleUsers } from '@/lib/dummyData';
+import ShopInstagram from './components/ShopInstagram';
 
 /**
  * Product details page component
@@ -80,6 +81,9 @@ export default function ProductDetails() {
             <section className="w-full max-w-[1320px] mx-auto px-2">
               <Reviews rating={4.5} reviewsCount={100} />
             </section>
+
+            {/* Shop Instagram - full-width blue background */}
+            <ShopInstagram />
 
             {/* Mobile Delivery Info */}
             <section className="max-[1199px]:block hidden w-full max-w-[1320px] mx-auto px-2">
