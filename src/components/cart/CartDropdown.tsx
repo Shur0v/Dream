@@ -8,6 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Plus, Minus, X, Trash2 } from 'lucide-react';
+import { CheckoutModal } from './CheckoutModal';
 
 interface CartItem {
   id: string;
@@ -105,6 +106,8 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
   const [localItems, setLocalItems] = useState<CartItem[]>(SAMPLE_ITEMS);
   // State for delete confirmation modal
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  // State for checkout modal
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   // Update local state when items prop changes
   useEffect(() => {
@@ -153,6 +156,31 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
 
   const handleCancelDelete = () => {
     setItemToDelete(null);
+  };
+
+  const handleCheckoutClick = () => {
+    setIsCheckoutOpen(true);
+  };
+
+  const handleCheckoutSubmit = (formData: {
+    name: string;
+    phoneNumber: string;
+    email: string;
+    district: string;
+    upazila: string;
+    thana: string;
+    postOffice: string;
+  }) => {
+    // Close checkout modal
+    setIsCheckoutOpen(false);
+    // Close cart dropdown
+    onClose();
+    // Call parent callback if provided
+    onCheckout?.();
+    // Log form data (you can replace this with API call)
+    console.log('Checkout form data:', formData);
+    console.log('Cart items:', cartItems);
+    console.log('Total price:', totalPrice);
   };
 
   if (!isOpen) return null;
@@ -211,7 +239,7 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
                       <div className="layer-11 self-stretch h-auto flex flex-col justify-start items-start gap-1.5" data-layer="11">
                         {/* layer-11 = item details */}
                         
-                        <div className="layer-12 self-stretch justify-start text-slate-950 text-lg font-semibold font-['Poppins'] leading-loose" data-layer="12">
+                        <div className="layer-12 self-stretch justify-start text-slate-950 text-lg font-semibold font-['Poppins'] leading-tight" data-layer="12">
                           {/* layer-12 = item name */}
                           {item.name}
                         </div>
@@ -305,7 +333,7 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
             {/* layer-23 = checkout button sticky container */}
             
             <button
-              onClick={onCheckout}
+              onClick={handleCheckoutClick}
               className="layer-24 w-full h-14 px-7 py-3 bg-fuchsia-500 rounded-xl flex justify-center items-center gap-1.5 hover:bg-fuchsia-600 transition-colors"
               data-layer="24"
             >
@@ -371,6 +399,13 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
           </div>
         </>
       )}
+
+      {/* Checkout Modal */}
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        onSubmit={handleCheckoutSubmit}
+      />
     </>
   );
 };

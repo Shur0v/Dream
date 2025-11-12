@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Minus, Plus, Heart, ShoppingCart, Star } from 'lucide-react';
+import { CheckoutModal } from '@/components/cart/CheckoutModal';
 
 interface ProductInfoProps {
   product: {
@@ -27,9 +28,35 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, className }) => {
   const [quantity, setQuantity] = useState(2);
   const [selectedColor, setSelectedColor] = useState(product.colors?.[0] ?? 'Default');
   const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] ?? 'M');
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
   const handleQuantityChange = (amount: number) => {
     setQuantity((prev) => Math.max(1, prev + amount));
+  };
+
+  const handleBuyNow = () => {
+    setIsCheckoutOpen(true);
+  };
+
+  const handleCheckoutSubmit = (formData: {
+    name: string;
+    phoneNumber: string;
+    email: string;
+    district: string;
+    upazila: string;
+    thana: string;
+    postOffice: string;
+  }) => {
+    // Log checkout data with product info
+    console.log('Buy Now - Form data:', formData);
+    console.log('Buy Now - Product:', product);
+    console.log('Buy Now - Quantity:', quantity);
+    console.log('Buy Now - Selected Color:', selectedColor);
+    console.log('Buy Now - Selected Size:', selectedSize);
+    console.log('Buy Now - Total Price:', (product.price * quantity).toFixed(2));
+    
+    // Close modal
+    setIsCheckoutOpen(false);
   };
 
   // Visual map for color swatches (keeps layout unchanged while feeling professional)
@@ -214,12 +241,22 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, className }) => {
             </div>
 
             {/* Buy Now Button */}
-            <button className="w-full px-4 py-3 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 rounded-md flex justify-center items-center gap-2.5 hover:from-fuchsia-600 hover:to-fuchsia-600 transition-colors shadow-[0_6px_18px_rgba(236,72,153,0.25)]">
+            <button 
+              onClick={handleBuyNow}
+              className="w-full px-4 py-3 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 rounded-md flex justify-center items-center gap-2.5 hover:from-fuchsia-600 hover:to-fuchsia-600 transition-colors shadow-[0_6px_18px_rgba(236,72,153,0.25)]"
+            >
               <span className="text-neutral-50 text-base font-semibold font-['Poppins'] leading-normal">Buy Now</span>
             </button>
           </div>
         </div>
       </div>
+
+      {/* Checkout Modal */}
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        onSubmit={handleCheckoutSubmit}
+      />
     </div>
   );
 };
