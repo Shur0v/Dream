@@ -3,6 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { Plus, ImagePlus, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
 
 interface Category {
   id: number;
@@ -21,6 +22,9 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
   const [childCategory, setChildCategory] = useState('');
   const [image, setImage] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deleteTargetName, setDeleteTargetName] = useState<string>('');
 
   // Existing categories - in a real app, this would come from an API/state management
   const [categories, setCategories] = useState<Category[]>([
@@ -67,10 +71,18 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
     }
   };
 
-  const handleDelete = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this category?')) {
-      setCategories((prev) => prev.filter((cat) => cat.id !== id));
-      onDelete?.(id);
+  const handleDeleteClick = (id: number, name: string) => {
+    setDeleteTargetId(id);
+    setDeleteTargetName(name);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteTargetId !== null) {
+      setCategories((prev) => prev.filter((cat) => cat.id !== deleteTargetId));
+      onDelete?.(deleteTargetId);
+      setDeleteTargetId(null);
+      setDeleteTargetName('');
     }
   };
 
@@ -194,7 +206,7 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
                 {/* Delete Button */}
                 <button
                   type="button"
-                  onClick={() => handleDelete(cat.id)}
+                  onClick={() => handleDeleteClick(cat.id, cat.name)}
                   className="absolute top-2 right-2 z-10 p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                   aria-label={`Delete ${cat.name} category`}
                 >
@@ -218,6 +230,20 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setDeleteTargetId(null);
+          setDeleteTargetName('');
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Category"
+        message="Are you sure you want to delete this category?"
+        itemName={deleteTargetName}
+      />
     </div>
   );
 }

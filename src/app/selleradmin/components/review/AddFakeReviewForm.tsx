@@ -5,6 +5,7 @@ import { ArrowLeft, Star, Trash2, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { products, Product } from '@/lib/productData';
+import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
 
 interface Review {
   id: number;
@@ -33,6 +34,9 @@ export default function AddFakeReviewForm({ onBack, onSave, onDelete }: AddFakeR
   const [verified, setVerified] = useState(false);
   const [showProductSuggestions, setShowProductSuggestions] = useState(false);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deleteTargetName, setDeleteTargetName] = useState<string>('');
 
   // Format datetime to display format
   const formatDate = (dateTimeString: string): string => {
@@ -128,10 +132,18 @@ export default function AddFakeReviewForm({ onBack, onSave, onDelete }: AddFakeR
     }
   };
 
-  const handleDelete = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this review?')) {
-      setReviews((prev) => prev.filter((r) => r.id !== id));
-      onDelete?.(id);
+  const handleDeleteClick = (id: number, author: string) => {
+    setDeleteTargetId(id);
+    setDeleteTargetName(author);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteTargetId !== null) {
+      setReviews((prev) => prev.filter((r) => r.id !== deleteTargetId));
+      onDelete?.(deleteTargetId);
+      setDeleteTargetId(null);
+      setDeleteTargetName('');
     }
   };
 
@@ -373,7 +385,7 @@ export default function AddFakeReviewForm({ onBack, onSave, onDelete }: AddFakeR
                   {/* Delete Button */}
                   <button
                     type="button"
-                    onClick={() => handleDelete(review.id)}
+                    onClick={() => handleDeleteClick(review.id, review.author)}
                     className="absolute top-3 right-3 z-10 p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                     aria-label={`Delete review by ${review.author}`}
                   >
@@ -424,6 +436,20 @@ export default function AddFakeReviewForm({ onBack, onSave, onDelete }: AddFakeR
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setDeleteTargetId(null);
+          setDeleteTargetName('');
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Review"
+        message="Are you sure you want to delete this review?"
+        itemName={deleteTargetName ? `Review by ${deleteTargetName}` : undefined}
+      />
     </div>
   );
 }

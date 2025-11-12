@@ -4,6 +4,7 @@ import React, { useRef, useState } from 'react';
 import { ArrowLeft, Upload, X, Plus, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
 
 interface PromoBanner {
   id: number;
@@ -29,6 +30,9 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
   const [minutes, setMinutes] = useState(0);
   const [seconds, setSeconds] = useState(0);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deleteTargetName, setDeleteTargetName] = useState<string>('');
 
   // Existing banners
   const [banners, setBanners] = useState<PromoBanner[]>([
@@ -100,10 +104,18 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
     }
   };
 
-  const handleDelete = (id: number) => {
-    if (window.confirm('Are you sure you want to delete this promo banner?')) {
-      setBanners((prev) => prev.filter((b) => b.id !== id));
-      onDelete?.(id);
+  const handleDeleteClick = (id: number, title: string) => {
+    setDeleteTargetId(id);
+    setDeleteTargetName(title);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteTargetId !== null) {
+      setBanners((prev) => prev.filter((b) => b.id !== deleteTargetId));
+      onDelete?.(deleteTargetId);
+      setDeleteTargetId(null);
+      setDeleteTargetName('');
     }
   };
 
@@ -285,7 +297,7 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
                 {/* Delete Button */}
                 <button
                   type="button"
-                  onClick={() => handleDelete(banner.id)}
+                  onClick={() => handleDeleteClick(banner.id, banner.title)}
                   className="absolute top-2 right-2 z-10 p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                   aria-label={`Delete ${banner.title}`}
                 >
@@ -317,6 +329,20 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setDeleteTargetId(null);
+          setDeleteTargetName('');
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Promo Banner"
+        message="Are you sure you want to delete this promo banner?"
+        itemName={deleteTargetName}
+      />
     </div>
   );
 }

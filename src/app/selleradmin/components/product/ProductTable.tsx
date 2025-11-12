@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, MoreVertical, Star, TrendingUp } from 'lucid
 import { cn } from '@/lib/utils';
 import { products as allProducts, getBestSellingProducts, getFeaturedProducts } from '@/lib/productData';
 import SimpleSelect from '../ui/SimpleSelect';
+import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
 
 export type TableMode = 'all' | 'featured' | 'best-selling';
 
@@ -18,6 +19,9 @@ export default function ProductTable({ mode = 'all' }: ProductTableProps) {
   const perPage = 10;
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [deletedIds, setDeletedIds] = useState<Set<number>>(new Set());
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deleteTargetName, setDeleteTargetName] = useState<string>('');
 
   const [featuredIds, setFeaturedIds] = useState<Set<number>>(
     () => new Set(getFeaturedProducts().map((p) => p.id))
@@ -66,13 +70,23 @@ export default function ProductTable({ mode = 'all' }: ProductTableProps) {
     });
   };
 
-  const deleteProduct = (id: number) => {
-    setDeletedIds((prev) => {
-      const next = new Set(prev);
-      next.add(id);
-      return next;
-    });
+  const handleDeleteClick = (id: number, name: string) => {
+    setDeleteTargetId(id);
+    setDeleteTargetName(name);
+    setDeleteModalOpen(true);
     setOpenMenuId(null);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteTargetId !== null) {
+      setDeletedIds((prev) => {
+        const next = new Set(prev);
+        next.add(deleteTargetId);
+        return next;
+      });
+      setDeleteTargetId(null);
+      setDeleteTargetName('');
+    }
   };
 
   return (
@@ -167,7 +181,7 @@ export default function ProductTable({ mode = 'all' }: ProductTableProps) {
                   {openMenuId === p.id && (
                     <div className="absolute right-0 top-full mt-2 bg-white border border-neutral-200 shadow-lg rounded-md p-2 z-50 min-w-[140px]">
                       <button
-                        onClick={() => deleteProduct(p.id)}
+                        onClick={() => handleDeleteClick(p.id, p.name)}
                         className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-red-50 text-red-600"
                       >
                         Delete
@@ -219,6 +233,20 @@ export default function ProductTable({ mode = 'all' }: ProductTableProps) {
           <ChevronRight className="w-5 h-5" />
         </button>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setDeleteTargetId(null);
+          setDeleteTargetName('');
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Product"
+        message="Are you sure you want to delete this product?"
+        itemName={deleteTargetName}
+      />
     </div>
   );
 }
