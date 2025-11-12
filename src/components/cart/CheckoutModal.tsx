@@ -101,7 +101,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop ppp*/}
       <div
         className="fixed inset-0 bg-black/50 z-[80]"
         onClick={onClose}
