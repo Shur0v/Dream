@@ -106,9 +106,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
           />
         </Link>
 
-        {/* Navigation Section - Middle (grows to fill space) */}
-        <div className="flex-1 flex flex-col justify-start items-start gap-6 overflow-hidden min-h-0">
-          <div className="w-full flex flex-col gap-6">
+        {/* Navigation Section - Middle (scrollable) */}
+        <div className="flex-1 flex flex-col justify-start items-start gap-6 overflow-y-auto overflow-x-hidden min-h-0 w-full">
+          <div className="w-full flex flex-col gap-6 pb-4">
             {navItems.map((item) => {
               const active = isActive(item.href);
               return (
