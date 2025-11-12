@@ -2,24 +2,25 @@
 
 import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Edit, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { products as allProducts, Product } from '@/lib/productData';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
+import EditProductModal from './EditProductModal';
 
 interface AllProductsGridProps {
   onDelete?: (id: number) => void;
 }
 
 export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
-  const router = useRouter();
   const [page, setPage] = useState(1);
   const perPage = 30;
   const [deletedIds, setDeletedIds] = useState<Set<number>>(new Set());
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const [deleteTargetName, setDeleteTargetName] = useState<string>('');
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   // Sort products: newest first (by id descending, or createdAt if available)
   const sortedProducts = useMemo(() => {
@@ -62,8 +63,16 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
     }
   };
 
-  const handleEdit = (productId: number) => {
-    router.push(`/selleradmin/add-product?id=${productId}`);
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+    setEditModalOpen(true);
+  };
+
+  const handleEditSave = (data: Partial<Product>) => {
+    console.log('Product updated', data);
+    // Here you would typically update the product in your state/API
+    setEditModalOpen(false);
+    setEditingProduct(null);
   };
 
   return (
@@ -134,7 +143,7 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2 pt-2 border-t border-neutral-100">
                   <button
-                    onClick={() => handleEdit(product.id)}
+                    onClick={() => handleEdit(product)}
                     className="flex-1 h-9 px-3 rounded-lg bg-fuchsia-500 hover:bg-fuchsia-600 text-white text-sm font-medium font-['Poppins'] transition-colors duration-200 flex items-center justify-center gap-2"
                   >
                     <Edit className="w-4 h-4" />
@@ -221,6 +230,17 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
         title="Delete Product"
         message="Are you sure you want to delete this product?"
         itemName={deleteTargetName}
+      />
+
+      {/* Edit Product Modal */}
+      <EditProductModal
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setEditingProduct(null);
+        }}
+        onSave={handleEditSave}
+        product={editingProduct}
       />
     </div>
   );
