@@ -40,6 +40,7 @@ export default function AddFestivalOfferForm({ onBack, onSave, onDelete }: AddFe
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
   const [deleteTargetName, setDeleteTargetName] = useState<string>('');
+  const [isVisible, setIsVisible] = useState(true);
 
   // Existing banners
   const [banners, setBanners] = useState<FestivalBanner[]>([
@@ -167,6 +168,40 @@ export default function AddFestivalOfferForm({ onBack, onSave, onDelete }: AddFe
 
   return (
     <div className="w-full flex flex-col gap-6">
+      {/* Show/Hide Toggle Switch */}
+      <div className="w-full p-5 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-1 flex-1">
+          <span className="text-slate-950 text-lg font-semibold font-['Poppins']">Show on Client Side</span>
+          <span className="text-zinc-500 text-sm font-normal font-['Poppins']">Toggle visibility of festival offer banners on categories page</span>
+        </div>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <span className={cn('text-sm font-medium font-Poppins transition-colors', !isVisible ? 'text-slate-950' : 'text-zinc-400')}>
+            Hide
+          </span>
+          <button
+            type="button"
+            onClick={() => setIsVisible(!isVisible)}
+            className={cn(
+              'relative inline-flex h-8 w-[60px] items-center rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:ring-offset-2 shadow-inner',
+              isVisible ? 'bg-fuchsia-500' : 'bg-gray-300'
+            )}
+            aria-label="Toggle visibility"
+            role="switch"
+            aria-checked={isVisible}
+          >
+            <span
+              className={cn(
+                'inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-all duration-300 ease-in-out',
+                isVisible ? 'translate-x-[34px]' : 'translate-x-1'
+              )}
+            />
+          </button>
+          <span className={cn('text-sm font-medium font-Poppins transition-colors', isVisible ? 'text-slate-950' : 'text-zinc-400')}>
+            Show
+          </span>
+        </div>
+      </div>
+
       {/* Page Header */}
       <div className="w-full flex items-center justify-between">
         <div className="flex items-center gap-3">
