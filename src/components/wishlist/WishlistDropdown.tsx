@@ -14,17 +14,19 @@ interface WishlistItem {
   id: number;
   name: string;
   image: string;
-  orderId: string;
+  price: number;
+  currency: string;
 }
 
 // Convert products to wishlist items format
 const getWishlistItems = (): WishlistItem[] => {
   // Using first 10 products from productData.ts as wishlist items
-  return products.slice(0, 10).map((product: Product, index: number) => ({
+  return products.slice(0, 10).map((product: Product) => ({
     id: product.id,
     name: product.name,
     image: product.image,
-    orderId: `#${String(10000000 + product.id).padStart(8, '0')}${String.fromCharCode(65 + index)}`,
+    price: product.price,
+    currency: product.currency,
   }));
 };
 
@@ -138,8 +140,8 @@ export const WishlistDropdown: React.FC<WishlistDropdownProps> = ({
                         </div>
                         
                         <div className="layer-14 self-stretch justify-start text-neutral-700 text-base font-normal font-['Poppins'] leading-5 tracking-tight" data-layer="14">
-                          {/* layer-14 = order id */}
-                          Order id: {item.orderId}
+                          {/* layer-14 = price */}
+                          {item.currency}{item.price.toFixed(2)}
                         </div>
                       </div>
                     </div>
