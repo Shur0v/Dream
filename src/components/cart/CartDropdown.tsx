@@ -7,12 +7,11 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Plus, Minus, X } from 'lucide-react';
+import { Plus, Minus, X, Trash2 } from 'lucide-react';
 
 interface CartItem {
   id: string;
   name: string;
-  orderId: string;
   quantity: number;
   price: number;
   image: string;
@@ -23,7 +22,6 @@ const SAMPLE_ITEMS: CartItem[] = [
   {
     id: '1',
     name: 'Wireless Bluetooth Headphones',
-    orderId: '#12345678A',
     quantity: 2,
     price: 89.99,
     image: '/common/cart/image1.png'
@@ -31,7 +29,6 @@ const SAMPLE_ITEMS: CartItem[] = [
   {
     id: '2',
     name: 'Smart Watch Series 8',
-    orderId: '#12345678B',
     quantity: 1,
     price: 299.99,
     image: '/common/cart/image2.jpg'
@@ -39,7 +36,6 @@ const SAMPLE_ITEMS: CartItem[] = [
   {
     id: '3',
     name: 'Gaming Mechanical Keyboard',
-    orderId: '#12345678C',
     quantity: 3,
     price: 149.99,
     image: '/common/cart/image3.png'
@@ -47,7 +43,6 @@ const SAMPLE_ITEMS: CartItem[] = [
   {
     id: '4',
     name: 'Wireless Mouse Pro',
-    orderId: '#12345678D',
     quantity: 1,
     price: 79.99,
     image: '/common/cart/image4.png'
@@ -55,7 +50,6 @@ const SAMPLE_ITEMS: CartItem[] = [
   {
     id: '5',
     name: 'USB-C Hub Adapter',
-    orderId: '#12345678E',
     quantity: 2,
     price: 45.99,
     image: '/common/cart/image5.jpg'
@@ -63,7 +57,6 @@ const SAMPLE_ITEMS: CartItem[] = [
   {
     id: '6',
     name: 'Portable Power Bank',
-    orderId: '#12345678F',
     quantity: 1,
     price: 59.99,
     image: '/common/cart/image6.png'
@@ -71,7 +64,6 @@ const SAMPLE_ITEMS: CartItem[] = [
   {
     id: '7',
     name: 'Bluetooth Speaker',
-    orderId: '#12345678G',
     quantity: 2,
     price: 129.99,
     image: '/common/cart/image7.jpg'
@@ -79,7 +71,6 @@ const SAMPLE_ITEMS: CartItem[] = [
   {
     id: '8',
     name: 'Phone Case Premium',
-    orderId: '#12345678H',
     quantity: 1,
     price: 24.99,
     image: '/common/cart/image8.png'
@@ -87,7 +78,6 @@ const SAMPLE_ITEMS: CartItem[] = [
   {
     id: '9',
     name: 'Screen Protector Glass',
-    orderId: '#12345678I',
     quantity: 3,
     price: 12.99,
     image: '/common/cart/image9.png'
@@ -99,6 +89,7 @@ interface CartDropdownProps {
   onClose: () => void;
   items?: CartItem[];
   onQuantityChange?: (itemId: string, quantity: number) => void;
+  onRemoveItem?: (itemId: string) => void;
   onCheckout?: () => void;
 }
 
@@ -107,10 +98,13 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
   onClose,
   items = [],
   onQuantityChange,
+  onRemoveItem,
   onCheckout,
 }) => {
   // Local state for cart items
   const [localItems, setLocalItems] = useState<CartItem[]>(SAMPLE_ITEMS);
+  // State for delete confirmation modal
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   // Update local state when items prop changes
   useEffect(() => {
@@ -138,6 +132,27 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
     
     // Call parent callback if provided
     onQuantityChange?.(itemId, newQuantity);
+  };
+
+  const handleDeleteClick = (itemId: string) => {
+    setItemToDelete(itemId);
+  };
+
+  const handleConfirmDelete = () => {
+    if (itemToDelete) {
+      // Update local state
+      setLocalItems(prevItems => prevItems.filter(item => item.id !== itemToDelete));
+      
+      // Call parent callback if provided
+      onRemoveItem?.(itemToDelete);
+      
+      // Close confirmation modal
+      setItemToDelete(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setItemToDelete(null);
   };
 
   if (!isOpen) return null;
@@ -178,99 +193,107 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
           </div>
 
           {/* Cart Items - Scrollable */}
-          <div className="layer-7 flex-1 overflow-y-auto px-4" data-layer="7">
+          <div className="layer-7 flex-1 overflow-y-auto overflow-x-hidden px-4" data-layer="7">
             {/* layer-7 = cart items scrollable container */}
             
             <div className="layer-8 flex flex-col gap-6 py-4" data-layer="8">
               {/* layer-8 = cart items wrapper */}
               
               {cartItems.map((item) => (
-                <div key={item.id} className="layer-9 inline-flex justify-start items-end gap-6" data-layer="9">
+                <div key={item.id} className="layer-9 flex flex-col gap-4" data-layer="9">
                   {/* layer-9 = individual cart item */}
                   
-                  {/* Item Info */}
-                  <div className="layer-10 w-64 inline-flex flex-col justify-start items-start gap-4" data-layer="10">
-                    {/* layer-10 = item info container */}
-                    
-                    <div className="layer-11 self-stretch h-auto flex flex-col justify-start items-start gap-1.5" data-layer="11">
-                      {/* layer-11 = item details */}
+                  <div className="flex justify-start items-end gap-4">
+                    {/* Item Info */}
+                    <div className="layer-10 flex-1 flex flex-col justify-start items-start gap-4" data-layer="10">
+                      {/* layer-10 = item info container */}
                       
-                      <div className="layer-12 self-stretch justify-start text-slate-950 text-lg font-semibold font-['Poppins'] leading-loose" data-layer="12">
-                        {/* layer-12 = item name */}
-                        {item.name}
+                      <div className="layer-11 self-stretch h-auto flex flex-col justify-start items-start gap-1.5" data-layer="11">
+                        {/* layer-11 = item details */}
+                        
+                        <div className="layer-12 self-stretch justify-start text-slate-950 text-lg font-semibold font-['Poppins'] leading-loose" data-layer="12">
+                          {/* layer-12 = item name */}
+                          {item.name}
+                        </div>
                       </div>
                       
-                      <div className="layer-13 self-stretch justify-start text-neutral-700 text-base font-normal font-['Poppins'] leading-tight tracking-tight" data-layer="13">
-                        {/* layer-13 = order id */}
-                        Order id: {item.orderId}
-                      </div>
-                    </div>
-                    
-                    {/* Quantity Controls and Price */}
-                    <div className="layer-14 self-stretch inline-flex justify-start items-center gap-4" data-layer="14">
-                      {/* layer-14 = quantity and price container */}
-                      
-                      {/* Quantity Controls */}
-                      <div className="layer-15 flex justify-start items-start" data-layer="15">
-                        {/* layer-15 = quantity controls */}
+                      {/* Quantity Controls and Price */}
+                      <div className="layer-14 self-stretch flex justify-start items-center gap-4 flex-wrap" data-layer="14">
+                        {/* layer-14 = quantity and price container */}
                         
-                        <button
-                          onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                          className="layer-16 w-7 h-8 relative rounded-tl-[2.91px] rounded-bl-[2.91px] outline-[0.73px] outline-offset-[-0.73px] outline-black/50 overflow-hidden hover:bg-gray-50 transition-colors flex items-center justify-center"
-                          aria-label="Decrease quantity"
-                          data-layer="16"
-                        >
-                          {/* layer-16 = minus button */}
-                          <Minus className="w-3 h-3 text-black" />
-                        </button>
+                        {/* Quantity Controls */}
+                        <div className="layer-15 flex justify-start items-start" data-layer="15">
+                          {/* layer-15 = quantity controls */}
+                          
+                          <button
+                            onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                            className="layer-16 w-7 h-8 relative rounded-tl-[2.91px] rounded-bl-[2.91px] outline-[0.73px] outline-offset-[-0.73px] outline-black/50 overflow-hidden hover:bg-gray-50 transition-colors flex items-center justify-center"
+                            aria-label="Decrease quantity"
+                            data-layer="16"
+                          >
+                            {/* layer-16 = minus button */}
+                            <Minus className="w-3 h-3 text-black" />
+                          </button>
+                          
+                          <div className="layer-17 w-11 h-8 relative border-t border-b border-black/50 overflow-hidden flex items-center justify-center" data-layer="17">
+                            {/* layer-17 = quantity display */}
+                            <div className="text-black text-base font-medium font-['Poppins'] leading-none">
+                              {item.quantity.toString().padStart(2, '0')}
+                            </div>
+                          </div>
+                          
+                          <button
+                            onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                            className="layer-18 w-7 h-8 relative bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 rounded-tr-[2.91px] rounded-br-[2.91px] overflow-hidden hover:from-fuchsia-600 hover:to-fuchsia-600 transition-colors flex items-center justify-center"
+                            aria-label="Increase quantity"
+                            data-layer="18"
+                          >
+                            {/* layer-18 = plus button */}
+                            <Plus className="w-3 h-3 text-white" />
+                          </button>
+                        </div>
                         
-                        <div className="layer-17 w-11 h-8 relative border-t border-b border-black/50 overflow-hidden flex items-center justify-center" data-layer="17">
-                          {/* layer-17 = quantity display */}
-                          <div className="text-black text-base font-medium font-['Poppins'] leading-none">
-                            {item.quantity.toString().padStart(2, '0')}
+                        {/* Price */}
+                        <div className="layer-19 flex justify-start items-center" data-layer="19">
+                          {/* layer-19 = price container */}
+                          
+                          <div className="layer-20 w-6 h-6" data-layer="20">
+                            {/* layer-20 = currency icon */}
+                            <div className="w-6 h-6 text-black text-lg">৳</div>
+                          </div>
+                          
+                          <div className="layer-21 justify-start text-black text-base font-medium font-['Poppins'] leading-normal" data-layer="21">
+                            {/* layer-21 = price text */}
+                            {(item.price * item.quantity).toFixed(2)}
                           </div>
                         </div>
-                        
-                        <button
-                          onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                          className="layer-18 w-7 h-8 relative bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 rounded-tr-[2.91px] rounded-br-[2.91px] overflow-hidden hover:from-fuchsia-600 hover:to-fuchsia-600 transition-colors flex items-center justify-center"
-                          aria-label="Increase quantity"
-                          data-layer="18"
-                        >
-                          {/* layer-18 = plus button */}
-                          <Plus className="w-3 h-3 text-white" />
-                        </button>
-                      </div>
-                      
-                      {/* Price */}
-                      <div className="layer-19 flex justify-start items-center" data-layer="19">
-                        {/* layer-19 = price container */}
-                        
-                        <div className="layer-20 w-6 h-6" data-layer="20">
-                          {/* layer-20 = currency icon */}
-                          <div className="w-6 h-6 text-black text-lg">৳</div>
-                        </div>
-                        
-                        <div className="layer-21 justify-start text-black text-base font-medium font-['Poppins'] leading-normal" data-layer="21">
-                          {/* layer-21 = price text */}
-                          {(item.price * item.quantity).toFixed(2)}
-                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Item Image */}
-                  <div className="layer-22 w-28 self-stretch" data-layer="22">
-                    {/* layer-22 = item image container */}
                     
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      width={109}
-                      height={107}
-                      className="w-full h-full object-cover rounded"
-                      loading="lazy"
-                    />
+                    {/* Item Image */}
+                    <div className="layer-22 w-28 h-28 flex-shrink-0 relative" data-layer="22">
+                      {/* layer-22 = item image container */}
+                      
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        width={112}
+                        height={112}
+                        className="w-full h-full object-cover rounded"
+                        loading="lazy"
+                      />
+                      
+                      {/* Delete Button - Top Right Corner with Glassy Background */}
+                      <button
+                        onClick={() => handleDeleteClick(item.id)}
+                        className="absolute top-1 right-1 w-7 h-7 rounded-md bg-white/80 backdrop-blur-sm border border-white/50 shadow-sm hover:bg-white/90 transition-all flex items-center justify-center z-10"
+                        aria-label="Remove from cart"
+                        data-layer="15"
+                      >
+                        {/* layer-15 = delete button with glassy effect */}
+                        <Trash2 className="w-4 h-4 text-red-600" strokeWidth={2.5} />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -307,6 +330,47 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {itemToDelete && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/20 bg-opacity-50 z-[60]"
+            onClick={handleCancelDelete}
+          />
+          
+          {/* Modal */}
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
+            <div 
+              className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-semibold font-['Poppins'] text-slate-950 mb-2">
+                Remove Item
+              </h3>
+              <p className="text-base font-normal font-['Poppins'] text-neutral-700 mb-6">
+                Are you sure you want to remove this item from your cart?
+              </p>
+              
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={handleCancelDelete}
+                  className="px-4 py-2 text-base font-medium font-['Poppins'] text-neutral-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  className="px-4 py-2 text-base font-medium font-['Poppins'] text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 };
