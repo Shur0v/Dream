@@ -43,16 +43,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       icon: <Package className="w-6 h-6" />
     },
     { 
-      label: 'Add Category', 
-      href: '/selleradmin/add-category',
-      icon: <FolderPlus className="w-6 h-6" />
-    },
-    { 
-      label: 'Add Color', 
-      href: '/selleradmin/add-color',
-      icon: <Palette className="w-6 h-6" />
-    },
-    { 
       label: 'Add Banner', 
       href: '/selleradmin/add-banner',
       icon: <ImageIcon className="w-6 h-6" />
@@ -73,9 +63,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       icon: <Sparkles className="w-6 h-6" />
     },
     { 
-      label: 'Fake Review', 
-      href: '/selleradmin/fake-review',
-      icon: <MessageSquare className="w-6 h-6" />
+      label: 'Featured', 
+      href: '/selleradmin/featured',
+      icon: <Star className="w-6 h-6" />
     },
     { 
       label: 'Best selling', 
@@ -83,9 +73,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       icon: <TrendingUp className="w-6 h-6" />
     },
     { 
-      label: 'Featured', 
-      href: '/selleradmin/featured',
-      icon: <Star className="w-6 h-6" />
+      label: 'Fake Review', 
+      href: '/selleradmin/fake-review',
+      icon: <MessageSquare className="w-6 h-6" />
+    },
+    { 
+      label: 'Add Category', 
+      href: '/selleradmin/add-category',
+      icon: <FolderPlus className="w-6 h-6" />
+    },
+    { 
+      label: 'Add Color', 
+      href: '/selleradmin/add-color',
+      icon: <Palette className="w-6 h-6" />
     },
   ];
 
