@@ -97,23 +97,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
   };
 
   return (
-    <div className={cn('w-80 h-screen bg-blue-100 flex justify-end items-start gap-2.5 overflow-hidden fixed left-0 top-0', className)}>
-      <div className="w-72 h-full flex flex-col py-5 overflow-hidden">
+    <div className={cn('w-80 h-screen bg-gradient-to-b from-blue-50 to-blue-100/80 backdrop-blur-sm flex justify-end items-start gap-2.5 overflow-hidden fixed left-0 top-0 border-r border-blue-200/50 shadow-xl', className)}>
+      <div className="w-72 h-full flex flex-col py-6 px-3 overflow-hidden">
         {/* Logo Section - Top */}
-        <Link href="/selleradmin" className="flex-shrink-0 mb-11">
+        <Link href="/selleradmin" className="flex-shrink-0 mb-6 px-2 py-2 rounded-xl transition-all duration-200 group">
           <Image
             src="/common/logo.svg"
             alt="DreamShop logo"
-            width={137}
-            height={50}
-            className="w-36 h-12 object-contain"
+            width={180}
+            height={65}
+            className="w-44 h-auto object-contain transition-transform duration-200 group-hover:scale-105"
             priority
           />
         </Link>
 
         {/* Navigation Section - Middle (scrollable) */}
-        <div className="flex-1 flex flex-col justify-start items-start gap-6 overflow-y-auto overflow-x-hidden min-h-0 w-full">
-          <div className="w-full flex flex-col gap-6 pb-4">
+        <div className="flex-1 flex flex-col justify-start items-start gap-2 overflow-y-auto overflow-x-hidden min-h-0 w-full pr-2 sidebar-scrollbar">
+          <div className="w-full flex flex-col gap-1.5 pb-4">
             {navItems.map((item) => {
               const active = isActive(item.href);
               return (
@@ -121,23 +121,41 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'w-full p-2.5 flex justify-center items-center gap-2.5 transition-colors flex-shrink-0',
+                    'w-full px-4 py-3.5 flex items-center gap-3.5 transition-all duration-200 flex-shrink-0 rounded-xl relative group',
                     active
-                      ? 'bg-fuchsia-500'
-                      : 'bg-fuchsia-500/5 hover:bg-fuchsia-500/10'
+                      ? 'bg-gradient-to-r from-fuchsia-500 to-fuchsia-600 text-white shadow-lg shadow-fuchsia-500/30 scale-[1.02]'
+                      : 'text-fuchsia-900 hover:bg-white/60 hover:shadow-md hover:scale-[1.01]'
                   )}
                 >
-                  <div className={cn('flex-shrink-0', active ? 'text-white' : 'text-fuchsia-900')}>
+                  {/* Active indicator line */}
+                  {active && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full" />
+                  )}
+                  
+                  <div className={cn(
+                    'flex-shrink-0 transition-transform duration-200',
+                    active ? 'text-white' : 'text-fuchsia-700 group-hover:text-fuchsia-600',
+                    !active && 'group-hover:scale-110'
+                  )}>
                     {item.icon}
                   </div>
                   <div
                     className={cn(
-                      'flex-1 justify-start text-base font-semibold font-["Manrope"] leading-6',
-                      active ? 'text-neutral-200' : 'text-fuchsia-900'
+                      'flex-1 text-sm font-semibold font-["Manrope"] leading-5 transition-colors duration-200',
+                      active ? 'text-white' : 'text-fuchsia-900 group-hover:text-fuchsia-800'
                     )}
                   >
                     {item.label}
                   </div>
+                  
+                  {/* Hover arrow indicator */}
+                  {!active && (
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <svg className="w-4 h-4 text-fuchsia-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  )}
                 </Link>
               );
             })}
@@ -145,10 +163,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
         </div>
 
         {/* Logout Section - Bottom (fixed) */}
-        <div className="flex-shrink-0 w-full p-2.5 flex justify-center items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity">
-          <LogOut className="w-6 h-6 text-red-600" />
-          <div className="flex-1 justify-start text-red-600 text-base font-normal font-['Manrope'] leading-6">
-            Log Out
+        <div className="flex-shrink-0 w-full mt-4 pt-4 border-t border-blue-200/50">
+          <div className="w-full px-4 py-3.5 flex items-center gap-3.5 cursor-pointer rounded-xl hover:bg-red-50/80 hover:shadow-md transition-all duration-200 group">
+            <LogOut className="w-5 h-5 text-red-500 group-hover:text-red-600 group-hover:scale-110 transition-all duration-200" />
+            <div className="flex-1 text-sm font-semibold text-red-600 group-hover:text-red-700 font-['Manrope'] leading-5 transition-colors duration-200">
+              Log Out
+            </div>
           </div>
         </div>
       </div>

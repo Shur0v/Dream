@@ -107,6 +107,30 @@ p, span, div, a, button, input, textarea, select, label {
   display: none;  /* Chrome, Safari and Opera */
 }
 
+/* Modern sidebar scrollbar */
+.sidebar-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(217, 70, 239, 0.3);
+  border-radius: 10px;
+  transition: background 0.2s ease;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(217, 70, 239, 0.5);
+}
+
+.sidebar-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(217, 70, 239, 0.3) transparent;
+}
+
 /* Horizontal scroll with touch support */
 .horizontal-scroll {
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
