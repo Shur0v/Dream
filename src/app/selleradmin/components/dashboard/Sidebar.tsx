@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Plus, FolderPlus, TrendingUp, Star, LogOut, Palette, Image as ImageIcon, Megaphone, Tag, Sparkles, MessageSquare, Package } from 'lucide-react';
+import { LayoutDashboard, Plus, FolderPlus, TrendingUp, Star, LogOut, Palette, Image as ImageIcon, Megaphone, Tag, Sparkles, MessageSquare, Package, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -31,6 +31,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ className }) => {
       label: 'Dashboard', 
       href: '/selleradmin',
       icon: <LayoutDashboard className="w-6 h-6" />
+    },
+    { 
+      label: 'Orders', 
+      href: '/selleradmin/orders',
+      icon: <ShoppingCart className="w-6 h-6" />
     },
     { 
       label: 'Add Product', 
