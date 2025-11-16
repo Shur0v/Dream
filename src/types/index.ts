@@ -33,6 +33,29 @@ export interface Address {
   country: string;
 }
 
+// Color Interface
+export interface Color {
+  id: string;
+  name: string;
+  hexCode: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Category Interface
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  image?: string;
+  parentId?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Product Interface
 export interface Product {
   id: string;
@@ -43,10 +66,14 @@ export interface Product {
   discount?: number;
   images: string[];
   category: string;
+  categoryId?: string;
   subcategory?: string;
   brand: string;
   sku: string;
   stock: number;
+  colors?: string[]; // Array of color IDs
+  colorOptions?: Color[]; // Full color objects
+  size?: string[];
   isActive: boolean;
   tags: string[];
   specifications?: Record<string, any>;
@@ -77,7 +104,7 @@ export interface Cart {
 }
 
 // Order Status Types
-export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
+export type OrderStatus = 'pending' | 'confirmed' | 'approved' | 'rejected' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
 
 // Order Item Interface
 export interface OrderItem {
@@ -86,6 +113,8 @@ export interface OrderItem {
   product: Product;
   quantity: number;
   price: number;
+  color?: string; // Selected color ID or name
+  size?: string; // Selected size
 }
 
 // Order Interface
@@ -156,10 +185,24 @@ export interface ProductFilters {
   category?: string;
   subcategory?: string;
   brand?: string;
+  color?: string;
   minPrice?: number;
   maxPrice?: number;
   inStock?: boolean;
   search?: string;
+}
+
+// Dashboard Stats Interface
+export interface DashboardStats {
+  totalRevenue: number;
+  totalProducts: number;
+  totalOrders: number;
+  pendingOrders: number;
+  recentOrders: Order[];
+  revenueByPeriod?: {
+    period: string;
+    revenue: number;
+  }[];
 }
 
 // Auth Types

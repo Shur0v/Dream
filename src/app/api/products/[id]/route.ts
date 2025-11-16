@@ -12,7 +12,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { sampleProducts, mockApiDelay } from '@/lib/dummyData';
+import { getProductById, saveProduct, deleteProduct, getColors } from '@/lib/db';
+import { mockApiDelay } from '@/lib/dummyData';
+import { Product } from '@/types';
 
 /**
  * Get single product API endpoint
@@ -33,8 +35,8 @@ export async function GET(
     
     const { id } = await params;
 
-    // Find product in sample data
-    const product = sampleProducts.find(p => p.id === id);
+    // Find product in database
+    const product = await getProductById(id);
     
     if (!product) {
       return NextResponse.json(
@@ -51,9 +53,22 @@ export async function GET(
       );
     }
 
+    // Enrich product with color objects if colors are present
+    let enrichedProduct = product;
+    if (product.colors && product.colors.length > 0) {
+      const allColors = await getColors();
+      const colorObjects = product.colors
+        .map(colorId => allColors.find(c => c.id === colorId))
+        .filter(Boolean);
+      enrichedProduct = {
+        ...product,
+        colorOptions: colorObjects,
+      };
+    }
+
     return NextResponse.json({
       success: true,
-      data: product,
+      data: enrichedProduct,
       message: 'Product retrieved successfully',
     });
 
@@ -94,10 +109,10 @@ export async function PUT(
     //   );
     // }
 
-    // Find product in sample data
-    const productIndex = sampleProducts.findIndex(p => p.id === id);
+    // Find product in database
+    const existingProduct = await getProductById(id);
     
-    if (productIndex === -1) {
+    if (!existingProduct) {
       return NextResponse.json(
         { success: false, error: 'Product not found' },
         { status: 404 }
@@ -105,7 +120,24 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, description, price, originalPrice, images, category, subcategory, brand, sku, stock, tags, specifications, isActive } = body;
+    const { 
+      name, 
+      description, 
+      price, 
+      originalPrice, 
+      images, 
+      category, 
+      categoryId,
+      subcategory, 
+      brand, 
+      sku, 
+      stock, 
+      colors,
+      size,
+      tags, 
+      specifications, 
+      isActive 
+    } = body;
 
     // Validate price if provided
     if (price !== undefined && price <= 0) {
@@ -123,27 +155,50 @@ export async function PUT(
       );
     }
 
+    // Validate colors if provided
+    if (colors && Array.isArray(colors)) {
+      const allColors = await getColors();
+      const validColors = colors.every(colorId => 
+        allColors.some(c => c.id === colorId)
+      );
+      if (!validColors) {
+        return NextResponse.json(
+          { success: false, error: 'One or more color IDs are invalid' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Calculate discount if originalPrice is provided
+    const calculatedDiscount = (price !== undefined && originalPrice !== undefined && originalPrice > price)
+      ? Math.round(((originalPrice - price) / originalPrice) * 100)
+      : undefined;
+
     // Update product
-    const updatedProduct = {
-      ...sampleProducts[productIndex],
+    const updatedProduct: Product = {
+      ...existingProduct,
       ...(name && { name }),
       ...(description && { description }),
       ...(price !== undefined && { price: parseFloat(price) }),
       ...(originalPrice !== undefined && { originalPrice: parseFloat(originalPrice) }),
+      ...(calculatedDiscount !== undefined && { discount: calculatedDiscount }),
       ...(images && { images }),
       ...(category && { category }),
+      ...(categoryId !== undefined && { categoryId }),
       ...(subcategory !== undefined && { subcategory }),
       ...(brand && { brand }),
       ...(sku && { sku }),
       ...(stock !== undefined && { stock: parseInt(stock) }),
+      ...(colors !== undefined && { colors }),
+      ...(size !== undefined && { size }),
       ...(tags && { tags }),
       ...(specifications && { specifications }),
       ...(isActive !== undefined && { isActive }),
       updatedAt: new Date().toISOString(),
     };
 
-    // In real app, update in database
-    // await updateProduct(id, updatedProduct);
+    // Update in database
+    await saveProduct(updatedProduct);
 
     return NextResponse.json({
       success: true,
@@ -188,25 +243,15 @@ export async function DELETE(
     //   );
     // }
 
-    // Find product in sample data
-    const productIndex = sampleProducts.findIndex(p => p.id === id);
+    // Soft delete product (set isActive to false)
+    const deletedProduct = await deleteProduct(id);
     
-    if (productIndex === -1) {
+    if (!deletedProduct) {
       return NextResponse.json(
         { success: false, error: 'Product not found' },
         { status: 404 }
       );
     }
-
-    // Soft delete product (set isActive to false)
-    const deletedProduct = {
-      ...sampleProducts[productIndex],
-      isActive: false,
-      updatedAt: new Date().toISOString(),
-    };
-
-    // In real app, update in database
-    // await softDeleteProduct(id);
 
     return NextResponse.json({
       success: true,

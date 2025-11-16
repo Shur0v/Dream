@@ -1,37 +1,115 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight, Edit, Trash2 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { ChevronLeft, ChevronRight, Edit, Trash2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { products as allProducts, Product } from '@/lib/productData';
+import { Product } from '@/types';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
 import EditProductModal from './EditProductModal';
 
 interface AllProductsGridProps {
-  onDelete?: (id: number) => void;
+  onDelete?: (id: string) => void;
 }
 
+// Convert API Product to display format
+type DisplayProduct = {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  currency?: string;
+  image: string;
+  category: string;
+  brand: string;
+  createdAt?: string;
+  updatedAt?: string;
+  sku?: string;
+  stock?: number;
+};
+
 export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
+  const searchParams = useSearchParams();
   const [page, setPage] = useState(1);
   const perPage = 30;
-  const [deletedIds, setDeletedIds] = useState<Set<number>>(new Set());
+  const [products, setProducts] = useState<DisplayProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleteTargetName, setDeleteTargetName] = useState<string>('');
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<DisplayProduct | null>(null);
 
-  // Sort products: newest first (by id descending, or createdAt if available)
+  // Fetch products from API
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/products?limit=1000');
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        // Convert API products to display format
+        const displayProducts: DisplayProduct[] = result.data.map((p: Product) => ({
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          originalPrice: p.originalPrice,
+          currency: '৳',
+          image: p.images && p.images.length > 0 ? p.images[0] : '/placeholder-image.png',
+          category: p.category,
+          brand: p.brand,
+          createdAt: p.createdAt,
+          updatedAt: p.updatedAt,
+          sku: p.sku,
+          stock: p.stock,
+        }));
+        
+        setProducts(displayProducts);
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  // Refresh when URL has refresh parameter (e.g., when navigating back from add product)
+  useEffect(() => {
+    const refresh = searchParams.get('refresh');
+    if (refresh) {
+      fetchProducts();
+      // Clean up URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, [searchParams]);
+
+  // Refresh when page becomes visible (e.g., when navigating back from add product)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchProducts();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Sort products: newest first (by createdAt)
   const sortedProducts = useMemo(() => {
-    return [...allProducts].sort((a, b) => {
-      // If createdAt exists, use it; otherwise use id (higher id = newer)
+    return [...products].sort((a, b) => {
       if (a.createdAt && b.createdAt) {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
-      return b.id - a.id;
+      return 0;
     });
-  }, []);
+  }, [products]);
 
   // Filter out deleted products
   const filteredProducts = useMemo(() => {
@@ -44,35 +122,77 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
   const end = Math.min(start + perPage, total);
   const pageData = filteredProducts.slice(start, end);
 
-  const handleDeleteClick = (id: number, name: string) => {
+  const handleDeleteClick = (id: string, name: string) => {
     setDeleteTargetId(id);
     setDeleteTargetName(name);
     setDeleteModalOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (deleteTargetId !== null) {
-      setDeletedIds((prev) => {
-        const next = new Set(prev);
-        next.add(deleteTargetId);
-        return next;
-      });
-      onDelete?.(deleteTargetId);
-      setDeleteTargetId(null);
-      setDeleteTargetName('');
+      try {
+        // Call API to delete product
+        const response = await fetch(`/api/products/${deleteTargetId}`, {
+          method: 'DELETE',
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          setDeletedIds((prev) => {
+            const next = new Set(prev);
+            next.add(deleteTargetId);
+            return next;
+          });
+          onDelete?.(deleteTargetId);
+          // Refresh products list
+          await fetchProducts();
+        } else {
+          alert(`Error: ${result.error || 'Failed to delete product'}`);
+        }
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        alert('An error occurred while deleting the product');
+      } finally {
+        setDeleteTargetId(null);
+        setDeleteTargetName('');
+        setDeleteModalOpen(false);
+      }
     }
   };
 
-  const handleEdit = (product: Product) => {
+  const handleEdit = (product: DisplayProduct) => {
     setEditingProduct(product);
     setEditModalOpen(true);
   };
 
-  const handleEditSave = (data: Partial<Product>) => {
-    console.log('Product updated', data);
-    // Here you would typically update the product in your state/API
-    setEditModalOpen(false);
-    setEditingProduct(null);
+  const handleEditSave = async (data: Partial<DisplayProduct>) => {
+    if (!editingProduct) return;
+    
+    try {
+      // Call API to update product
+      const response = await fetch(`/api/products/${editingProduct.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Refresh products list
+        await fetchProducts();
+        setEditModalOpen(false);
+        setEditingProduct(null);
+      } else {
+        alert(`Error: ${result.error || 'Failed to update product'}`);
+      }
+    } catch (error) {
+      console.error('Error updating product:', error);
+      alert('An error occurred while updating the product');
+    }
   };
 
   return (
@@ -80,13 +200,27 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
       {/* Header */}
       <div className="w-full flex items-center justify-between">
         <h1 className="text-slate-950 text-2xl font-bold font-['Poppins']">All Products</h1>
-        <div className="text-zinc-500 text-sm font-normal font-['Poppins']">
-          {total === 0 ? 'No products' : `Showing ${start + 1} to ${end} out of ${total} products`}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={fetchProducts}
+            disabled={loading}
+            className="p-2 rounded-lg hover:bg-neutral-100 transition-colors disabled:opacity-50"
+            aria-label="Refresh products"
+          >
+            <RefreshCw className={cn('w-5 h-5 text-zinc-700', loading && 'animate-spin')} />
+          </button>
+          <div className="text-zinc-500 text-sm font-normal font-['Poppins']">
+            {loading ? 'Loading...' : total === 0 ? 'No products' : `Showing ${start + 1} to ${end} out of ${total} products`}
+          </div>
         </div>
       </div>
 
       {/* Products Grid */}
-      {pageData.length > 0 ? (
+      {loading ? (
+        <div className="w-full py-12 text-center text-zinc-500 text-base font-normal font-['Poppins']">
+          Loading products...
+        </div>
+      ) : pageData.length > 0 ? (
         <div className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           {pageData.map((product) => (
             <div
@@ -95,13 +229,26 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
             >
               {/* Product Image */}
               <div className="w-full aspect-square relative bg-neutral-50">
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                />
+                {product.image && product.image.startsWith('data:') ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Image
+                    src={product.image || '/placeholder-image.png'}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    onError={(e) => {
+                      // Fallback to placeholder if image fails to load
+                      e.currentTarget.src = '/placeholder-image.png';
+                    }}
+                  />
+                )}
               </div>
 
               {/* Product Info */}
@@ -111,11 +258,13 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
                   {product.name}
                 </h3>
 
-                {/* Product ID */}
-                <div className="flex items-center gap-2">
-                  <span className="text-zinc-500 text-xs font-normal font-['Poppins']">ID:</span>
-                  <span className="text-zinc-700 text-xs font-medium font-['Poppins']">{product.id}</span>
-                </div>
+                {/* SKU */}
+                {product.sku && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-zinc-500 text-xs font-normal font-['Poppins']">SKU:</span>
+                    <span className="text-zinc-700 text-xs font-medium font-['Poppins']">{product.sku}</span>
+                  </div>
+                )}
 
                 {/* Price */}
                 <div className="flex items-center gap-2">

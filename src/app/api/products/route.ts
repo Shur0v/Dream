@@ -14,7 +14,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { sampleProducts, mockApiDelay } from '@/lib/dummyData';
+import { getProducts, saveProduct, getColors } from '@/lib/db';
+import { mockApiDelay } from '@/lib/dummyData';
+import { Product } from '@/types';
 
 /**
  * Get products list API endpoint
@@ -33,13 +35,17 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '12');
     const category = searchParams.get('category');
+    const categoryId = searchParams.get('categoryId');
+    const color = searchParams.get('color'); // Color ID or name
     const search = searchParams.get('search');
     const minPrice = searchParams.get('minPrice');
     const maxPrice = searchParams.get('maxPrice');
+    const inStock = searchParams.get('inStock') === 'true';
     const sortBy = searchParams.get('sortBy') || 'createdAt';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
-    let filteredProducts = [...sampleProducts];
+    const allProducts = await getProducts();
+    let filteredProducts = [...allProducts];
 
     // Apply search filter
     if (search) {
@@ -51,11 +57,33 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Apply category filter
+    // Apply category filter (by name or ID)
     if (category) {
       filteredProducts = filteredProducts.filter(product =>
         product.category.toLowerCase() === category.toLowerCase()
       );
+    }
+    if (categoryId) {
+      filteredProducts = filteredProducts.filter(product =>
+        product.categoryId === categoryId
+      );
+    }
+
+    // Apply color filter
+    if (color) {
+      filteredProducts = filteredProducts.filter(product => {
+        if (product.colors && product.colors.length > 0) {
+          return product.colors.some(c => 
+            c.toLowerCase() === color.toLowerCase() || 
+            c === color
+          );
+        }
+        // Fallback: check specifications for color
+        if (product.specifications?.color) {
+          return product.specifications.color.toLowerCase().includes(color.toLowerCase());
+        }
+        return false;
+      });
     }
 
     // Apply price filters
@@ -67,6 +95,13 @@ export async function GET(request: NextRequest) {
     if (maxPrice) {
       filteredProducts = filteredProducts.filter(product =>
         product.price <= parseFloat(maxPrice)
+      );
+    }
+
+    // Apply stock filter
+    if (inStock) {
+      filteredProducts = filteredProducts.filter(product =>
+        product.stock > 0 && product.isActive
       );
     }
 
@@ -97,12 +132,27 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    // Enrich products with color objects if colors are present
+    const allColors = await getColors();
+    const enrichedProducts = filteredProducts.map(product => {
+      if (product.colors && product.colors.length > 0) {
+        const colorObjects = product.colors
+          .map(colorId => allColors.find(c => c.id === colorId))
+          .filter(Boolean);
+        return {
+          ...product,
+          colorOptions: colorObjects,
+        };
+      }
+      return product;
+    });
+
     // Apply pagination
-    const total = filteredProducts.length;
+    const total = enrichedProducts.length;
     const totalPages = Math.ceil(total / limit);
     const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
-    const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+    const paginatedProducts = enrichedProducts.slice(startIndex, endIndex);
 
     return NextResponse.json({
       success: true,
@@ -150,55 +200,111 @@ export async function POST(request: NextRequest) {
     // }
     
     const body = await request.json();
-    const { name, description, price, originalPrice, images, category, subcategory, brand, sku, stock, tags, specifications } = body;
+    console.log('Received product data:', body);
+    
+    const { 
+      name, 
+      description, 
+      price, 
+      originalPrice, 
+      images, 
+      category, 
+      categoryId,
+      subcategory, 
+      brand, 
+      sku, 
+      stock, 
+      colors, // Array of color IDs
+      size, // Array of sizes
+      tags, 
+      specifications 
+    } = body;
 
     // Validate required fields
-    if (!name || !description || !price || !category || !brand || !sku) {
+    if (!name || !description || price === undefined || price === null || !category || !brand || !sku) {
       return NextResponse.json(
-        { success: false, error: 'Required fields missing' },
+        { success: false, error: 'Required fields missing. Please check: name, description, price, category, brand, and sku.' },
         { status: 400 }
       );
     }
 
-    // Validate price
-    if (price <= 0) {
+    // Convert and validate price
+    const priceNum = typeof price === 'string' ? parseFloat(price) : Number(price);
+    if (isNaN(priceNum) || priceNum <= 0) {
       return NextResponse.json(
-        { success: false, error: 'Price must be greater than 0' },
+        { success: false, error: 'Price must be a valid number greater than 0' },
         { status: 400 }
       );
     }
 
-    // Validate stock
-    if (stock < 0) {
+    // Convert and validate stock
+    const stockNum = typeof stock === 'string' ? parseInt(stock) : Number(stock);
+    if (isNaN(stockNum) || stockNum < 0) {
       return NextResponse.json(
-        { success: false, error: 'Stock cannot be negative' },
+        { success: false, error: 'Stock must be a valid number and cannot be negative' },
         { status: 400 }
       );
     }
+
+    // Validate colors if provided
+    if (colors && Array.isArray(colors)) {
+      const allColors = await getColors();
+      const validColors = colors.every(colorId => 
+        allColors.some(c => c.id === colorId)
+      );
+      if (!validColors) {
+        return NextResponse.json(
+          { success: false, error: 'One or more color IDs are invalid' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Convert originalPrice
+    const originalPriceNum = originalPrice 
+      ? (typeof originalPrice === 'string' ? parseFloat(originalPrice) : Number(originalPrice))
+      : undefined;
 
     // Create new product
-    const newProduct = {
+    const newProduct: Product = {
       id: `product-${Date.now()}`,
-      name,
-      description,
-      price: parseFloat(price),
-      originalPrice: originalPrice ? parseFloat(originalPrice) : undefined,
-      images: images || [],
-      category,
-      subcategory: subcategory || undefined,
-      brand,
-      sku,
-      stock: parseInt(stock) || 0,
+      name: String(name).trim(),
+      description: String(description).trim(),
+      price: priceNum,
+      originalPrice: originalPriceNum && !isNaN(originalPriceNum) ? originalPriceNum : undefined,
+      discount: originalPriceNum && originalPriceNum > priceNum
+        ? Math.round(((originalPriceNum - priceNum) / originalPriceNum) * 100)
+        : undefined,
+      images: Array.isArray(images) ? images.filter(img => img && img.trim() !== '') : [],
+      category: String(category).trim(),
+      categoryId: categoryId ? String(categoryId).trim() : undefined,
+      subcategory: subcategory ? String(subcategory).trim() : undefined,
+      brand: String(brand).trim(),
+      sku: String(sku).trim(),
+      stock: stockNum,
+      colors: colors && Array.isArray(colors) ? colors.filter(c => c) : undefined,
+      size: size && Array.isArray(size) ? size.filter(s => s) : undefined,
       isActive: true,
-      tags: tags || [],
-      specifications: specifications || {},
+      tags: Array.isArray(tags) ? tags.filter(t => t) : [],
+      specifications: specifications && typeof specifications === 'object' ? specifications : {},
       sellerId: 'seller-1', // TODO: Get from authenticated user
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    // In real app, save to database
-    // await saveProduct(newProduct);
+    console.log('Product to save:', newProduct);
+
+    // Save to database
+    try {
+      await saveProduct(newProduct);
+      console.log('Product saved successfully to database');
+    } catch (error) {
+      console.error('Error saving product to database:', error);
+      return NextResponse.json(
+        { success: false, error: 'Failed to save product to database' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,

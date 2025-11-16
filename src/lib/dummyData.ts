@@ -12,7 +12,7 @@
  * @version 1.0.0
  */
 
-import { Product, User, CartItem, WishlistItem, Order } from '../types';
+import { Product, User, CartItem, WishlistItem, Order, Color, Category } from '../types';
 
 /**
  * Sample products for development
@@ -317,6 +317,8 @@ export const sampleOrders: Order[] = [
         product: sampleProducts[0],
         quantity: 1,
         price: 199.99,
+        color: 'color-1',
+        size: 'One Size',
       },
     ],
     status: 'delivered',
@@ -334,10 +336,253 @@ export const sampleOrders: Order[] = [
     createdAt: '2024-01-10T10:00:00Z',
     updatedAt: '2024-01-12T15:30:00Z',
   },
+  {
+    id: 'order-2',
+    userId: 'user-1',
+    items: [
+      {
+        id: 'order-item-2',
+        productId: '3',
+        product: sampleProducts[2],
+        quantity: 2,
+        price: 59.98,
+        color: 'color-2',
+        size: 'Large',
+      },
+    ],
+    status: 'pending',
+    totalAmount: 59.98,
+    shippingAddress: {
+      street: '123 Main St',
+      city: 'New York',
+      state: 'NY',
+      zipCode: '10001',
+      country: 'USA',
+    },
+    paymentMethod: 'Credit Card',
+    paymentStatus: 'paid',
+    createdAt: '2024-01-18T14:30:00Z',
+    updatedAt: '2024-01-18T14:30:00Z',
+  },
+  {
+    id: 'order-3',
+    userId: 'user-1',
+    items: [
+      {
+        id: 'order-item-3',
+        productId: '2',
+        product: sampleProducts[1],
+        quantity: 1,
+        price: 299.99,
+        color: 'color-4',
+        size: 'One Size',
+      },
+    ],
+    status: 'pending',
+    totalAmount: 299.99,
+    shippingAddress: {
+      street: '123 Main St',
+      city: 'New York',
+      state: 'NY',
+      zipCode: '10001',
+      country: 'USA',
+    },
+    paymentMethod: 'PayPal',
+    paymentStatus: 'paid',
+    createdAt: '2024-01-19T09:15:00Z',
+    updatedAt: '2024-01-19T09:15:00Z',
+  },
+  {
+    id: 'order-4',
+    userId: 'user-1',
+    items: [
+      {
+        id: 'order-item-4',
+        productId: '5',
+        product: sampleProducts[4],
+        quantity: 3,
+        price: 74.97,
+        color: 'color-3',
+        size: '32oz',
+      },
+    ],
+    status: 'confirmed',
+    totalAmount: 74.97,
+    shippingAddress: {
+      street: '123 Main St',
+      city: 'New York',
+      state: 'NY',
+      zipCode: '10001',
+      country: 'USA',
+    },
+    paymentMethod: 'Credit Card',
+    paymentStatus: 'paid',
+    createdAt: '2024-01-17T11:20:00Z',
+    updatedAt: '2024-01-17T16:45:00Z',
+  },
+  {
+    id: 'order-5',
+    userId: 'user-1',
+    items: [
+      {
+        id: 'order-item-5',
+        productId: '6',
+        product: sampleProducts[5],
+        quantity: 1,
+        price: 39.99,
+        color: 'color-1',
+        size: 'One Size',
+      },
+    ],
+    status: 'shipped',
+    totalAmount: 39.99,
+    shippingAddress: {
+      street: '123 Main St',
+      city: 'New York',
+      state: 'NY',
+      zipCode: '10001',
+      country: 'USA',
+    },
+    paymentMethod: 'Credit Card',
+    paymentStatus: 'paid',
+    trackingNumber: 'TRK987654321',
+    createdAt: '2024-01-15T08:00:00Z',
+    updatedAt: '2024-01-16T10:30:00Z',
+  },
 ];
 
 /**
- * Categories for navigation
+ * Sample colors for products
+ */
+export const sampleColors: Color[] = [
+  {
+    id: 'color-1',
+    name: 'Black',
+    hexCode: '#000000',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'color-2',
+    name: 'White',
+    hexCode: '#FFFFFF',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'color-3',
+    name: 'Red',
+    hexCode: '#FF0000',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'color-4',
+    name: 'Blue',
+    hexCode: '#0000FF',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'color-5',
+    name: 'Green',
+    hexCode: '#00FF00',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'color-6',
+    name: 'Yellow',
+    hexCode: '#FFFF00',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'color-7',
+    name: 'Gray',
+    hexCode: '#808080',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'color-8',
+    name: 'Navy',
+    hexCode: '#000080',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+];
+
+/**
+ * Sample categories
+ */
+export const sampleCategories: Category[] = [
+  {
+    id: 'cat-1',
+    name: 'Electronics',
+    slug: 'electronics',
+    description: 'Electronic devices and accessories',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'cat-2',
+    name: 'Clothing',
+    slug: 'clothing',
+    description: 'Apparel and fashion items',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'cat-3',
+    name: 'Home & Kitchen',
+    slug: 'home-kitchen',
+    description: 'Home and kitchen essentials',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'cat-4',
+    name: 'Sports & Outdoors',
+    slug: 'sports',
+    description: 'Sports equipment and outdoor gear',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'cat-5',
+    name: 'Books',
+    slug: 'books',
+    description: 'Books and reading materials',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'cat-6',
+    name: 'Beauty & Health',
+    slug: 'beauty',
+    description: 'Beauty products and health items',
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+];
+
+/**
+ * Categories for navigation (legacy format)
  */
 export const categories = [
   { id: 'electronics', name: 'Electronics', slug: 'electronics' },

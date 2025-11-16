@@ -5,19 +5,42 @@ import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { products, Product } from '@/lib/productData';
+import { Product } from '@/types';
 
 /**
  * Complete Filtering System Component
  * Displays sidebar with search, category, brand, and size filters on the left
  * and product grid on the right with 3 products per row
  */
+// Display Product type (converted from API Product)
+type DisplayProduct = {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  currency?: string;
+  image: string;
+  category: string;
+  brand: string;
+  sizes: string[];
+  rating: number;
+  reviews: number;
+  createdAt?: string;
+};
+
 export default function FilteringSystem() {
   const router = useRouter();
   const [isCategoryOpen, setIsCategoryOpen] = useState(true);
   const [isBrandingOpen, setIsBrandingOpen] = useState(true);
   const [isSizeOpen, setIsSizeOpen] = useState(true);
   const [isFilterOpen, setIsFilterOpen] = useState(false); // drawer for <1320px
+
+  // Data states
+  const [products, setProducts] = useState<DisplayProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<Array<{ name: string; count: number }>>([]);
+  const [brands, setBrands] = useState<string[]>([]);
+  const [allSizes, setAllSizes] = useState<string[]>([]);
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,49 +51,79 @@ export default function FilteringSystem() {
   const [visibleProducts, setVisibleProducts] = useState(18);
   const [headerHeight, setHeaderHeight] = useState(0);
 
-  const brands = [
-    'Apple',
-    'Samsung', 
-    'Sony',
-    'Nike',
-    'Adidas',
-    'Samsung'
-  ];
-
-  const sizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', 'XXL', '3XL', '4XL'];
+  // Fetch products and categories from API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch products
+        const productsResponse = await fetch('/api/products?limit=1000');
+        const productsResult = await productsResponse.json();
+        
+        if (productsResult.success && productsResult.data) {
+          // Convert API products to display format
+          const displayProducts: DisplayProduct[] = productsResult.data
+            .filter((p: Product) => p.isActive !== false) // Only active products
+            .map((p: Product) => ({
+              id: p.id,
+              name: p.name,
+              price: p.price,
+              originalPrice: p.originalPrice,
+              currency: '৳',
+              image: p.images && p.images.length > 0 ? p.images[0] : '/placeholder-image.png',
+              category: p.category,
+              brand: p.brand,
+              sizes: p.size || [],
+              rating: 4, // Default rating (can be added to Product type later)
+              reviews: 0, // Default reviews (can be added to Product type later)
+              createdAt: p.createdAt,
+            }));
+          
+          setProducts(displayProducts);
+          
+          // Extract unique brands
+          const uniqueBrands = Array.from(new Set(displayProducts.map(p => p.brand).filter(Boolean)));
+          setBrands(uniqueBrands.sort());
+          
+          // Extract unique sizes
+          const allSizesSet = new Set<string>();
+          displayProducts.forEach(p => {
+            p.sizes.forEach(size => allSizesSet.add(size));
+          });
+          setAllSizes(Array.from(allSizesSet).sort());
+        }
+        
+        // Fetch categories
+        const categoriesResponse = await fetch('/api/categories');
+        const categoriesResult = await categoriesResponse.json();
+        
+        if (categoriesResult.success && categoriesResult.data) {
+          const activeCategories = categoriesResult.data.filter((c: any) => c.isActive !== false);
+          setCategories(activeCategories.map((c: any) => ({ name: c.name, count: 0 })));
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, []);
 
   // Calculate dynamic category counts based on current filters
-  const getCategoryCounts = () => {
-    return [
-      { name: 'Electronics', count: products.filter(p => p.category === 'Electronics' && 
+  const categoryCounts = useMemo(() => {
+    return categories.map(cat => ({
+      name: cat.name,
+      count: products.filter(p => 
+        p.category === cat.name &&
         (!searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
         (selectedBrands.length === 0 || selectedBrands.includes(p.brand)) &&
         (selectedSizes.length === 0 || selectedSizes.some(size => p.sizes.includes(size)))
-      ).length },
-      { name: 'Fashion', count: products.filter(p => p.category === 'Fashion' && 
-        (!searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
-        (selectedBrands.length === 0 || selectedBrands.includes(p.brand)) &&
-        (selectedSizes.length === 0 || selectedSizes.some(size => p.sizes.includes(size)))
-      ).length },
-      { name: 'Home & Garden', count: products.filter(p => p.category === 'Home & Garden' && 
-        (!searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
-        (selectedBrands.length === 0 || selectedBrands.includes(p.brand)) &&
-        (selectedSizes.length === 0 || selectedSizes.some(size => p.sizes.includes(size)))
-      ).length },
-      { name: 'Sports', count: products.filter(p => p.category === 'Sports' && 
-        (!searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
-        (selectedBrands.length === 0 || selectedBrands.includes(p.brand)) &&
-        (selectedSizes.length === 0 || selectedSizes.some(size => p.sizes.includes(size)))
-      ).length },
-      { name: 'Books', count: products.filter(p => p.category === 'Books' && 
-        (!searchTerm || p.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
-        (selectedBrands.length === 0 || selectedBrands.includes(p.brand)) &&
-        (selectedSizes.length === 0 || selectedSizes.some(size => p.sizes.includes(size)))
-      ).length },
-    ];
-  };
-
-  const categories = getCategoryCounts();
+      ).length
+    }));
+  }, [categories, products, searchTerm, selectedBrands, selectedSizes]);
 
   // Filter and sort products
   const filteredAndSortedProducts = useMemo(() => {
@@ -113,16 +166,22 @@ export default function FilteringSystem() {
         filtered.sort((a, b) => b.reviews - a.reviews);
         break;
       default:
-        // Keep original order
+        // Sort by newest first (by createdAt)
+        filtered.sort((a, b) => {
+          if (a.createdAt && b.createdAt) {
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          }
+          return 0;
+        });
         break;
     }
 
     return filtered;
-  }, [searchTerm, selectedCategories, selectedBrands, selectedSizes, sortBy]);
+  }, [products, searchTerm, selectedCategories, selectedBrands, selectedSizes, sortBy]);
 
   // Function to chunk products into rows of 3
-  const chunkProducts = (products: Product[], size: number) => {
-    const chunks: Product[][] = [];
+  const chunkProducts = (products: DisplayProduct[], size: number) => {
+    const chunks: DisplayProduct[][] = [];
     for (let i = 0; i < products.length; i += size) {
       chunks.push(products.slice(i, i + size));
     }
@@ -130,8 +189,8 @@ export default function FilteringSystem() {
   };
 
   // Create infinite scroll effect by repeating products
-  const createInfiniteProducts = (products: Product[], count: number) => {
-    const infiniteProducts: Product[] = [];
+  const createInfiniteProducts = (products: DisplayProduct[], count: number) => {
+    const infiniteProducts: DisplayProduct[] = [];
     let currentIndex = 0;
     
     for (let i = 0; i < count; i++) {
@@ -141,7 +200,7 @@ export default function FilteringSystem() {
       const product = products[currentIndex % products.length];
       infiniteProducts.push({
         ...product,
-        id: product.id + (Math.floor(i / products.length) * 1000) // Unique ID for each cycle
+        id: `${product.id}-${i}` // Unique ID for each cycle
       });
       
       currentIndex++;
@@ -196,7 +255,7 @@ export default function FilteringSystem() {
   };
 
   // Handle product card click
-  const handleProductClick = (productId: number) => {
+  const handleProductClick = (productId: string) => {
     router.push(`/client/product-details/${productId}`);
   };
 
@@ -276,7 +335,7 @@ export default function FilteringSystem() {
         
         {isCategoryOpen && (
           <div className=" space-y-2">
-            {categories.map((category, index) => (
+            {categoryCounts.map((category, index) => (
               <label key={index} className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded">
                 <div className="flex items-center">
                   <input 
@@ -347,7 +406,7 @@ export default function FilteringSystem() {
         
         {isSizeOpen && (
           <div className="mt-2 grid grid-cols-3 gap-2">
-            {sizes.map((size, index) => (
+            {allSizes.map((size, index) => (
               <button
                 key={index}
                 onClick={() => handleSizeToggle(size)}
@@ -413,7 +472,7 @@ export default function FilteringSystem() {
           </button>
           {isCategoryOpen && (
             <div className="space-y-2">
-              {categories.map((category, index) => (
+              {categoryCounts.map((category, index) => (
                 <label key={index} className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded">
                   <div className="flex items-center">
                     <input
@@ -473,7 +532,7 @@ export default function FilteringSystem() {
         </button>
         {isSizeOpen && (
           <div className="mt-2 grid grid-cols-3 gap-2">
-            {sizes.map((size, index) => (
+            {allSizes.map((size, index) => (
               <button
                 key={index}
                 onClick={() => handleSizeToggle(size)}
@@ -575,7 +634,11 @@ export default function FilteringSystem() {
           <div className="hidden md:flex md:flex-col md:justify-start md:items-center md:gap-0">
             {/* Products Grid Container */}
             
-            {displayedProducts.length === 0 ? (
+            {loading ? (
+              <div className="w-full text-center py-12">
+                <div className="text-gray-500 text-lg mb-4">Loading products...</div>
+              </div>
+            ) : displayedProducts.length === 0 ? (
               <div className="w-full text-center py-12">
                 <div className="text-gray-500 text-lg mb-4">No products found</div>
                 <p className="text-gray-400 mb-6">Try adjusting your filters or search terms</p>
@@ -649,17 +712,31 @@ export default function FilteringSystem() {
                       {/* Product Image */}
                       <div className="self-stretch h-72 relative mb-4 overflow-hidden rounded-lg">
                         {/* Product Image Container */}
-                        
-                        <Image
-                          src={product.image}
-                          alt={`${product.name} product image`}
-                          fill
-                          className="object-cover transform group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
-                          draggable={false}
-                          onDragStart={(e) => e.preventDefault()}
-                          style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
-                          loading="lazy"
-                        />
+                        {product.image && product.image.startsWith('data:') ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={product.image}
+                            alt={`${product.name} product image`}
+                            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
+                            draggable={false}
+                            onDragStart={(e) => e.preventDefault()}
+                            style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
+                          />
+                        ) : (
+                          <Image
+                            src={product.image || '/placeholder-image.png'}
+                            alt={`${product.name} product image`}
+                            fill
+                            className="object-cover transform group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
+                            draggable={false}
+                            onDragStart={(e) => e.preventDefault()}
+                            style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
+                            loading="lazy"
+                            onError={(e) => {
+                              e.currentTarget.src = '/placeholder-image.png';
+                            }}
+                          />
+                        )}
                       </div>
 
                       {/* Product Info */}
@@ -819,14 +896,27 @@ export default function FilteringSystem() {
                   </div>
                   {/* Product Image */}
                   <div className="self-stretch h-40 relative mb-3 overflow-hidden rounded-lg">
-                    <Image
-                      src={product.image}
-                      alt={`${product.name} product image`}
-                      fill
-                      className="object-cover select-none pointer-events-none"
-                      draggable={false}
-                      loading="lazy"
-                    />
+                    {product.image && product.image.startsWith('data:') ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={product.image}
+                        alt={`${product.name} product image`}
+                        className="w-full h-full object-cover select-none pointer-events-none"
+                        draggable={false}
+                      />
+                    ) : (
+                      <Image
+                        src={product.image || '/placeholder-image.png'}
+                        alt={`${product.name} product image`}
+                        fill
+                        className="object-cover select-none pointer-events-none"
+                        draggable={false}
+                        loading="lazy"
+                        onError={(e) => {
+                          e.currentTarget.src = '/placeholder-image.png';
+                        }}
+                      />
+                    )}
                   </div>
                   {/* Info */}
                   <div className="self-stretch flex flex-col justify-start items-start gap-2">
