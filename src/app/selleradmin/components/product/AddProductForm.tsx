@@ -354,7 +354,7 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
                     <label className="self-stretch text-neutral-600 text-base font-medium font-['Poppins'] leading-6">
                       Price <span className="text-red-500">*</span>
                     </label>
-                    <div className="w-full h-14 px-5 py-3.5 rounded-md outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex items-center gap-2.5">
+                    <div className="w-full h-14 px-5 py-3.5 rounded-md outline-1 outline-offset-[-1px] outline-gray-200 inline-flex items-center gap-2.5">
                       <input
                         type="number"
                         step="0.01"
