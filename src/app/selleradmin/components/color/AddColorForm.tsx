@@ -1,70 +1,139 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
-
-interface Color {
-  id: number;
-  name: string;
-  code: string;
-}
+import { Color } from '@/types';
 
 interface AddColorFormProps {
   onCancel?: () => void;
   onConfirm?: (data: { name: string; code: string }) => void;
-  onDelete?: (id: number) => void;
+  onDelete?: (id: string) => void;
 }
 
 export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColorFormProps) {
   const [colorName, setColorName] = useState('');
   const [colorCode, setColorCode] = useState('#000000');
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleteTargetName, setDeleteTargetName] = useState<string>('');
+  const [colors, setColors] = useState<Color[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Existing colors - in a real app, this would come from an API/state management
-  const [colors, setColors] = useState<Color[]>([
-    { id: 1, name: 'Red', code: '#FF0000' },
-    { id: 2, name: 'Blue', code: '#0000FF' },
-    { id: 3, name: 'Green', code: '#00FF00' },
-    { id: 4, name: 'Black', code: '#000000' },
-    { id: 5, name: 'White', code: '#FFFFFF' },
-    { id: 6, name: 'Gray', code: '#808080' },
-  ]);
+  // Fetch colors from database
+  useEffect(() => {
+    let active = true;
+    const fetchColors = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetch('/api/colors');
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Failed to load colors');
+        }
+        if (active) {
+          setColors(result.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching colors:', error);
+        if (active) {
+          setError(error instanceof Error ? error.message : 'Unable to load colors');
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
 
-  const handleConfirm = () => {
-    if (colorName.trim() && colorCode.trim()) {
-      // Add new color to the list (at the beginning)
-      const newColor: Color = {
-        id: Math.max(...colors.map(c => c.id), 0) + 1,
-        name: colorName.trim(),
-        code: colorCode.trim(),
-      };
-      setColors((prev) => [newColor, ...prev]);
-      
-      // Call the onConfirm callback
-      onConfirm?.({ name: colorName.trim(), code: colorCode.trim() });
-      
-      // Reset form
-      setColorName('');
-      setColorCode('#000000');
+    fetchColors();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleConfirm = async () => {
+    if (colorName.trim() && colorCode.trim() && !saving) {
+      try {
+        setSaving(true);
+        setError(null);
+        
+        const response = await fetch('/api/colors', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: colorName.trim(),
+            hexCode: colorCode.trim(),
+          }),
+        });
+
+        const result = await response.json();
+        
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Failed to save color');
+        }
+
+        // Add new color to the list (at the beginning)
+        if (result.data) {
+          setColors((prev) => [result.data, ...prev]);
+        }
+        
+        // Call the onConfirm callback
+        onConfirm?.({ name: colorName.trim(), code: colorCode.trim() });
+        
+        // Reset form
+        setColorName('');
+        setColorCode('#000000');
+      } catch (error) {
+        console.error('Error saving color:', error);
+        setError(error instanceof Error ? error.message : 'Failed to save color');
+      } finally {
+        setSaving(false);
+      }
     }
   };
 
-  const handleDeleteClick = (id: number, name: string) => {
+  const handleDeleteClick = (id: string, name: string) => {
     setDeleteTargetId(id);
     setDeleteTargetName(name);
     setDeleteModalOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
-    if (deleteTargetId !== null) {
-      setColors((prev) => prev.filter((color) => color.id !== deleteTargetId));
-      onDelete?.(deleteTargetId);
-      setDeleteTargetId(null);
-      setDeleteTargetName('');
+  const handleDeleteConfirm = async () => {
+    if (deleteTargetId !== null && !deleting) {
+      try {
+        setDeleting(true);
+        setError(null);
+        
+        const response = await fetch(`/api/colors/${deleteTargetId}`, {
+          method: 'DELETE',
+        });
+
+        const result = await response.json();
+        
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Failed to delete color');
+        }
+
+        // Remove color from the list
+        setColors((prev) => prev.filter((color) => color.id !== deleteTargetId));
+        onDelete?.(deleteTargetId);
+        setDeleteTargetId(null);
+        setDeleteTargetName('');
+      } catch (error) {
+        console.error('Error deleting color:', error);
+        setError(error instanceof Error ? error.message : 'Failed to delete color');
+      } finally {
+        setDeleting(false);
+        setDeleteModalOpen(false);
+      }
     }
   };
 
@@ -137,6 +206,13 @@ export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColor
         </div>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="w-full p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600 text-sm font-['Poppins']">{error}</p>
+        </div>
+      )}
+
       {/* Footer buttons */}
       <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
         <button
@@ -149,15 +225,22 @@ export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColor
         <button
           type="button"
           onClick={handleConfirm}
-          disabled={!canConfirm || !isValidHex(colorCode)}
-          className={cn('h-12 px-6 py-3 rounded bg-fuchsia-500 text-white font-medium', (!canConfirm || !isValidHex(colorCode)) && 'opacity-60 cursor-not-allowed')}
+          disabled={!canConfirm || !isValidHex(colorCode) || saving}
+          className={cn(
+            'h-12 px-6 py-3 rounded bg-fuchsia-500 text-white font-medium',
+            (!canConfirm || !isValidHex(colorCode) || saving) && 'opacity-60 cursor-not-allowed'
+          )}
         >
-          Confirm
+          {saving ? 'Saving...' : 'Confirm'}
         </button>
       </div>
 
       {/* Existing Colors Section */}
-      {colors.length > 0 && (
+      {loading ? (
+        <div className="w-full flex justify-center items-center py-12">
+          <p className="text-zinc-500 text-sm font-['Poppins']">Loading colors...</p>
+        </div>
+      ) : colors.length > 0 ? (
         <div className="w-full flex flex-col gap-4">
           <h3 className="text-slate-950 text-xl md:text-2xl font-medium font-['Poppins']">Existing Colors</h3>
           <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
@@ -170,7 +253,11 @@ export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColor
                 <button
                   type="button"
                   onClick={() => handleDeleteClick(color.id, color.name)}
-                  className="absolute top-2 right-2 z-10 p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                  disabled={deleting}
+                  className={cn(
+                    "absolute top-2 right-2 z-10 p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200",
+                    deleting && "opacity-50 cursor-not-allowed"
+                  )}
                   aria-label={`Delete ${color.name} color`}
                 >
                   <Trash2 className="w-4 h-4" />
@@ -179,7 +266,7 @@ export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColor
                 {/* Color Preview */}
                 <div
                   className="w-full h-20 md:h-40 rounded-lg border-2 border-gray-300"
-                  style={{ backgroundColor: color.code }}
+                  style={{ backgroundColor: color.hexCode }}
                 />
 
                 {/* Color Name */}
@@ -189,11 +276,15 @@ export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColor
 
                 {/* Color Code */}
                 <div className="w-full text-center text-zinc-600 text-xs md:text-sm font-mono font-['Poppins']">
-                  {color.code}
+                  {color.hexCode}
                 </div>
               </div>
             ))}
           </div>
+        </div>
+      ) : (
+        <div className="w-full flex justify-center items-center py-12">
+          <p className="text-zinc-500 text-sm font-['Poppins']">No colors found. Add your first color above.</p>
         </div>
       )}
 

@@ -8,7 +8,7 @@ import { ArrowLeft, ImagePlus, X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SimpleSelect from '../ui/SimpleSelect';
 import SearchableMultiSelect from '../ui/SearchableMultiSelect';
-import { Color } from '@/types';
+import { Color, Category } from '@/types';
 
 // Zod schema for validation
 const productSchema = z.object({
@@ -44,7 +44,6 @@ type Distribution = 'Best selling' | 'Featured' | 'New arrival';
 
 const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL'];
 const distributionOptions: Distribution[] = ['Best selling', 'Featured', 'New arrival'];
-const categoryOptions = ['Electronics', 'Fashion', 'Home & Garden', 'Sports', 'Books', 'Toys', 'Beauty', 'Food', 'Clothing', 'Home & Kitchen'];
 const currencyOptions = ['৳', '$', '€', '£', '¥'];
 
 export default function AddProductForm({ onBack, onSave, isSaving = false }: AddProductFormProps) {
@@ -57,6 +56,9 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
   const [colorOptions, setColorOptions] = useState<Color[]>([]);
   const [colorsLoading, setColorsLoading] = useState(true);
   const [colorsError, setColorsError] = useState<string | null>(null);
+  const [categoryOptions, setCategoryOptions] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -96,6 +98,7 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
   const watchedTags = watch('tags');
   const watchedSpecs = watch('specifications');
 
+  // Fetch colors from database
   useEffect(() => {
     let active = true;
     const fetchColors = async () => {
@@ -123,6 +126,39 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
     };
 
     fetchColors();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Fetch categories from database
+  useEffect(() => {
+    let active = true;
+    const fetchCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        setCategoriesError(null);
+        const response = await fetch('/api/categories');
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Failed to load categories');
+        }
+        if (active) {
+          setCategoryOptions(result.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        if (active) {
+          setCategoriesError(error instanceof Error ? error.message : 'Unable to load categories');
+        }
+      } finally {
+        if (active) {
+          setCategoriesLoading(false);
+        }
+      }
+    };
+
+    fetchCategories();
     return () => {
       active = false;
     };
@@ -352,11 +388,19 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
                         <SimpleSelect
                           value={field.value || ''}
                           onChange={field.onChange}
-                          options={categoryOptions}
-                          placeholder="Select Category"
+                          options={categoryOptions.map(cat => cat.name)}
+                          placeholder={categoriesLoading ? 'Loading categories...' : 'Select Category'}
                         />
                       )}
                     />
+                    {categoriesError && (
+                      <p className="text-red-500 text-sm">{categoriesError}</p>
+                    )}
+                    {!categoriesLoading && !categoriesError && categoryOptions.length === 0 && (
+                      <p className="text-zinc-500 text-sm">
+                        No categories found. Add categories first from the category management page.
+                      </p>
+                    )}
                     {errors.category && (
                       <p className="text-red-500 text-sm">{errors.category.message}</p>
                     )}
