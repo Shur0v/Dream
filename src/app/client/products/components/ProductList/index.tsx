@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import ProductCard from '@/components/product/ProductCard';
+import { Product } from '@/types';
 
 /**
  * ProductList component for displaying products with filtering and sorting
@@ -13,15 +15,43 @@ import ProductCard from '@/components/product/ProductCard';
  * - Pagination
  */
 export default function ProductList() {
+  const router = useRouter();
   const [filters, setFilters] = useState({
     category: 'all',
     priceRange: 'all',
     rating: 'all',
     sortBy: 'popularity'
   });
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Sample products data
-  const products = [
+  // Fetch products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/products?limit=100');
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          setProducts(result.data);
+        } else {
+          setError(result.error || 'Failed to load products');
+        }
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        setError('Failed to load products');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // Sample products data (fallback)
+  const sampleProducts = [
     {
       id: '1',
       name: 'Wireless Headphones',
@@ -209,17 +239,33 @@ export default function ProductList() {
           </div>
 
           {/* Products Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {products.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={(product) => console.log('Add to cart:', product.id)}
-                onAddToWishlist={(product) => console.log('Add to wishlist:', product.id)}
-                onProductClick={(product) => console.log('View details:', product.id)}
-              />
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="text-gray-600">Loading products...</div>
+            </div>
+          ) : error ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="text-red-600">{error}</div>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="text-gray-600">No products found</div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onAddToCart={(product) => console.log('Add to cart:', product.id)}
+                  onAddToWishlist={(product) => console.log('Add to wishlist:', product.id)}
+                  onProductClick={(product) => {
+                    router.push(`/client/product-details/${product.id}`);
+                  }}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Pagination */}
           <div className="flex justify-center mt-8">

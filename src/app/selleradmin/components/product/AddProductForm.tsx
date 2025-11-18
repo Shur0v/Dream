@@ -7,6 +7,8 @@ import { z } from 'zod';
 import { ArrowLeft, ImagePlus, X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SimpleSelect from '../ui/SimpleSelect';
+import SearchableMultiSelect from '../ui/SearchableMultiSelect';
+import { Color } from '@/types';
 
 // Zod schema for validation
 const productSchema = z.object({
@@ -41,7 +43,6 @@ interface AddProductFormProps {
 type Distribution = 'Best selling' | 'Featured' | 'New arrival';
 
 const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL'];
-const colorOptions = ['Red', 'Blue', 'Green', 'Black', 'White', 'Brown', 'Gray', 'Navy', 'Silver', 'Gold', 'Pink', 'Purple'];
 const distributionOptions: Distribution[] = ['Best selling', 'Featured', 'New arrival'];
 const categoryOptions = ['Electronics', 'Fashion', 'Home & Garden', 'Sports', 'Books', 'Toys', 'Beauty', 'Food', 'Clothing', 'Home & Kitchen'];
 const currencyOptions = ['৳', '$', '€', '£', '¥'];
@@ -50,10 +51,12 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
   const [images, setImages] = useState<string[]>(Array(12).fill(''));
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [sizeInput, setSizeInput] = useState('');
-  const [colorInput, setColorInput] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [specKey, setSpecKey] = useState('');
   const [specValue, setSpecValue] = useState('');
+  const [colorOptions, setColorOptions] = useState<Color[]>([]);
+  const [colorsLoading, setColorsLoading] = useState(true);
+  const [colorsError, setColorsError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -92,6 +95,38 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
   const watchedColors = watch('colors');
   const watchedTags = watch('tags');
   const watchedSpecs = watch('specifications');
+
+  useEffect(() => {
+    let active = true;
+    const fetchColors = async () => {
+      try {
+        setColorsLoading(true);
+        setColorsError(null);
+        const response = await fetch('/api/colors');
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Failed to load colors');
+        }
+        if (active) {
+          setColorOptions(result.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching colors:', error);
+        if (active) {
+          setColorsError(error instanceof Error ? error.message : 'Unable to load colors');
+        }
+      } finally {
+        if (active) {
+          setColorsLoading(false);
+        }
+      }
+    };
+
+    fetchColors();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Update images array in form when images state changes
   useEffect(() => {
@@ -136,19 +171,6 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
     setValue('sizes', newSizes, { shouldValidate: true });
   };
 
-  const addColor = () => {
-    if (colorInput.trim() && !watchedColors?.includes(colorInput.trim())) {
-      const newColors = [...(watchedColors || []), colorInput.trim()];
-      setValue('colors', newColors, { shouldValidate: true });
-      setColorInput('');
-    }
-  };
-
-  const removeColor = (color: string) => {
-    const newColors = watchedColors?.filter((c) => c !== color) || [];
-    setValue('colors', newColors, { shouldValidate: true });
-  };
-
   const addTag = () => {
     if (tagInput.trim() && !watchedTags?.includes(tagInput.trim())) {
       const newTags = [...(watchedTags || []), tagInput.trim()];
@@ -180,8 +202,14 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
     setValue('specifications', newSpecs, { shouldValidate: true });
   };
 
+  const handleColorSelectionChange = (ids: Array<string | number>) => {
+    const normalized = ids.map((id) => String(id));
+    setValue('colors', normalized, { shouldValidate: true });
+  };
+
   const onSubmit = async (data: ProductFormInput) => {
     if (isSaving) return;
+    
     
     // Ensure images are included
     const validImages = images.filter(img => img !== '');
@@ -451,42 +479,20 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
               <div className="w-full pb-6 border-b flex flex-col gap-6">
                 <h3 className="text-lg font-semibold text-zinc-900 font-['Poppins']">Colors</h3>
                 <div className="w-full flex flex-col gap-4">
-                  <div className="w-full flex gap-2">
-                    <div className="flex-1 h-14 px-5 py-3.5 rounded-md outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex items-center gap-2.5">
-                      <input
-                        value={colorInput}
-                        onChange={(e) => setColorInput(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addColor())}
-                        placeholder="Add color"
-                        className="w-full bg-transparent outline-none text-zinc-900 text-base font-normal font-['Poppins']"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={addColor}
-                      className="px-4 h-14 bg-neutral-100 rounded-md flex items-center justify-center"
-                    >
-                      <Plus className="w-5 h-5 text-zinc-900" />
-                    </button>
-                  </div>
-                  {watchedColors && watchedColors.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {watchedColors.map((color) => (
-                        <span
-                          key={color}
-                          className="px-3 py-1.5 bg-neutral-100 rounded-md text-zinc-900 text-sm font-normal font-['Poppins'] inline-flex items-center gap-2"
-                        >
-                          {color}
-                          <button
-                            type="button"
-                            onClick={() => removeColor(color)}
-                            className="hover:text-red-500"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
+                  <SearchableMultiSelect
+                    options={colorOptions}
+                    selectedIds={watchedColors || []}
+                    onChange={handleColorSelectionChange}
+                    placeholder={colorsLoading ? 'Loading colors...' : 'Select colors'}
+                    disabled={colorsLoading || !!colorsError}
+                  />
+                  {colorsError && (
+                    <p className="text-red-500 text-sm">{colorsError}</p>
+                  )}
+                  {!colorsLoading && !colorsError && colorOptions.length === 0 && (
+                    <p className="text-zinc-500 text-sm">
+                      No colors found. Add colors first from the color management page.
+                    </p>
                   )}
                 </div>
               </div>
