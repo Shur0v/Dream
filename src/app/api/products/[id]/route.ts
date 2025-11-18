@@ -14,7 +14,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getProductById, saveProduct, deleteProduct, getColors } from '@/lib/db';
 import { mockApiDelay } from '@/lib/dummyData';
-import { Product } from '@/types';
+import { Product, Color } from '@/types';
 
 /**
  * Get single product API endpoint
@@ -58,8 +58,8 @@ export async function GET(
     if (product.colors && product.colors.length > 0) {
       const allColors = await getColors();
       const colorObjects = product.colors
-        .map(colorId => allColors.find(c => c.id === colorId))
-        .filter(Boolean);
+        .map((colorId) => allColors.find((c) => c.id === colorId))
+        .filter((color): color is Color => Boolean(color));
       enrichedProduct = {
         ...product,
         colorOptions: colorObjects,
@@ -139,6 +139,13 @@ export async function PUT(
       isActive 
     } = body;
 
+    const hasImagesField = Object.prototype.hasOwnProperty.call(body, 'images');
+    const sanitizedImages = hasImagesField
+      ? Array.isArray(images)
+        ? images.filter((img): img is string => typeof img === 'string' && img.length > 0)
+        : []
+      : undefined;
+
     // Validate price if provided
     if (price !== undefined && price <= 0) {
       return NextResponse.json(
@@ -182,7 +189,7 @@ export async function PUT(
       ...(price !== undefined && { price: parseFloat(price) }),
       ...(originalPrice !== undefined && { originalPrice: parseFloat(originalPrice) }),
       ...(calculatedDiscount !== undefined && { discount: calculatedDiscount }),
-      ...(images && { images }),
+      ...(hasImagesField && { images: sanitizedImages ?? [] }),
       ...(category && { category }),
       ...(categoryId !== undefined && { categoryId }),
       ...(subcategory !== undefined && { subcategory }),

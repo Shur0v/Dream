@@ -1,16 +1,41 @@
 'use client';
 
 import React, { useMemo, useRef, useState, useEffect } from 'react';
-import { X, ImagePlus, Plus } from 'lucide-react';
+import { X, ImagePlus, Plus, Trash2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SimpleSelect from '../ui/SimpleSelect';
-import type { Product } from '@/lib/productData';
+
+interface EditableProduct {
+  id: string;
+  name?: string;
+  price?: number;
+  originalPrice?: number;
+  currency?: string;
+  image?: string;
+  category?: string;
+  brand?: string;
+  sizes?: string[];
+  description?: string;
+  colors?: string[];
+  inStock?: boolean;
+  tags?: string[];
+  sku?: string;
+  stock?: number;
+  isActive?: boolean;
+  specifications?: Record<string, unknown>;
+  discount?: number;
+  subcategory?: string;
+  images?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 interface EditProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave?: (data: Partial<Product>) => void;
-  product: Product | null;
+  onSave?: (data: Partial<EditableProduct>) => void;
+  onImagesUpdate?: (images: string[]) => void;
+  product: EditableProduct | null;
 }
 
 const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL'];
@@ -18,8 +43,8 @@ const colorOptions = ['Red', 'Blue', 'Green', 'Black', 'White', 'Brown', 'Gray',
 const categoryOptions = ['Electronics', 'Fashion', 'Home & Garden', 'Sports', 'Books', 'Toys', 'Beauty', 'Food'];
 const currencyOptions = ['৳', '$', '€', '£', '¥'];
 
-export default function EditProductModal({ isOpen, onClose, onSave, product }: EditProductModalProps) {
-  const [form, setForm] = useState<Partial<Product>>({
+export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpdate, product }: EditProductModalProps) {
+  const [form, setForm] = useState<Partial<EditableProduct>>({
     name: '',
     price: undefined,
     originalPrice: undefined,
@@ -46,6 +71,7 @@ export default function EditProductModal({ isOpen, onClose, onSave, product }: E
   const [colorInput, setColorInput] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [images, setImages] = useState<string[]>([]);
+  const [deletingImageIndex, setDeletingImageIndex] = useState<number | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -72,7 +98,11 @@ export default function EditProductModal({ isOpen, onClose, onSave, product }: E
         discount: product.discount,
         subcategory: product.subcategory || '',
       });
-      setImages(product.image ? [product.image] : []);
+      // Load all images from product (check for images array or single image)
+      const productImages = (product as any).images && Array.isArray((product as any).images) 
+        ? (product as any).images 
+        : (product.image ? [product.image] : []);
+      setImages(productImages);
     }
   }, [isOpen, product]);
 
@@ -80,8 +110,16 @@ export default function EditProductModal({ isOpen, onClose, onSave, product }: E
     return (form.name?.trim() ?? '') !== '';
   }, [form]);
 
-  const handleChange = <K extends keyof Product>(key: K, value: Product[K] | undefined) => {
-    setForm((prev) => ({ ...prev, [key]: value as Product[K] }));
+  const handleChange = <K extends keyof EditableProduct>(key: K, value: EditableProduct[K] | undefined) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const syncPrimaryImage = (imageList: string[]) => {
+    if (imageList.length > 0) {
+      handleChange('image', imageList[0]);
+    } else {
+      handleChange('image', '');
+    }
   };
 
   const handleImagePick = () => fileInputRef.current?.click();
@@ -100,11 +138,61 @@ export default function EditProductModal({ isOpen, onClose, onSave, product }: E
           })
       )
     );
-    setImages((prev) => [...prev, ...readers]);
-    if (readers.length > 0) {
-      handleChange('image', readers[0]);
-    }
+    setImages((prev) => {
+      const next = [...prev, ...readers];
+      if (next.length > 0) {
+        syncPrimaryImage(next);
+      }
+      return next;
+    });
     e.target.value = '';
+  };
+
+  const handleDeleteImage = async (index: number) => {
+    if (!product || deletingImageIndex !== null || !images[index]) return;
+
+    const previousImages = [...images];
+    const updatedImages = images.filter((_, i) => i !== index);
+    setDeletingImageIndex(index);
+    setImages(updatedImages);
+    syncPrimaryImage(updatedImages);
+    
+    try {
+      const response = await fetch(`/api/products/${product.id}/images`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          index,
+        }),
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to delete image');
+      }
+
+      const serverImages: string[] = Array.isArray(result.data?.images)
+        ? result.data.images
+        : updatedImages;
+
+      setImages(serverImages);
+      syncPrimaryImage(serverImages);
+      onImagesUpdate?.(serverImages);
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      setImages(previousImages);
+      syncPrimaryImage(previousImages);
+      alert(
+        error instanceof Error
+          ? error.message
+          : 'An error occurred while deleting the image'
+      );
+    } finally {
+      setDeletingImageIndex(null);
+    }
   };
 
   const addSize = () => {
@@ -159,10 +247,11 @@ export default function EditProductModal({ isOpen, onClose, onSave, product }: E
 
   const handleSave = () => {
     if (!canSave || !product) return;
-    const productData: Partial<Product> = {
+    const productData: Partial<EditableProduct> = {
       ...form,
       id: product.id,
       image: images[0] || form.image || '',
+      images: images, // Include all images
       updatedAt: new Date().toISOString(),
     };
     onSave?.(productData);
@@ -628,28 +717,67 @@ export default function EditProductModal({ isOpen, onClose, onSave, product }: E
           {/* Photos */}
           <div className="w-full pb-6 border-b flex flex-col gap-2.5">
             <div className="self-stretch flex flex-col justify-start items-start gap-0.5">
-              <div className="text-neutral-600 text-base font-medium font-['Poppins'] leading-6">Add Photos</div>
-              <div className="text-zinc-400 text-sm font-normal font-['Poppins'] leading-5">Upload 1-12 product photos</div>
+              <div className="text-neutral-600 text-base font-medium font-['Poppins'] leading-6">Product Photos</div>
+              <div className="text-zinc-400 text-sm font-normal font-['Poppins'] leading-5">
+                Upload 1-12 product photos. Use the delete option under each image to remove it from the database instantly.
+              </div>
             </div>
             <div className="w-full flex flex-col gap-4">
               <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <div key={i} className="inline-flex flex-col justify-start items-start gap-1.5">
-                    <button
-                      type="button"
-                      onClick={handleImagePick}
-                      className="w-20 h-20 p-2.5 bg-neutral-100 rounded-lg flex flex-col justify-center items-center gap-2.5 overflow-hidden"
-                    >
-                      {images[i] ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={images[i]} alt={`image ${i + 1}`} className="w-full h-full object-cover rounded" />
+                {Array.from({ length: 12 }).map((_, i) => {
+                  const hasImage = Boolean(images[i]);
+                  const isDeleting = deletingImageIndex === i;
+                  return (
+                    <div key={i} className="inline-flex flex-col justify-start items-start gap-1.5">
+                      {hasImage ? (
+                        <div className="relative group w-20 h-20">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img 
+                            src={images[i]!} 
+                            alt={`image ${i + 1}`} 
+                            className={cn(
+                              'w-20 h-20 object-cover rounded-lg border-2 border-neutral-200 transition-all',
+                              isDeleting && 'opacity-60'
+                            )} 
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteImage(i)}
+                            disabled={isDeleting}
+                            className={cn(
+                              'absolute top-1 right-1 p-1 rounded-full bg-white/90 border border-red-100 text-red-600 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity',
+                              'hover:bg-red-50 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200',
+                              isDeleting && 'cursor-wait opacity-100'
+                            )}
+                            aria-label={`Delete image ${i + 1}`}
+                          >
+                            {isDeleting ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
                       ) : (
-                        <ImagePlus className="w-8 h-8 text-zinc-400" />
+                        <button
+                          type="button"
+                          onClick={handleImagePick}
+                          className="w-20 h-20 p-2.5 bg-neutral-100 rounded-lg flex flex-col justify-center items-center gap-2.5 overflow-hidden hover:bg-neutral-200 transition-colors"
+                        >
+                          <ImagePlus className="w-8 h-8 text-zinc-400" />
+                        </button>
                       )}
-                    </button>
-                    <div className="text-zinc-400 text-xs font-normal font-['Poppins'] leading-3 tracking-wide">image {i + 1}</div>
-                  </div>
-                ))}
+                      <div className="w-full flex items-center justify-between text-zinc-400 text-xs font-normal font-['Poppins'] leading-3 tracking-wide">
+                        <span>image {i + 1}</span>
+                        {hasImage && (
+                          <span className={cn('text-[10px]', isDeleting ? 'text-red-500' : 'text-zinc-400')}>
+                            {isDeleting ? 'Deleting…' : 'Delete'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
             <input

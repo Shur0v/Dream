@@ -130,6 +130,38 @@ export async function deleteProduct(id: string): Promise<Product | null> {
 }
 
 /**
+ * Remove a single image from a product
+ * @param id - Product ID
+ * @param imageIndex - Index of the image to remove
+ * @returns Promise<Product | null>
+ */
+export async function removeProductImage(id: string, imageIndex: number): Promise<Product | null> {
+  const db = await readDatabase();
+  const productIndex = db.products.findIndex(p => p.id === id);
+
+  if (productIndex === -1) {
+    return null;
+  }
+
+  const product = db.products[productIndex];
+
+  if (!Array.isArray(product.images) || imageIndex < 0 || imageIndex >= product.images.length) {
+    return { ...product };
+  }
+
+  const updatedProduct: Product = {
+    ...product,
+    images: product.images.filter((_, idx) => idx !== imageIndex),
+    updatedAt: new Date().toISOString(),
+  };
+
+  db.products[productIndex] = updatedProduct;
+  await writeDatabase(db);
+
+  return updatedProduct;
+}
+
+/**
  * Get all orders
  * @returns Promise<Order[]>
  */

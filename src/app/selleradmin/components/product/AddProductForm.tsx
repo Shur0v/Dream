@@ -14,21 +14,23 @@ const productSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   price: z.number().min(0.01, 'Price must be greater than 0'),
   originalPrice: z.number().optional(),
+  currency: z.string().min(1, 'Currency is required').default('৳'),
   category: z.string().min(1, 'Category is required'),
   subcategory: z.string().optional(),
   brand: z.string().min(1, 'Brand is required'),
   sku: z.string().min(1, 'SKU is required'),
   stock: z.number().min(0, 'Stock cannot be negative'),
-  sizes: z.array(z.string()).default([]),
-  colors: z.array(z.string()).default([]),
-  tags: z.array(z.string()).default([]),
-  specifications: z.record(z.string()).default({}),
+  sizes: z.array(z.string()),
+  colors: z.array(z.string()),
+  tags: z.array(z.string()),
+  specifications: z.record(z.string(), z.string()),
   sellerId: z.string().optional(),
   seller: z.string().optional(),
-  images: z.array(z.string()).default([]),
+  images: z.array(z.string()),
 });
 
-type ProductFormData = z.infer<typeof productSchema>;
+type ProductFormInput = z.input<typeof productSchema>;
+export type ProductFormData = z.output<typeof productSchema>;
 
 interface AddProductFormProps {
   onBack?: () => void;
@@ -62,12 +64,13 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
     watch,
     setValue,
     formState: { errors, isValid },
-  } = useForm<ProductFormData>({
+  } = useForm<ProductFormInput>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: '',
       description: '',
       price: 0,
+      currency: '৳',
       originalPrice: undefined,
       category: '',
       subcategory: '',
@@ -177,7 +180,7 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
     setValue('specifications', newSpecs, { shouldValidate: true });
   };
 
-  const onSubmit = async (data: ProductFormData) => {
+  const onSubmit = async (data: ProductFormInput) => {
     if (isSaving) return;
     
     // Ensure images are included
@@ -188,7 +191,8 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
     };
     
     try {
-      await onSave?.(formData);
+      const parsedData = productSchema.parse(formData);
+      await onSave?.(parsedData);
     } catch (error) {
       console.error('Error saving product:', error);
     }

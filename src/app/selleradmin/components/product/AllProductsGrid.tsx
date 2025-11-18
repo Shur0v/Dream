@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Edit, Trash2, RefreshCw } from 'lucide-react';
@@ -21,6 +21,7 @@ type DisplayProduct = {
   originalPrice?: number;
   currency?: string;
   image: string;
+  images?: string[];
   category: string;
   brand: string;
   createdAt?: string;
@@ -43,7 +44,7 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
   const [editingProduct, setEditingProduct] = useState<DisplayProduct | null>(null);
 
   // Fetch products from API
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/products?limit=1000');
@@ -58,6 +59,7 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
           originalPrice: p.originalPrice,
           currency: '৳',
           image: p.images && p.images.length > 0 ? p.images[0] : '/placeholder-image.png',
+          images: p.images,
           category: p.category,
           brand: p.brand,
           createdAt: p.createdAt,
@@ -73,15 +75,15 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [fetchProducts]);
 
   // Refresh when URL has refresh parameter (e.g., when navigating back from add product)
   useEffect(() => {
-    const refresh = searchParams.get('refresh');
+    const refresh = searchParams?.get('refresh');
     if (refresh) {
       fetchProducts();
       // Clean up URL
@@ -99,7 +101,7 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
+  }, [fetchProducts]);
 
   // Sort products: newest first (by createdAt)
   const sortedProducts = useMemo(() => {
@@ -161,22 +163,62 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
     }
   };
 
-  const handleEdit = (product: DisplayProduct) => {
-    setEditingProduct(product);
-    setEditModalOpen(true);
+  const handleEdit = async (product: DisplayProduct) => {
+    try {
+      // Fetch full product data with all images
+      const response = await fetch(`/api/products/${product.id}`);
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        // Convert API product to display format with all images
+        const fullProduct: DisplayProduct = {
+          id: result.data.id,
+          name: result.data.name,
+          price: result.data.price,
+          originalPrice: result.data.originalPrice,
+          currency: '৳',
+          image: result.data.images && result.data.images.length > 0 ? result.data.images[0] : '/placeholder-image.png',
+          images: result.data.images || [],
+          category: result.data.category,
+          brand: result.data.brand,
+          createdAt: result.data.createdAt,
+          updatedAt: result.data.updatedAt,
+          sku: result.data.sku,
+          stock: result.data.stock,
+        };
+        // Store full product data including all images
+        setEditingProduct({ ...fullProduct, images: result.data.images || [] } as any);
+        setEditModalOpen(true);
+      } else {
+        // Fallback to display product if API fails
+        setEditingProduct(product);
+        setEditModalOpen(true);
+      }
+    } catch (error) {
+      console.error('Error fetching product details:', error);
+      // Fallback to display product if API fails
+      setEditingProduct(product);
+      setEditModalOpen(true);
+    }
   };
 
   const handleEditSave = async (data: Partial<DisplayProduct>) => {
     if (!editingProduct) return;
     
     try {
+      // Prepare update data - ensure images array is included
+      const updateData: any = {
+        ...data,
+        images: (data as any).images || [],
+      };
+      
       // Call API to update product
       const response = await fetch(`/api/products/${editingProduct.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify(updateData),
       });
       
       const result = await response.json();
@@ -389,6 +431,7 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
           setEditingProduct(null);
         }}
         onSave={handleEditSave}
+        onImagesUpdate={fetchProducts}
         product={editingProduct}
       />
     </div>

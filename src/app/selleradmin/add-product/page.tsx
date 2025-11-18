@@ -2,27 +2,8 @@
 
 import React, { useState } from 'react';
 import { DashboardLayout } from '../components/dashboard';
-import AddProductForm from '../components/product/AddProductForm';
+import AddProductForm, { ProductFormData } from '../components/product/AddProductForm';
 import { useRouter } from 'next/navigation';
-
-type ProductFormData = {
-  name: string;
-  description: string;
-  price: number;
-  originalPrice?: number;
-  category: string;
-  subcategory?: string;
-  brand: string;
-  sku: string;
-  stock: number;
-  sizes: string[];
-  colors: string[];
-  tags: string[];
-  specifications: Record<string, string>;
-  sellerId?: string;
-  seller?: string;
-  images: string[];
-};
 
 export default function AddProductPage() {
   const router = useRouter();
