@@ -17,6 +17,7 @@ interface TopPartProps {
     orderId: string;
     seller: string;
     colors: string[];
+    colorDetailsMap?: Record<string, { name: string; hexCode: string }>;
     sizes: string[];
     inStock: boolean;
   };

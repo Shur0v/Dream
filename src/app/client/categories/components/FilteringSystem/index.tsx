@@ -51,6 +51,51 @@ export default function FilteringSystem() {
   const [visibleProducts, setVisibleProducts] = useState(18);
   const [headerHeight, setHeaderHeight] = useState(0);
 
+  // Store raw products data
+  const [rawProducts, setRawProducts] = useState<Product[]>([]);
+  const [rawCategories, setRawCategories] = useState<any[]>([]);
+
+  // Memoize products transformation
+  const displayProducts = useMemo(() => {
+    return rawProducts
+      .filter((p: Product) => p.isActive !== false) // Only active products
+      .map((p: Product) => ({
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        originalPrice: p.originalPrice,
+        currency: '৳',
+        image: p.images && p.images.length > 0 ? p.images[0] : '/placeholder-image.png',
+        category: p.category,
+        brand: p.brand,
+        sizes: p.size || [],
+        rating: 4, // Default rating (can be added to Product type later)
+        reviews: 0, // Default reviews (can be added to Product type later)
+        createdAt: p.createdAt,
+      }));
+  }, [rawProducts]);
+
+  // Memoize brands extraction
+  const uniqueBrands = useMemo(() => {
+    return Array.from(new Set(displayProducts.map(p => p.brand).filter(Boolean))).sort();
+  }, [displayProducts]);
+
+  // Memoize sizes extraction
+  const allSizesList = useMemo(() => {
+    const allSizesSet = new Set<string>();
+    displayProducts.forEach(p => {
+      p.sizes.forEach(size => allSizesSet.add(size));
+    });
+    return Array.from(allSizesSet).sort();
+  }, [displayProducts]);
+
+  // Memoize categories transformation
+  const processedCategories = useMemo(() => {
+    return rawCategories
+      .filter((c: any) => c.isActive !== false)
+      .map((c: any) => ({ name: c.name, count: 0 }));
+  }, [rawCategories]);
+
   // Fetch products and categories from API
   useEffect(() => {
     const fetchData = async () => {
@@ -62,36 +107,7 @@ export default function FilteringSystem() {
         const productsResult = await productsResponse.json();
         
         if (productsResult.success && productsResult.data) {
-          // Convert API products to display format
-          const displayProducts: DisplayProduct[] = productsResult.data
-            .filter((p: Product) => p.isActive !== false) // Only active products
-            .map((p: Product) => ({
-              id: p.id,
-              name: p.name,
-              price: p.price,
-              originalPrice: p.originalPrice,
-              currency: '৳',
-              image: p.images && p.images.length > 0 ? p.images[0] : '/placeholder-image.png',
-              category: p.category,
-              brand: p.brand,
-              sizes: p.size || [],
-              rating: 4, // Default rating (can be added to Product type later)
-              reviews: 0, // Default reviews (can be added to Product type later)
-              createdAt: p.createdAt,
-            }));
-          
-          setProducts(displayProducts);
-          
-          // Extract unique brands
-          const uniqueBrands = Array.from(new Set(displayProducts.map(p => p.brand).filter(Boolean)));
-          setBrands(uniqueBrands.sort());
-          
-          // Extract unique sizes
-          const allSizesSet = new Set<string>();
-          displayProducts.forEach(p => {
-            p.sizes.forEach(size => allSizesSet.add(size));
-          });
-          setAllSizes(Array.from(allSizesSet).sort());
+          setRawProducts(productsResult.data);
         }
         
         // Fetch categories
@@ -99,8 +115,7 @@ export default function FilteringSystem() {
         const categoriesResult = await categoriesResponse.json();
         
         if (categoriesResult.success && categoriesResult.data) {
-          const activeCategories = categoriesResult.data.filter((c: any) => c.isActive !== false);
-          setCategories(activeCategories.map((c: any) => ({ name: c.name, count: 0 })));
+          setRawCategories(categoriesResult.data);
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -111,6 +126,18 @@ export default function FilteringSystem() {
     
     fetchData();
   }, []);
+
+  // Update products and derived data when displayProducts changes
+  useEffect(() => {
+    setProducts(displayProducts);
+    setBrands(uniqueBrands);
+    setAllSizes(allSizesList);
+  }, [displayProducts, uniqueBrands, allSizesList]);
+
+  // Update categories when processedCategories changes
+  useEffect(() => {
+    setCategories(processedCategories);
+  }, [processedCategories]);
 
   // Calculate dynamic category counts based on current filters
   const categoryCounts = useMemo(() => {

@@ -18,6 +18,7 @@ interface ProductInfoProps {
     orderId: string;
     seller: string;
     colors: string[];
+    colorDetailsMap?: Record<string, { name: string; hexCode: string }>;
     sizes: string[];
     inStock: boolean;
   };
@@ -26,7 +27,9 @@ interface ProductInfoProps {
 
 const ProductInfo: React.FC<ProductInfoProps> = ({ product, className }) => {
   const [quantity, setQuantity] = useState(2);
-  const [selectedColor, setSelectedColor] = useState(product.colors?.[0] ?? 'Default');
+  const [selectedColor, setSelectedColor] = useState<string | null>(
+    product.colors && product.colors.length > 0 ? product.colors[0] : null
+  );
   const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] ?? 'M');
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
@@ -59,8 +62,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, className }) => {
     setIsCheckoutOpen(false);
   };
 
-  // Visual map for color swatches (keeps layout unchanged while feeling professional)
-  const colorCodeMap: Record<string, string> = {
+  // Visual map for color swatches - use database colors if available, otherwise fallback to hardcoded map
+  const fallbackColorCodeMap: Record<string, string> = {
     Lemon: '#FCD34D',
     Red: '#EF4444',
     Green: '#16A34A',
@@ -78,6 +81,14 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, className }) => {
     Midnight: '#1C273A',
     Graphite: '#4A4A4A',
     'Core Black': '#111111',
+  };
+
+  // Get color hexCode from database or fallback map
+  const getColorHexCode = (colorName: string): string => {
+    if (product.colorDetailsMap && product.colorDetailsMap[colorName]) {
+      return product.colorDetailsMap[colorName].hexCode;
+    }
+    return fallbackColorCodeMap[colorName] || fallbackColorCodeMap[colorName.trim()] || '#B0B0B0';
   };
 
   return (
@@ -145,34 +156,39 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, className }) => {
             </div>
             <div className="overflow-x-auto">
               <div className="flex gap-3 pb-1.5 min-w-max">
-                {product.colors.map((color) => {
-                  const colorCode = colorCodeMap[color] || colorCodeMap[color.trim()] || '#B0B0B0';
-                  return (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => setSelectedColor(color)}
-                      className={`group relative flex flex-col items-center gap-1.5 transition-colors cursor-pointer ${
-                        selectedColor === color ? 'border-b border-fuchsia-500' : 'border-b border-transparent'
-                      }`}
-                      aria-pressed={selectedColor === color}
-                    >
-                      <div
-                        className={`w-11 h-11 rounded-md border ${
-                          selectedColor === color ? 'border-fuchsia-500 shadow-[0_0_0_2px_rgba(236,72,153,0.25)]' : 'border-gray-300'
+                {product.colors && product.colors.length > 0 ? (
+                  product.colors.map((color) => {
+                    const colorCode = getColorHexCode(color);
+                    return (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setSelectedColor(color)}
+                        className={`group relative flex flex-col items-center gap-1.5 transition-colors cursor-pointer ${
+                          selectedColor === color ? 'border-b border-fuchsia-500' : 'border-b border-transparent'
                         }`}
-                        style={{ backgroundColor: colorCode }}
-                      />
-                      <span
-                        className={`px-1 text-xs font-medium font-['Poppins'] whitespace-nowrap text-center ${
-                          selectedColor === color ? 'text-zinc-900' : 'text-zinc-900/80 group-hover:text-zinc-900'
-                        }`}
+                        aria-pressed={selectedColor === color}
+                        aria-label={`Select ${color} color`}
                       >
-                        {color}
-                      </span>
-                    </button>
-                  );
-                })}
+                        <div
+                          className={`w-11 h-11 rounded-md border ${
+                            selectedColor === color ? 'border-fuchsia-500 shadow-[0_0_0_2px_rgba(236,72,153,0.25)]' : 'border-gray-300'
+                          }`}
+                          style={{ backgroundColor: colorCode }}
+                        />
+                        <span
+                          className={`px-1 text-xs font-medium font-['Poppins'] whitespace-nowrap text-center ${
+                            selectedColor === color ? 'text-zinc-900' : 'text-zinc-900/80 group-hover:text-zinc-900'
+                          }`}
+                        >
+                          {color}
+                        </span>
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="text-zinc-500 text-sm font-['Poppins']">No colors available</div>
+                )}
               </div>
             </div>
           </div>

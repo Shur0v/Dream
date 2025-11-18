@@ -1,20 +1,15 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
-import { Plus, ImagePlus, Trash2 } from 'lucide-react';
+import React, { useRef, useState, useEffect } from 'react';
+import { Plus, ImagePlus, Trash2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
-
-interface Category {
-  id: number;
-  name: string;
-  image: string;
-}
+import { Category } from '@/types';
 
 interface AddCategoryFormProps {
   onCancel?: () => void;
   onConfirm?: (data: { category: string; childCategory: string; image?: string | null }) => void;
-  onDelete?: (id: number) => void;
+  onDelete?: (id: string) => void;
 }
 
 export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCategoryFormProps) {
@@ -23,18 +18,56 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
   const [image, setImage] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleteTargetName, setDeleteTargetName] = useState<string>('');
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Existing categories - in a real app, this would come from an API/state management
-  const [categories, setCategories] = useState<Category[]>([
-    { id: 1, name: 'Jacket', image: '/categories/image/category1.png' },
-    { id: 2, name: 'Trousers', image: '/categories/image/category2.png' },
-    { id: 3, name: 'Hoodie', image: '/categories/image/category3.png' },
-    { id: 4, name: 'Muffler', image: '/categories/image/category4.png' },
-    { id: 5, name: 'Combo', image: '/categories/image/category5.png' },
-    { id: 6, name: 'Shoe', image: '/categories/image/category6.png' },
-  ]);
+  // Generate slug from category name
+  const generateSlug = (name: string): string => {
+    return name
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '') // Remove special characters
+      .replace(/[\s_-]+/g, '-') // Replace spaces and underscores with hyphens
+      .replace(/^-+|-+$/g, ''); // Remove leading/trailing hyphens
+  };
+
+  // Fetch categories from database
+  useEffect(() => {
+    let active = true;
+    const fetchCategories = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetch('/api/categories');
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Failed to load categories');
+        }
+        if (active) {
+          setCategories(result.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        if (active) {
+          setError(error instanceof Error ? error.message : 'Unable to load categories');
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchCategories();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleChoose = () => fileRef.current?.click();
 
@@ -51,42 +84,91 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
     handleFiles(e.dataTransfer.files);
   };
 
-  const handleConfirm = () => {
-    if (category.trim() && image) {
-      // Add new category to the list (at the beginning)
-      const newCategory: Category = {
-        id: Math.max(...categories.map(c => c.id), 0) + 1,
-        name: category,
-        image: image,
-      };
-      setCategories((prev) => [newCategory, ...prev]);
-      
-      // Call the onConfirm callback
-      onConfirm?.({ category, childCategory, image });
-      
-      // Reset form
-      setCategory('');
-      setChildCategory('');
-      setImage(null);
+  const handleConfirm = async () => {
+    if (category.trim() && image && !saving) {
+      try {
+        setSaving(true);
+        setError(null);
+
+        const slug = generateSlug(category);
+        
+        const response = await fetch('/api/categories', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: category.trim(),
+            slug: slug,
+            description: childCategory.trim() || undefined,
+            image: image,
+          }),
+        });
+
+        const result = await response.json();
+        
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Failed to save category');
+        }
+
+        // Add new category to the list (at the beginning)
+        if (result.data) {
+          setCategories((prev) => [result.data, ...prev]);
+        }
+        
+        // Call the onConfirm callback
+        onConfirm?.({ category, childCategory, image });
+        
+        // Reset form
+        setCategory('');
+        setChildCategory('');
+        setImage(null);
+      } catch (error) {
+        console.error('Error saving category:', error);
+        setError(error instanceof Error ? error.message : 'Failed to save category');
+      } finally {
+        setSaving(false);
+      }
     }
   };
 
-  const handleDeleteClick = (id: number, name: string) => {
+  const handleDeleteClick = (id: string, name: string) => {
     setDeleteTargetId(id);
     setDeleteTargetName(name);
     setDeleteModalOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
-    if (deleteTargetId !== null) {
-      setCategories((prev) => prev.filter((cat) => cat.id !== deleteTargetId));
-      onDelete?.(deleteTargetId);
-      setDeleteTargetId(null);
-      setDeleteTargetName('');
+  const handleDeleteConfirm = async () => {
+    if (deleteTargetId !== null && !deleting) {
+      try {
+        setDeleting(true);
+        setError(null);
+
+        const response = await fetch(`/api/categories/${deleteTargetId}`, {
+          method: 'DELETE',
+        });
+
+        const result = await response.json();
+        
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Failed to delete category');
+        }
+
+        setCategories((prev) => prev.filter((cat) => cat.id !== deleteTargetId));
+        onDelete?.(deleteTargetId);
+        setDeleteTargetId(null);
+        setDeleteTargetName('');
+      } catch (error) {
+        console.error('Error deleting category:', error);
+        setError(error instanceof Error ? error.message : 'Failed to delete category');
+      } finally {
+        setDeleting(false);
+        setDeleteModalOpen(false);
+      }
     }
   };
 
-  const canConfirm = category.trim().length > 0 && image !== null;
+  const canConfirm = category.trim().length > 0 && image !== null && !saving;
 
   return (
     <div className="w-full flex flex-col gap-6">
@@ -187,14 +269,32 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
           type="button"
           onClick={handleConfirm}
           disabled={!canConfirm}
-          className={cn('h-12 px-6 py-3 rounded bg-fuchsia-500 text-white font-medium', !canConfirm && 'opacity-60 cursor-not-allowed')}
+          className={cn('h-12 px-6 py-3 rounded bg-fuchsia-500 text-white font-medium flex items-center justify-center gap-2', !canConfirm && 'opacity-60 cursor-not-allowed')}
         >
-          Confirm
+          {saving ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            'Confirm'
+          )}
         </button>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="w-full p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600 text-sm font-['Poppins']">{error}</p>
+        </div>
+      )}
+
       {/* Existing Categories Section */}
-      {categories.length > 0 && (
+      {loading ? (
+        <div className="w-full flex justify-center items-center py-12">
+          <p className="text-zinc-500 text-sm font-['Poppins']">Loading categories...</p>
+        </div>
+      ) : categories.length > 0 ? (
         <div className="w-full flex flex-col gap-4">
           <h3 className="text-slate-950 text-xl md:text-2xl font-medium font-['Poppins']">Existing Categories</h3>
           <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
@@ -207,19 +307,34 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
                 <button
                   type="button"
                   onClick={() => handleDeleteClick(cat.id, cat.name)}
-                  className="absolute top-2 right-2 z-10 p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                  disabled={deleting}
+                  className={cn(
+                    "absolute top-2 right-2 z-10 p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200",
+                    deleting && "opacity-50 cursor-not-allowed"
+                  )}
                   aria-label={`Delete ${cat.name} category`}
                 >
-                  <Trash2 className="w-4 h-4" />
+                  {deleting && deleteTargetId === cat.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
                 </button>
 
                 {/* Category Image */}
-                <img
-                  className="w-full h-20 md:h-40 rounded-lg object-cover"
-                  src={cat.image}
-                  alt={`${cat.name} category`}
-                  loading="lazy"
-                />
+                {cat.image ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    className="w-full h-20 md:h-40 rounded-lg object-cover"
+                    src={cat.image}
+                    alt={`${cat.name} category`}
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-full h-20 md:h-40 rounded-lg bg-gray-200 flex items-center justify-center">
+                    <ImagePlus className="w-8 h-8 text-gray-400" />
+                  </div>
+                )}
 
                 {/* Category Name */}
                 <div className="w-full text-center text-black text-sm md:text-lg font-medium font-['Poppins'] leading-tight md:leading-normal">
@@ -228,6 +343,10 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
               </div>
             ))}
           </div>
+        </div>
+      ) : (
+        <div className="w-full flex justify-center items-center py-12">
+          <p className="text-zinc-500 text-sm font-['Poppins']">No categories found. Add your first category above.</p>
         </div>
       )}
 

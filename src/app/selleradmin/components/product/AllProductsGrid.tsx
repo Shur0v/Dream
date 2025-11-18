@@ -43,6 +43,28 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<DisplayProduct | null>(null);
 
+  // Store raw products data
+  const [rawProducts, setRawProducts] = useState<Product[]>([]);
+
+  // Memoize products transformation
+  const displayProducts = useMemo(() => {
+    return rawProducts.map((p: Product) => ({
+      id: p.id,
+      name: p.name,
+      price: p.price,
+      originalPrice: p.originalPrice,
+      currency: '৳',
+      image: p.images && p.images.length > 0 ? p.images[0] : '/placeholder-image.png',
+      images: p.images,
+      category: p.category,
+      brand: p.brand,
+      createdAt: p.createdAt,
+      updatedAt: p.updatedAt,
+      sku: p.sku,
+      stock: p.stock,
+    }));
+  }, [rawProducts]);
+
   // Fetch products from API
   const fetchProducts = useCallback(async () => {
     try {
@@ -51,24 +73,7 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
       const result = await response.json();
       
       if (result.success && result.data) {
-        // Convert API products to display format
-        const displayProducts: DisplayProduct[] = result.data.map((p: Product) => ({
-          id: p.id,
-          name: p.name,
-          price: p.price,
-          originalPrice: p.originalPrice,
-          currency: '৳',
-          image: p.images && p.images.length > 0 ? p.images[0] : '/placeholder-image.png',
-          images: p.images,
-          category: p.category,
-          brand: p.brand,
-          createdAt: p.createdAt,
-          updatedAt: p.updatedAt,
-          sku: p.sku,
-          stock: p.stock,
-        }));
-        
-        setProducts(displayProducts);
+        setRawProducts(result.data);
       }
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -76,6 +81,11 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
       setLoading(false);
     }
   }, []);
+
+  // Update products when displayProducts changes
+  useEffect(() => {
+    setProducts(displayProducts);
+  }, [displayProducts]);
 
   useEffect(() => {
     fetchProducts();

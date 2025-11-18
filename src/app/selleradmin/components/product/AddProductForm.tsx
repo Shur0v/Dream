@@ -240,12 +240,15 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
 
   const handleColorSelectionChange = (ids: Array<string | number>) => {
     const normalized = ids.map((id) => String(id));
+    console.log('[AddProductForm] Color selection changed:', normalized);
     setValue('colors', normalized, { shouldValidate: true });
   };
 
   const onSubmit = async (data: ProductFormInput) => {
     if (isSaving) return;
     
+    console.log('[AddProductForm] Form submitted with data:', data);
+    console.log('[AddProductForm] Colors in form data:', data.colors);
     
     // Ensure images are included
     const validImages = images.filter(img => img !== '');
@@ -254,11 +257,16 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
       images: validImages.length > 0 ? validImages : data.images,
     };
     
+    console.log('[AddProductForm] Form data after processing:', formData);
+    console.log('[AddProductForm] Colors after processing:', formData.colors);
+    
     try {
       const parsedData = productSchema.parse(formData);
+      console.log('[AddProductForm] Parsed data:', parsedData);
+      console.log('[AddProductForm] Parsed colors:', parsedData.colors);
       await onSave?.(parsedData);
     } catch (error) {
-      console.error('Error saving product:', error);
+      console.error('[AddProductForm] Error saving product:', error);
     }
   };
 

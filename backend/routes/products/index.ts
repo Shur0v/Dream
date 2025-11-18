@@ -155,7 +155,9 @@ export async function POST(request: NextRequest) {
     await mockApiDelay(1200);
 
     const body = await request.json();
-    console.log('Received product data:', body);
+    console.log('[Backend POST /api/products] Received product data:', body);
+    console.log('[Backend POST /api/products] Colors in request:', body.colors);
+    console.log('[Backend POST /api/products] Colors type:', typeof body.colors, Array.isArray(body.colors));
 
     const {
       name,
@@ -174,6 +176,8 @@ export async function POST(request: NextRequest) {
       tags,
       specifications
     } = body;
+    
+    console.log('[Backend POST /api/products] Extracted colors:', colors);
 
     if (!name || !description || price === undefined || price === null || !category || !brand || !sku) {
       return NextResponse.json(
@@ -198,17 +202,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (colors && Array.isArray(colors)) {
+    console.log('[Backend POST /api/products] Validating colors:', colors);
+    
+    if (colors && Array.isArray(colors) && colors.length > 0) {
       const allColors = await getColors();
-      const validColors = colors.every(colorId =>
-        allColors.some(c => c.id === colorId)
-      );
+      console.log('[Backend POST /api/products] Available colors in DB:', allColors.map(c => c.id));
+      console.log('[Backend POST /api/products] Requested color IDs:', colors);
+      
+      const validColors = colors.every(colorId => {
+        const exists = allColors.some(c => c.id === colorId);
+        console.log(`[Backend POST /api/products] Color ID ${colorId} exists:`, exists);
+        return exists;
+      });
+      
       if (!validColors) {
+        console.error('[Backend POST /api/products] Invalid color IDs found');
         return NextResponse.json(
           { success: false, error: 'One or more color IDs are invalid' },
           { status: 400 }
         );
       }
+      console.log('[Backend POST /api/products] All color IDs are valid');
+    } else {
+      console.log('[Backend POST /api/products] No colors provided or empty array');
     }
 
     const originalPriceNum = originalPrice
@@ -231,7 +247,7 @@ export async function POST(request: NextRequest) {
       brand: String(brand).trim(),
       sku: String(sku).trim(),
       stock: stockNum,
-      colors: colors && Array.isArray(colors) ? colors.filter((c: string) => c) : undefined,
+      colors: colors && Array.isArray(colors) && colors.length > 0 ? colors.filter((c: string) => c && c.trim() !== '') : [],
       size: size && Array.isArray(size) ? size.filter((s: string) => s) : undefined,
       isActive: true,
       tags: Array.isArray(tags) ? tags.filter((t: string) => t) : [],
@@ -241,11 +257,13 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date().toISOString(),
     };
 
-    console.log('Product to save:', newProduct);
+    console.log('[Backend POST /api/products] Product to save:', newProduct);
+    console.log('[Backend POST /api/products] Colors in product to save:', newProduct.colors);
 
     try {
       await saveProduct(newProduct);
-      console.log('Product saved successfully to database');
+      console.log('[Backend POST /api/products] Product saved successfully to database');
+      console.log('[Backend POST /api/products] Saved product colors:', newProduct.colors);
     } catch (error) {
       console.error('Error saving product to database:', error);
       return NextResponse.json(

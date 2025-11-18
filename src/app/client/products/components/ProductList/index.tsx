@@ -252,19 +252,19 @@ export default function ProductList() {
               <div className="text-gray-600">No products found</div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onAddToCart={(product) => console.log('Add to cart:', product.id)}
-                  onAddToWishlist={(product) => console.log('Add to wishlist:', product.id)}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {products.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onAddToCart={(product) => console.log('Add to cart:', product.id)}
+                onAddToWishlist={(product) => console.log('Add to wishlist:', product.id)}
                   onProductClick={(product) => {
                     router.push(`/client/product-details/${product.id}`);
                   }}
-                />
-              ))}
-            </div>
+              />
+            ))}
+          </div>
           )}
 
           {/* Pagination */}

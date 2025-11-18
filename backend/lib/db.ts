@@ -27,6 +27,13 @@ interface Database {
   users: User[];
 }
 
+// In-memory cache for products (with TTL)
+let productsCache: { data: Product[]; timestamp: number } | null = null;
+const CACHE_TTL = 5000; // 5 seconds cache
+
+// In-memory cache for colors
+let colorsCache: { data: Color[]; timestamp: number } | null = null;
+
 /**
  * Read database from JSON file
  * @returns Promise<Database> - The entire database object
@@ -65,12 +72,34 @@ export async function writeDatabase(data: Database): Promise<void> {
 }
 
 /**
- * Get all products
+ * Get all products (with caching)
  * @returns Promise<Product[]>
  */
 export async function getProducts(): Promise<Product[]> {
+  // Check cache validity
+  const now = Date.now();
+  if (productsCache && (now - productsCache.timestamp) < CACHE_TTL) {
+    return productsCache.data;
+  }
+  
+  // Fetch from database
   const db = await readDatabase();
-  return db.products;
+  const products = db.products;
+  
+  // Update cache
+  productsCache = {
+    data: products,
+    timestamp: now,
+  };
+  
+  return products;
+}
+
+/**
+ * Invalidate products cache (call after write operations)
+ */
+export function invalidateProductsCache(): void {
+  productsCache = null;
 }
 
 /**
@@ -102,6 +131,7 @@ export async function saveProduct(product: Product): Promise<Product> {
     }
     
     await writeDatabase(db);
+    invalidateProductsCache(); // Invalidate cache after write
     console.log(`Total products in database: ${db.products.length}`);
     return product;
   } catch (error) {
@@ -123,6 +153,7 @@ export async function deleteProduct(id: string): Promise<Product | null> {
     product.isActive = false;
     product.updatedAt = new Date().toISOString();
     await writeDatabase(db);
+    invalidateProductsCache(); // Invalidate cache after write
     return product;
   }
   
@@ -267,12 +298,34 @@ export async function deleteCategory(id: string): Promise<Category | null> {
 }
 
 /**
- * Get all colors
+ * Get all colors (with caching)
  * @returns Promise<Color[]>
  */
 export async function getColors(): Promise<Color[]> {
+  // Check cache validity
+  const now = Date.now();
+  if (colorsCache && (now - colorsCache.timestamp) < CACHE_TTL) {
+    return colorsCache.data;
+  }
+  
+  // Fetch from database
   const db = await readDatabase();
-  return db.colors;
+  const colors = db.colors;
+  
+  // Update cache
+  colorsCache = {
+    data: colors,
+    timestamp: now,
+  };
+  
+  return colors;
+}
+
+/**
+ * Invalidate colors cache (call after write operations)
+ */
+export function invalidateColorsCache(): void {
+  colorsCache = null;
 }
 
 /**
@@ -301,6 +354,7 @@ export async function saveColor(color: Color): Promise<Color> {
   }
   
   await writeDatabase(db);
+  invalidateColorsCache(); // Invalidate cache after write
   return color;
 }
 
@@ -317,6 +371,7 @@ export async function deleteColor(id: string): Promise<Color | null> {
     color.isActive = false;
     color.updatedAt = new Date().toISOString();
     await writeDatabase(db);
+    invalidateColorsCache(); // Invalidate cache after write
     return color;
   }
   
