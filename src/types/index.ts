@@ -82,6 +82,13 @@ export interface Product {
   updatedAt: string;
 }
 
+export interface OrderProductSnapshot extends Partial<Product> {
+  id: string;
+  name: string;
+  price: number;
+  [key: string]: any;
+}
+
 // Cart Item Interface
 export interface CartItem {
   id: string;
@@ -110,7 +117,7 @@ export type OrderStatus = 'pending' | 'confirmed' | 'approved' | 'rejected' | 's
 export interface OrderItem {
   id: string;
   productId: string;
-  product?: Product;
+  product?: OrderProductSnapshot;
   quantity: number;
   price: number;
   color?: string; // Selected color ID or name

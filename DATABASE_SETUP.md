@@ -12,6 +12,21 @@ This project uses a layered JSON store so the app works the same way in local de
   ```
 - The helper `backend/lib/jsonStore.ts` will detect these variables automatically. Reads/writes now hit Redis first, giving you low-latency access from every serverless function.
 
+#### Seeding Redis with the existing JSON database
+1. Add a one-time token to both local `.env.local` and Vercel project settings:
+   ```
+   DB_SEED_TOKEN=<choose-a-strong-random-string>
+   ```
+2. Deploy as usual so the `/api/admin/seed` route is available.
+3. Run the following command from your machine (replace `<token>` and `<deployment-host>`):
+   ```bash
+   curl -X POST https://<deployment-host>/api/admin/seed \
+     -H "Authorization: Bearer <token>"
+   ```
+   - By default the route reads `backend/database/database.json`, validates it with zod, and pushes the whole payload into Upstash/Redis.
+   - You can also supply a custom payload by posting `{ "data": { ... } }` in the request body if you need to seed with different data.
+4. Remove or rotate the token after seeding if you don’t plan to run it again.
+
 ### 2. Filesystem fallback (local dev)
 - If the Redis env vars are missing, we automatically fall back to `backend/database/database.json`.
 - No extra configuration is needed—just run `pnpm dev` and the JSON file will be used for persistence.
@@ -32,5 +47,6 @@ This project uses a layered JSON store so the app works the same way in local de
 With this setup you can:
 1. Develop locally with zero dependencies.
 2. Flip on Upstash + Blob env vars when deploying.
-3. Trust that every API route shares the same persistence layer without code changes.
+3. Seed the remote store at any time by calling `/api/admin/seed`.
+4. Trust that every API route shares the same persistence layer without code changes.
 
