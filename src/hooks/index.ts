@@ -85,6 +85,14 @@ export function useForm<T extends Record<string, any>>(
   initialValues: T,
   validationSchema?: (values: T) => Record<string, string>
 ) {
+  // Store initial values in ref to prevent infinite loops
+  const initialValuesRef = useRef<T>(initialValues);
+  
+  // Update ref when initialValues actually changes (deep comparison would be better, but this works for most cases)
+  useEffect(() => {
+    initialValuesRef.current = initialValues;
+  }, [initialValues]);
+
   const [values, setValues] = useState<T>(initialValues);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -126,11 +134,12 @@ export function useForm<T extends Record<string, any>>(
     };
   }, [values, validate]);
 
+  // Use ref to avoid dependency on initialValues which changes on every render
   const reset = useCallback(() => {
-    setValues(initialValues);
+    setValues(initialValuesRef.current);
     setErrors({});
     setTouched({});
-  }, [initialValues]);
+  }, []); // Empty dependency array - reset function is stable
 
   return {
     values,

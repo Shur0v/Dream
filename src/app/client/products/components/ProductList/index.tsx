@@ -52,7 +52,7 @@ export default function ProductList() {
           }
         }
         
-        const response = await fetch('/api/products?limit=40');
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/products?limit=40`);
         const result = await response.json();
         
         if (result.success && result.data) {

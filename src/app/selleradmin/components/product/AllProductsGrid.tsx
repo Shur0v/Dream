@@ -90,7 +90,7 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
         }
       }
       
-      const response = await fetch('/api/products?limit=40');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/products?limit=40`);
       const result = await response.json();
       
       if (result.success && result.data) {
@@ -199,12 +199,13 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
 
   const handleEdit = async (product: DisplayProduct) => {
     try {
-      // Fetch full product data with all images
-      const response = await fetch(`/api/products/${product.id}`);
+      // Fetch full product data with all images from Express backend
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiUrl}/products/${product.id}`);
       const result = await response.json();
       
       if (result.success && result.data) {
-        // Convert API product to display format with all images
+        // Convert API product to display format with all images and colors
         const fullProduct: DisplayProduct = {
           id: result.data.id,
           name: result.data.name,
@@ -220,8 +221,18 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
           sku: result.data.sku,
           stock: result.data.stock,
         };
-        // Store full product data including all images
-        setEditingProduct({ ...fullProduct, images: result.data.images || [] } as any);
+        // Store full product data including all images, colors, and other fields
+        setEditingProduct({ 
+          ...fullProduct, 
+          images: result.data.images || [],
+          colors: result.data.colors || [],
+          sizes: result.data.size || [],
+          description: result.data.description || '',
+          subcategory: result.data.subcategory || '',
+          tags: result.data.tags || [],
+          specifications: result.data.specifications || {},
+          isActive: result.data.isActive !== undefined ? result.data.isActive : true,
+        } as any);
         setEditModalOpen(true);
       } else {
         // Fallback to display product if API fails
@@ -240,14 +251,37 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
     if (!editingProduct) return;
     
     try {
-      // Prepare update data - ensure images array is included
+      // Prepare update data - ensure all required fields are included and match backend format
       const updateData: any = {
-        ...data,
-        images: (data as any).images || [],
+        name: data.name || editingProduct.name,
+        description: (data as any).description || '',
+        price: data.price !== undefined ? data.price : editingProduct.price,
+        originalPrice: data.originalPrice !== undefined ? data.originalPrice : editingProduct.originalPrice,
+        images: (data as any).images && Array.isArray((data as any).images) ? (data as any).images : (editingProduct.images || []),
+        category: data.category || editingProduct.category,
+        subcategory: (data as any).subcategory || '',
+        brand: (data as any).brand || editingProduct.brand || '',
+        sku: (data as any).sku || editingProduct.sku || '',
+        stock: data.stock !== undefined ? data.stock : editingProduct.stock,
+        colors: (data as any).colors && Array.isArray((data as any).colors) ? (data as any).colors : [],
+        size: (data as any).sizes && Array.isArray((data as any).sizes) ? (data as any).sizes : [], // Backend expects 'size' not 'sizes'
+        tags: (data as any).tags && Array.isArray((data as any).tags) ? (data as any).tags : [],
+        specifications: (data as any).specifications || {},
+        isActive: (data as any).isActive !== undefined ? (data as any).isActive : true,
       };
       
-      // Call API to update product
-      const response = await fetch(`/api/products/${editingProduct.id}`, {
+      // Remove undefined values to avoid sending them
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key] === undefined) {
+          delete updateData[key];
+        }
+      });
+      
+      console.log('[AllProductsGrid] Updating product:', editingProduct.id, updateData);
+      
+      // Call Express backend API to update product
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiUrl}/products/${editingProduct.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -257,17 +291,24 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
       
       const result = await response.json();
       
-      if (result.success) {
+      if (result.success && result.data) {
+        console.log('[AllProductsGrid] Product updated successfully:', result.data);
+        // Invalidate cache
+        localStorage.removeItem('products_cache');
+        localStorage.removeItem('products_cache_timestamp');
         // Refresh products list
         await fetchProducts();
         setEditModalOpen(false);
         setEditingProduct(null);
+        // Show success message
+        alert('Product updated successfully!');
       } else {
+        console.error('[AllProductsGrid] Update failed:', result);
         alert(`Error: ${result.error || 'Failed to update product'}`);
       }
     } catch (error) {
-      console.error('Error updating product:', error);
-      alert('An error occurred while updating the product');
+      console.error('[AllProductsGrid] Error updating product:', error);
+      alert(`An error occurred while updating the product: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

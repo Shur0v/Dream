@@ -4,6 +4,9 @@ import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { X, ImagePlus, Plus, Trash2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SimpleSelect from '../ui/SimpleSelect';
+import SearchableMultiSelect from '../ui/SearchableMultiSelect';
+import { Color } from '@/types';
+import { getApiUrl } from '@/lib/apiConfig';
 
 interface EditableProduct {
   id: string;
@@ -39,7 +42,6 @@ interface EditProductModalProps {
 }
 
 const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL'];
-const colorOptions = ['Red', 'Blue', 'Green', 'Black', 'White', 'Brown', 'Gray', 'Navy', 'Silver', 'Gold', 'Pink', 'Purple'];
 const categoryOptions = ['Electronics', 'Fashion', 'Home & Garden', 'Sports', 'Books', 'Toys', 'Beauty', 'Food'];
 const currencyOptions = ['৳', '$', '€', '£', '¥'];
 
@@ -68,12 +70,49 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
   const [specKey, setSpecKey] = useState('');
   const [specValue, setSpecValue] = useState('');
   const [sizeInput, setSizeInput] = useState('');
-  const [colorInput, setColorInput] = useState('');
   const [tagInput, setTagInput] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [deletingImageIndex, setDeletingImageIndex] = useState<number | null>(null);
+  const [colorOptions, setColorOptions] = useState<Color[]>([]);
+  const [colorsLoading, setColorsLoading] = useState(true);
+  const [colorsError, setColorsError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Fetch colors from database
+  useEffect(() => {
+    let active = true;
+    const fetchColors = async () => {
+      try {
+        setColorsLoading(true);
+        setColorsError(null);
+        const response = await fetch(getApiUrl('colors'));
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Failed to load colors');
+        }
+        if (active) {
+          setColorOptions(result.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching colors:', error);
+        if (active) {
+          setColorsError(error instanceof Error ? error.message : 'Unable to load colors');
+        }
+      } finally {
+        if (active) {
+          setColorsLoading(false);
+        }
+      }
+    };
+
+    if (isOpen) {
+      fetchColors();
+    }
+    return () => {
+      active = false;
+    };
+  }, [isOpen]);
 
   // Load product data when modal opens
   useEffect(() => {
@@ -206,15 +245,10 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
     handleChange('sizes', form.sizes?.filter((s) => s !== size) || []);
   };
 
-  const addColor = () => {
-    if (colorInput.trim() && !form.colors?.includes(colorInput.trim())) {
-      handleChange('colors', [...(form.colors || []), colorInput.trim()]);
-      setColorInput('');
-    }
-  };
-
-  const removeColor = (color: string) => {
-    handleChange('colors', form.colors?.filter((c) => c !== color) || []);
+  const handleColorSelectionChange = (ids: Array<string | number>) => {
+    const normalized = ids.map((id) => String(id));
+    console.log('[EditProductModal] Color selection changed:', normalized);
+    handleChange('colors', normalized);
   };
 
   const addTag = () => {
@@ -250,10 +284,25 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
     const productData: Partial<EditableProduct> = {
       ...form,
       id: product.id,
+      name: form.name || product.name,
+      price: form.price !== undefined ? form.price : product.price,
+      originalPrice: form.originalPrice !== undefined ? form.originalPrice : product.originalPrice,
+      description: form.description || '',
+      category: form.category || product.category || '',
+      subcategory: form.subcategory || '',
+      brand: form.brand || product.brand || '',
+      sku: form.sku || product.sku || '',
+      stock: form.stock !== undefined ? form.stock : product.stock,
+      sizes: form.sizes || [],
+      colors: form.colors || [],
+      tags: form.tags || [],
+      specifications: form.specifications || {},
+      isActive: form.isActive !== undefined ? form.isActive : (product.isActive ?? true),
       image: images[0] || form.image || '',
       images: images, // Include all images
       updatedAt: new Date().toISOString(),
     };
+    console.log('[EditProductModal] Saving product data:', productData);
     onSave?.(productData);
     onClose();
   };
@@ -506,47 +555,28 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
                 )}
               </div>
 
+              {/* Colors */}
               <div className="w-full flex flex-col gap-2.5">
                 <label className="self-stretch text-neutral-600 text-base font-medium font-['Poppins'] leading-6">
                   Colors
                 </label>
-                <div className="w-full flex gap-2">
-                  <div className="flex-1 h-14 px-5 py-3.5 rounded-md outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex items-center gap-2.5">
-                    <input
-                      value={colorInput}
-                      onChange={(e) => setColorInput(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addColor())}
-                      placeholder="Add color (e.g., Red, Blue)"
-                      className="w-full bg-transparent outline-none text-zinc-900 text-base font-normal font-['Poppins']"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={addColor}
-                    className="px-4 h-14 bg-neutral-100 rounded-md flex items-center justify-center"
-                  >
-                    <Plus className="w-5 h-5 text-zinc-900" />
-                  </button>
+                <div className="w-full flex flex-col gap-4">
+                  <SearchableMultiSelect
+                    options={colorOptions}
+                    selectedIds={form.colors || []}
+                    onChange={handleColorSelectionChange}
+                    placeholder={colorsLoading ? 'Loading colors...' : 'Select colors'}
+                    disabled={colorsLoading || !!colorsError}
+                  />
+                  {colorsError && (
+                    <p className="text-red-500 text-sm">{colorsError}</p>
+                  )}
+                  {!colorsLoading && !colorsError && colorOptions.length === 0 && (
+                    <p className="text-zinc-500 text-sm">
+                      No colors found. Add colors first from the color management page.
+                    </p>
+                  )}
                 </div>
-                {form.colors && form.colors.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {form.colors.map((color) => (
-                      <span
-                        key={color}
-                        className="px-3 py-1 bg-neutral-100 rounded-md text-sm text-zinc-900 font-['Poppins'] inline-flex items-center gap-2"
-                      >
-                        {color}
-                        <button
-                          type="button"
-                          onClick={() => removeColor(color)}
-                          className="hover:text-red-500"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
           </div>

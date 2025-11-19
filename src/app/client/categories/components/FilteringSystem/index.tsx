@@ -4,7 +4,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Product } from '@/types';
 
 /**
@@ -29,7 +28,6 @@ type DisplayProduct = {
 };
 
 export default function FilteringSystem() {
-  const router = useRouter();
   const [isCategoryOpen, setIsCategoryOpen] = useState(true);
   const [isBrandingOpen, setIsBrandingOpen] = useState(true);
   const [isSizeOpen, setIsSizeOpen] = useState(true);
@@ -38,6 +36,7 @@ export default function FilteringSystem() {
   // Data states
   const [products, setProducts] = useState<DisplayProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
   const [categories, setCategories] = useState<Array<{ name: string; count: number }>>([]);
   const [brands, setBrands] = useState<string[]>([]);
   const [allSizes, setAllSizes] = useState<string[]>([]);
@@ -48,7 +47,7 @@ export default function FilteringSystem() {
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState('default');
-  const [visibleProducts, setVisibleProducts] = useState(18);
+  const [visibleProducts, setVisibleProducts] = useState(9);
   const [headerHeight, setHeaderHeight] = useState(0);
 
   // Store raw products data
@@ -59,20 +58,33 @@ export default function FilteringSystem() {
   const displayProducts = useMemo(() => {
     return rawProducts
       .filter((p: Product) => p.isActive !== false) // Only active products
-      .map((p: Product) => ({
-        id: p.id,
-        name: p.name,
-        price: p.price,
-        originalPrice: p.originalPrice,
-        currency: '৳',
-        image: p.images && p.images.length > 0 ? p.images[0] : '/placeholder-image.png',
-        category: p.category,
-        brand: p.brand,
-        sizes: p.size || [],
-        rating: 4, // Default rating (can be added to Product type later)
-        reviews: 0, // Default reviews (can be added to Product type later)
-        createdAt: p.createdAt,
-      }));
+      .map((p: Product) => {
+        // Get first valid image from images array
+        let productImage = '/placeholder-image.png';
+        if (p.images && Array.isArray(p.images) && p.images.length > 0) {
+          // Find first valid image (not empty, not null, not undefined)
+          const validImage = p.images.find(img => img && typeof img === 'string' && img.trim().length > 0);
+          if (validImage) {
+            productImage = validImage.trim();
+          }
+        }
+        
+        return {
+          id: p.id,
+          name: p.name,
+          price: p.price,
+          originalPrice: p.originalPrice,
+          currency: '৳',
+          image: productImage,
+          category: p.category,
+          brand: p.brand,
+          sizes: p.size || [],
+          rating: 4, // Default rating (can be added to Product type later)
+          reviews: 0, // Default reviews (can be added to Product type later)
+          createdAt: p.createdAt,
+          updatedAt: p.updatedAt, // Include updatedAt for latest data tracking
+        };
+      });
   }, [rawProducts]);
 
   // Memoize brands extraction
@@ -91,79 +103,369 @@ export default function FilteringSystem() {
 
   // Memoize categories transformation
   const processedCategories = useMemo(() => {
-    return rawCategories
-      .filter((c: any) => c.isActive !== false)
+    if (!rawCategories || !Array.isArray(rawCategories) || rawCategories.length === 0) {
+      console.log('[FilteringSystem] No categories to process, rawCategories:', rawCategories);
+      return [];
+    }
+    
+    const processed = rawCategories
+      .filter((c: any) => c && c.isActive !== false)
       .map((c: any) => ({ name: c.name, count: 0 }));
+    
+    console.log(`[FilteringSystem] Processed ${processed.length} categories from ${rawCategories.length} raw categories`);
+    return processed;
   }, [rawCategories]);
 
-  // Fetch products and categories from API with localStorage caching
+  // Helper function to validate and sanitize image URL for Next.js Image component
+  const getValidImageUrl = (imageUrl: string | null | undefined): string => {
+    if (!imageUrl || typeof imageUrl !== 'string') {
+      return '/placeholder-image.png';
+    }
+    
+    const trimmed = imageUrl.trim();
+    
+    // Empty string or too short
+    if (trimmed.length < 2) {
+      return '/placeholder-image.png';
+    }
+    
+    // Already a valid relative path starting with /
+    if (trimmed.startsWith('/')) {
+      return trimmed;
+    }
+    
+    // Valid absolute URL
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    
+    // Valid data URL
+    if (trimmed.startsWith('data:')) {
+      return trimmed;
+    }
+    
+    // Invalid URL, return placeholder
+    return '/placeholder-image.png';
+  };
+
+  // Helper function to generate data hash (simple hash based on data content)
+  const generateDataHash = (data: any[]): string => {
+    if (!data || !Array.isArray(data)) return '';
+    // Generate hash based on data length, IDs, and timestamps
+    const ids = data.map(item => item.id || '').sort().join(',');
+    const timestamps = data.map(item => item.updatedAt || item.createdAt || '').sort().join(',');
+    return `${data.length}-${ids.substring(0, 50)}-${timestamps.substring(0, 50)}`;
+  };
+
+  // Helper function to safely set localStorage with quota handling
+  const safeSetItem = (key: string, value: string): boolean => {
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch (error: any) {
+      if (error.name === 'QuotaExceededError') {
+        console.warn(`[FilteringSystem] localStorage quota exceeded for ${key}, clearing old cache...`);
+        try {
+          // Clear old cache items except current one
+          const keysToRemove = ['products_cache', 'categories_cache', 'products_cache_timestamp', 'categories_cache_timestamp', 'products_cache_hash', 'categories_cache_hash'];
+          keysToRemove.forEach(k => {
+            if (k !== key) localStorage.removeItem(k);
+          });
+          // Try again
+          localStorage.setItem(key, value);
+          return true;
+        } catch (retryError) {
+          console.error(`[FilteringSystem] Failed to set ${key} after cleanup:`, retryError);
+          return false;
+        }
+      }
+      console.error(`[FilteringSystem] Error setting ${key}:`, error);
+      return false;
+    }
+  };
+
+  // Preload categories API on component mount (before main fetch)
+  useEffect(() => {
+    // Preload categories immediately when component mounts
+    const preloadCategories = async () => {
+      const categoriesCacheKey = 'categories_cache';
+      const categoriesCacheTimestampKey = 'categories_cache_timestamp';
+      const cachedCategories = localStorage.getItem(categoriesCacheKey);
+      const cachedCategoriesTimestamp = localStorage.getItem(categoriesCacheTimestampKey);
+      const CATEGORIES_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+      
+      // Only preload if cache is missing or expired
+      if (!cachedCategories || !cachedCategoriesTimestamp || 
+          (Date.now() - parseInt(cachedCategoriesTimestamp, 10)) >= CATEGORIES_CACHE_TTL) {
+        try {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+          const response = await fetch(`${apiUrl}/categories`).catch(() => fetch('/api/categories'));
+          
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data && Array.isArray(result.data)) {
+              console.log(`[FilteringSystem] Preloaded ${result.data.length} categories`);
+              setRawCategories(result.data);
+              safeSetItem(categoriesCacheKey, JSON.stringify(result));
+              safeSetItem(categoriesCacheTimestampKey, Date.now().toString());
+            }
+          }
+        } catch (error) {
+          console.error('[FilteringSystem] Error preloading categories:', error);
+        }
+      } else {
+        // Use cached categories immediately
+        try {
+          const parsed = JSON.parse(cachedCategories);
+          if (parsed.success && parsed.data && Array.isArray(parsed.data) && parsed.data.length > 0) {
+            console.log(`[FilteringSystem] Using preloaded cached categories (${parsed.data.length} items)`);
+            setRawCategories(parsed.data);
+          }
+        } catch (error) {
+          console.error('[FilteringSystem] Error parsing preloaded categories:', error);
+        }
+      }
+    };
+    
+    preloadCategories();
+  }, []);
+
+  // Fetch products and categories from API with smart caching (only fetch if data changed)
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Detect back navigation
+        let isBackNavigation = false;
+        try {
+          const navigationEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+          isBackNavigation = navigationEntry?.type === 'back_forward';
+        } catch (e) {
+          // Fallback: check if cache is very recent (< 2 minutes), likely back navigation
+          const productsCacheTimestamp = localStorage.getItem('products_cache_timestamp');
+          if (productsCacheTimestamp) {
+            const age = Date.now() - parseInt(productsCacheTimestamp, 10);
+            isBackNavigation = age < 120000; // Less than 2 minutes old
+          }
+        }
+        
         setLoading(true);
         
-        // Check localStorage cache first for products
         const productsCacheKey = 'products_cache';
         const productsCacheTimestampKey = 'products_cache_timestamp';
-        const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+        const productsCacheHashKey = 'products_cache_hash';
+        const categoriesCacheKey = 'categories_cache';
+        const categoriesCacheTimestampKey = 'categories_cache_timestamp';
+        const categoriesCacheHashKey = 'categories_cache_hash';
         
+        // Very long cache TTL - only invalidate if data actually changed
+        const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours (data persists until changed)
+        const CATEGORIES_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+        const API_TIMEOUT = 5000; // 5 seconds timeout
+        
+        // Helper function to fetch with timeout
+        const fetchWithTimeout = async (url: string, timeout: number) => {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), timeout);
+          
+          try {
+            const response = await fetch(url, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            return response;
+          } catch (error) {
+            clearTimeout(timeoutId);
+            throw error;
+          }
+        };
+        
+        // Load cached data immediately (for instant display)
         const cachedProducts = localStorage.getItem(productsCacheKey);
         const cachedProductsTimestamp = localStorage.getItem(productsCacheTimestampKey);
+        const cachedProductsHash = localStorage.getItem(productsCacheHashKey);
+        const cachedCategories = localStorage.getItem(categoriesCacheKey);
+        const cachedCategoriesTimestamp = localStorage.getItem(categoriesCacheTimestampKey);
+        const cachedCategoriesHash = localStorage.getItem(categoriesCacheHashKey);
         
+        // Set cached products immediately if valid
+        let hasValidProductsCache = false;
         if (cachedProducts && cachedProductsTimestamp) {
           const age = Date.now() - parseInt(cachedProductsTimestamp, 10);
           if (age < CACHE_TTL) {
-            const parsed = JSON.parse(cachedProducts);
-            if (parsed.success && parsed.data) {
-              setRawProducts(parsed.data);
+            try {
+              const parsed = JSON.parse(cachedProducts);
+              if (parsed.success && parsed.data && Array.isArray(parsed.data) && parsed.data.length > 0) {
+                console.log(`[FilteringSystem] Using cached products (${parsed.data.length} items)`);
+                setRawProducts(parsed.data);
+                hasValidProductsCache = true;
+              }
+            } catch (error) {
+              console.error('[FilteringSystem] Error parsing cached products:', error);
             }
           }
         }
         
-        // Check localStorage cache for categories
-        const categoriesCacheKey = 'categories_cache';
-        const categoriesCacheTimestampKey = 'categories_cache_timestamp';
-        
-        const cachedCategories = localStorage.getItem(categoriesCacheKey);
-        const cachedCategoriesTimestamp = localStorage.getItem(categoriesCacheTimestampKey);
-        
+        // Set cached categories immediately if valid (PRIORITY - show categories first)
+        let hasValidCategoriesCache = false;
         if (cachedCategories && cachedCategoriesTimestamp) {
           const age = Date.now() - parseInt(cachedCategoriesTimestamp, 10);
-          if (age < CACHE_TTL) {
-            const parsed = JSON.parse(cachedCategories);
-            if (parsed.success && parsed.data) {
-              setRawCategories(parsed.data);
+          if (age < CATEGORIES_CACHE_TTL) {
+            try {
+              const parsed = JSON.parse(cachedCategories);
+              if (parsed.success && parsed.data && Array.isArray(parsed.data) && parsed.data.length > 0) {
+                console.log(`[FilteringSystem] Using cached categories (${parsed.data.length} items)`);
+                setRawCategories(parsed.data);
+                hasValidCategoriesCache = true;
+              }
+            } catch (error) {
+              console.error('[FilteringSystem] Error parsing cached categories:', error);
             }
           }
         }
         
-        // Fetch products if not cached or expired
-        if (!cachedProducts || !cachedProductsTimestamp || 
-            (Date.now() - parseInt(cachedProductsTimestamp, 10)) >= CACHE_TTL) {
-          const productsResponse = await fetch('/api/products?limit=40');
-          const productsResult = await productsResponse.json();
-          
-          if (productsResult.success && productsResult.data) {
-            setRawProducts(productsResult.data);
-            // Cache the response
-            localStorage.setItem(productsCacheKey, JSON.stringify(productsResult));
-            localStorage.setItem(productsCacheTimestampKey, Date.now().toString());
-          }
+        // If back navigation: only skip API if BOTH cache are valid AND recent (< 2 minutes)
+        // If cache is missing or invalid, MUST fetch from API to show data
+        const cacheAge = cachedProductsTimestamp ? Date.now() - parseInt(cachedProductsTimestamp, 10) : Infinity;
+        const shouldSkipAPI = isBackNavigation && hasValidProductsCache && hasValidCategoriesCache && cacheAge < 120000; // 2 minutes
+        
+        if (shouldSkipAPI) {
+          console.log('[FilteringSystem] Back navigation detected, using cache only (no API calls)');
+          setLoading(false);
+          return; // Skip all API calls
         }
         
-        // Fetch categories if not cached or expired
-        if (!cachedCategories || !cachedCategoriesTimestamp || 
-            (Date.now() - parseInt(cachedCategoriesTimestamp, 10)) >= CACHE_TTL) {
-          const categoriesResponse = await fetch('/api/categories');
-          const categoriesResult = await categoriesResponse.json();
-          
-          if (categoriesResult.success && categoriesResult.data) {
-            setRawCategories(categoriesResult.data);
-            // Cache the response
-            localStorage.setItem(categoriesCacheKey, JSON.stringify(categoriesResult));
-            localStorage.setItem(categoriesCacheTimestampKey, Date.now().toString());
-          }
+        // If back navigation but cache is missing/invalid, fetch from API
+        if (isBackNavigation && (!hasValidProductsCache || !hasValidCategoriesCache)) {
+          console.log('[FilteringSystem] Back navigation detected but cache invalid/missing, fetching from API...');
         }
+        
+        // If cache is older than 2 minutes, always fetch fresh data to get latest products
+        if (cacheAge >= 120000 && hasValidProductsCache) {
+          console.log('[FilteringSystem] Cache older than 2 minutes, fetching fresh data to get latest products/images...');
+        }
+        
+        // Fetch categories and products in parallel (only if cache expired or data changed)
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        
+        const fetchPromises: Promise<void>[] = [];
+        
+        // Always fetch categories if cache is missing/invalid (PRIORITY - load first)
+        // Categories are critical for filter functionality
+        // BUT: If back navigation and cache exists, skip to avoid delay (already preloaded)
+        const shouldFetchCategories = !isBackNavigation && (!hasValidCategoriesCache || 
+            !cachedCategories || 
+            !cachedCategoriesTimestamp || 
+            (Date.now() - parseInt(cachedCategoriesTimestamp, 10)) >= CATEGORIES_CACHE_TTL);
+        
+        // Fetch categories FIRST (priority) - always fetch if needed (unless back nav with cache)
+        if (shouldFetchCategories) {
+          setCategoriesLoading(true);
+          // Fetch categories FIRST before products (higher priority)
+          fetchPromises.unshift(
+            (async () => {
+              try {
+                let categoriesResponse;
+                try {
+                  categoriesResponse = await fetchWithTimeout(`${apiUrl}/categories`, API_TIMEOUT);
+                } catch (error) {
+                  console.log('Express API failed, trying Next.js API...');
+                  categoriesResponse = await fetchWithTimeout('/api/categories', API_TIMEOUT);
+                }
+                
+                if (categoriesResponse.ok) {
+                  const categoriesResult = await categoriesResponse.json();
+                  if (categoriesResult.success && categoriesResult.data && Array.isArray(categoriesResult.data)) {
+                    const newHash = generateDataHash(categoriesResult.data);
+                    
+                    // Check if data actually changed
+                    if (cachedCategoriesHash === newHash) {
+                      console.log('[FilteringSystem] Categories data unchanged, updating cache timestamp only');
+                      // Data unchanged, just update timestamp
+                      safeSetItem(categoriesCacheTimestampKey, Date.now().toString());
+                    } else {
+                      console.log(`[FilteringSystem] Categories data changed, loaded ${categoriesResult.data.length} items from API`);
+                      // Data changed, update everything
+                      setRawCategories(categoriesResult.data);
+                      safeSetItem(categoriesCacheKey, JSON.stringify(categoriesResult));
+                      safeSetItem(categoriesCacheTimestampKey, Date.now().toString());
+                      safeSetItem(categoriesCacheHashKey, newHash);
+                    }
+                  }
+                }
+              } catch (error) {
+                console.error('[FilteringSystem] Error fetching categories:', error);
+                // Use cached data if available
+                if (cachedCategories) {
+                  const parsed = JSON.parse(cachedCategories);
+                  if (parsed.success && parsed.data && Array.isArray(parsed.data)) {
+                    console.log('[FilteringSystem] Using cached categories due to API error');
+                    setRawCategories(parsed.data);
+                  }
+                }
+              } finally {
+                setCategoriesLoading(false);
+              }
+            })()
+          );
+        } else {
+          console.log('[FilteringSystem] Categories cache valid, skipping API call');
+        }
+        
+        // Check if products need to be fetched
+        // IMPORTANT: If back navigation and cache is missing/invalid, MUST fetch to show data
+        const shouldFetchProducts = !hasValidProductsCache || 
+            !cachedProducts || 
+            !cachedProductsTimestamp || 
+            (Date.now() - parseInt(cachedProductsTimestamp, 10)) >= CACHE_TTL;
+        
+        // Fetch products only if needed
+        if (shouldFetchProducts) {
+          fetchPromises.push(
+            (async () => {
+              try {
+                const productsResponse = await fetchWithTimeout(`${apiUrl}/products?limit=20`, API_TIMEOUT).catch(() => {
+                  return fetchWithTimeout('/api/products?limit=20', API_TIMEOUT);
+                });
+                
+                if (productsResponse.ok) {
+                  const productsResult = await productsResponse.json();
+                  
+                  if (productsResult.success && productsResult.data) {
+                    const newHash = generateDataHash(productsResult.data);
+                    
+                    // Check if data actually changed
+                    if (cachedProductsHash === newHash) {
+                      console.log('[FilteringSystem] Products data unchanged, updating cache timestamp only');
+                      // Data unchanged, just update timestamp
+                      safeSetItem(productsCacheTimestampKey, Date.now().toString());
+                    } else {
+                      console.log(`[FilteringSystem] Products data changed, loaded ${productsResult.data.length} items from API`);
+                      // Data changed, update everything
+                      setRawProducts(productsResult.data);
+                      safeSetItem(productsCacheKey, JSON.stringify(productsResult));
+                      safeSetItem(productsCacheTimestampKey, Date.now().toString());
+                      safeSetItem(productsCacheHashKey, newHash);
+                    }
+                  }
+                }
+              } catch (error) {
+                console.error('[FilteringSystem] Error fetching products:', error);
+                // Use cached data if available
+                if (cachedProducts) {
+                  const parsed = JSON.parse(cachedProducts);
+                  if (parsed.success && parsed.data) {
+                    console.log('[FilteringSystem] Using cached products due to API error');
+                    setRawProducts(parsed.data);
+                  }
+                }
+              }
+            })()
+          );
+        } else {
+          console.log('[FilteringSystem] Products cache valid, skipping API call');
+        }
+        
+        // Wait for all fetches to complete
+        await Promise.all(fetchPromises);
+        
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -173,10 +475,89 @@ export default function FilteringSystem() {
     
     fetchData();
   }, []);
+  
+  // Refresh categories when window gains focus (only if data changed)
+  useEffect(() => {
+    const handleFocus = async () => {
+      const categoriesCacheKey = 'categories_cache';
+      const categoriesCacheTimestampKey = 'categories_cache_timestamp';
+      const categoriesCacheHashKey = 'categories_cache_hash';
+      const cachedTimestamp = localStorage.getItem(categoriesCacheTimestampKey);
+      const cachedHash = localStorage.getItem(categoriesCacheHashKey);
+      
+      // Only check for updates if cache is older than 1 minute (to avoid too frequent checks)
+      if (!cachedTimestamp || (Date.now() - parseInt(cachedTimestamp, 10)) > 60000) {
+        console.log('[FilteringSystem] Window focused, checking for category updates...');
+        
+        // Fetch fresh categories to check if data changed
+        try {
+          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+          let categoriesResponse;
+          
+          // Helper for timeout
+          const fetchWithTimeout = async (url: string, timeout: number) => {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+            try {
+              const response = await fetch(url, { signal: controller.signal });
+              clearTimeout(timeoutId);
+              return response;
+            } catch (error) {
+              clearTimeout(timeoutId);
+              throw error;
+            }
+          };
+          
+          try {
+            categoriesResponse = await fetchWithTimeout(`${apiUrl}/categories`, 3000);
+          } catch (error) {
+            categoriesResponse = await fetchWithTimeout('/api/categories', 3000);
+          }
+          
+          if (categoriesResponse.ok) {
+            const categoriesResult = await categoriesResponse.json();
+            if (categoriesResult.success && categoriesResult.data && Array.isArray(categoriesResult.data)) {
+              const newHash = generateDataHash(categoriesResult.data);
+              
+              // Only update if data actually changed
+              if (cachedHash !== newHash) {
+                console.log(`[FilteringSystem] Categories changed on focus, updated ${categoriesResult.data.length} items`);
+                setRawCategories(categoriesResult.data);
+                safeSetItem(categoriesCacheKey, JSON.stringify(categoriesResult));
+                safeSetItem(categoriesCacheTimestampKey, Date.now().toString());
+                safeSetItem(categoriesCacheHashKey, newHash);
+              } else {
+                console.log('[FilteringSystem] Categories unchanged on focus, just updating timestamp');
+                // Data unchanged, just update timestamp
+                safeSetItem(categoriesCacheTimestampKey, Date.now().toString());
+              }
+            }
+          }
+        } catch (error) {
+          console.error('[FilteringSystem] Error checking categories on focus:', error);
+          // Don't update on error, keep using cache
+        }
+      }
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
 
   // Update products and derived data when displayProducts changes
+  // Only update if actually changed to prevent infinite loops
   useEffect(() => {
-    setProducts(displayProducts);
+    setProducts(prevProducts => {
+      // Only update if the array reference or length changed
+      if (prevProducts.length !== displayProducts.length || 
+          prevProducts.some((p, i) => p.id !== displayProducts[i]?.id)) {
+        return displayProducts;
+      }
+      return prevProducts;
+    });
     setBrands(uniqueBrands);
     setAllSizes(allSizesList);
   }, [displayProducts, uniqueBrands, allSizesList]);
@@ -262,33 +643,18 @@ export default function FilteringSystem() {
     return chunks;
   };
 
-  // Create infinite scroll effect by repeating products
-  const createInfiniteProducts = (products: DisplayProduct[], count: number) => {
-    const infiniteProducts: DisplayProduct[] = [];
-    let currentIndex = 0;
-    
-    for (let i = 0; i < count; i++) {
-      if (products.length === 0) break;
-      
-      // Create a copy of the product with unique ID for infinite scroll
-      const product = products[currentIndex % products.length];
-      infiniteProducts.push({
-        ...product,
-        id: `${product.id}-${i}` // Unique ID for each cycle
-      });
-      
-      currentIndex++;
-    }
-    
-    return infiniteProducts;
-  };
-
-  // Get products to display with infinite scroll effect
-  const displayedProducts = createInfiniteProducts(filteredAndSortedProducts, visibleProducts);
-  const productRows = chunkProducts(displayedProducts, 3);
+  // Get products to display - just slice the filtered products for better performance
+  const displayedProducts = useMemo(() => {
+    return filteredAndSortedProducts.slice(0, visibleProducts);
+  }, [filteredAndSortedProducts, visibleProducts]);
   
-  // Always show "Load More" button for infinite scroll effect
-  const hasMoreProducts = true;
+  // Memoize product rows for better performance
+  const productRows = useMemo(() => {
+    return chunkProducts(displayedProducts, 3);
+  }, [displayedProducts]);
+  
+  // Check if there are more products to load
+  const hasMoreProducts = filteredAndSortedProducts.length > visibleProducts;
 
   // Filter handler functions
   const handleCategoryToggle = (category: string) => {
@@ -325,17 +691,15 @@ export default function FilteringSystem() {
 
   // Show more products function
   const showMoreProducts = () => {
-    setVisibleProducts(prev => prev + 18);
+    setVisibleProducts(prev => prev + 9);
   };
 
-  // Handle product card click
-  const handleProductClick = (productId: string) => {
-    router.push(`/client/product-details/${productId}`);
-  };
+  // Handle product card click - using Link component for client-side navigation
+  // No need for separate handler, Link handles it automatically
 
   // Reset visible products when filters change
   React.useEffect(() => {
-    setVisibleProducts(18);
+    setVisibleProducts(9);
   }, [searchTerm, selectedCategories, selectedBrands, selectedSizes, sortBy]);
 
   useEffect(() => {
@@ -409,20 +773,26 @@ export default function FilteringSystem() {
         
         {isCategoryOpen && (
           <div className=" space-y-2">
-            {categoryCounts.map((category, index) => (
-              <label key={index} className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded">
-                <div className="flex items-center">
-                  <input 
-                    type="checkbox" 
-                    className="mr-3"
-                    checked={selectedCategories.includes(category.name)}
-                    onChange={() => handleCategoryToggle(category.name)}
-                  />
-                <span className="text-gray-700">{category.name}</span>
-                </div>
-                <span className="text-gray-500 text-sm">({category.count})</span>
-              </label>
-            ))}
+            {categoriesLoading || (loading && categoryCounts.length === 0) ? (
+              <div className="text-gray-500 text-sm py-2">Loading categories...</div>
+            ) : categoryCounts.length === 0 ? (
+              <div className="text-gray-500 text-sm py-2">No categories available</div>
+            ) : (
+              categoryCounts.map((category, index) => (
+                <label key={index} className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded">
+                  <div className="flex items-center">
+                    <input 
+                      type="checkbox" 
+                      className="mr-3"
+                      checked={selectedCategories.includes(category.name)}
+                      onChange={() => handleCategoryToggle(category.name)}
+                    />
+                    <span className="text-gray-700">{category.name}</span>
+                  </div>
+                  <span className="text-gray-500 text-sm">({category.count})</span>
+                </label>
+              ))
+            )}
           </div>
         )}
       </div>
@@ -546,20 +916,26 @@ export default function FilteringSystem() {
           </button>
           {isCategoryOpen && (
             <div className="space-y-2">
-              {categoryCounts.map((category, index) => (
-                <label key={index} className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      className="mr-3"
-                      checked={selectedCategories.includes(category.name)}
-                      onChange={() => handleCategoryToggle(category.name)}
-                    />
-                    <span className="text-gray-700">{category.name}</span>
-                  </div>
-                  <span className="text-gray-500 text-sm">({category.count})</span>
-                </label>
-              ))}
+              {categoriesLoading || (loading && categoryCounts.length === 0) ? (
+                <div className="text-gray-500 text-sm py-2">Loading categories...</div>
+              ) : categoryCounts.length === 0 ? (
+                <div className="text-gray-500 text-sm py-2">No categories available</div>
+              ) : (
+                categoryCounts.map((category, index) => (
+                  <label key={index} className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        className="mr-3"
+                        checked={selectedCategories.includes(category.name)}
+                        onChange={() => handleCategoryToggle(category.name)}
+                      />
+                      <span className="text-gray-700">{category.name}</span>
+                    </div>
+                    <span className="text-gray-500 text-sm">({category.count})</span>
+                  </label>
+                ))
+              )}
             </div>
           )}
         </div>
@@ -709,8 +1085,27 @@ export default function FilteringSystem() {
             {/* Products Grid Container */}
             
             {loading ? (
-              <div className="w-full text-center py-12">
-                <div className="text-gray-500 text-lg mb-4">Loading products...</div>
+              <div className="w-full flex flex-col justify-start items-center gap-0">
+                {/* Skeleton Loading - Show 9 skeleton cards */}
+                {[...Array(9)].map((_, index) => (
+                  <div key={`skeleton-${index}`} className="w-full flex justify-center items-center gap-6 h-[582px] mb-6">
+                    {[...Array(3)].map((_, cardIndex) => (
+                      <div
+                        key={`skeleton-card-${index}-${cardIndex}`}
+                        className="w-[312px] p-4 bg-gray-100 rounded-xl border border-gray-200 animate-pulse"
+                      >
+                        {/* Skeleton Image */}
+                        <div className="w-full h-72 bg-gray-300 rounded-lg mb-4"></div>
+                        {/* Skeleton Text */}
+                        <div className="space-y-3">
+                          <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                          <div className="h-6 bg-gray-300 rounded w-1/2"></div>
+                          <div className="h-4 bg-gray-300 rounded w-1/4"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
               </div>
             ) : displayedProducts.length === 0 ? (
               <div className="w-full text-center py-12">
@@ -730,16 +1125,18 @@ export default function FilteringSystem() {
                 
                 {rowProducts.map((product, productIndex) => {
                   return (
-                    <Link key={product.id} href={`/client/product-details/${product.id}`} className="flex h-full items-center">
+                    <Link 
+                      key={product.id} 
+                      href={`/client/product-details/${product.id}`} 
+                      className="flex h-full items-center"
+                      prefetch={true}
+                      scroll={true}
+                    >
                       <div
                         className="w-[312px] p-4 bg-sky-50 rounded-xl border border-black/10 inline-flex flex-col justify-start items-start group md:hover:shadow-md md:hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
                         style={{ transformOrigin: 'center', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
                         role="article"
                         aria-labelledby={`product-title-${product.id}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleProductClick(product.id);
-                        }}
                       >
                       {/* Individual Product Card */}
                       
@@ -786,31 +1183,34 @@ export default function FilteringSystem() {
                       {/* Product Image */}
                       <div className="self-stretch h-72 relative mb-4 overflow-hidden rounded-lg">
                         {/* Product Image Container */}
-                        {product.image && product.image.startsWith('data:') ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={product.image}
-                            alt={`${product.name} product image`}
-                            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
-                            draggable={false}
-                            onDragStart={(e) => e.preventDefault()}
-                            style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
-                          />
-                        ) : (
-                          <Image
-                            src={product.image || '/placeholder-image.png'}
-                            alt={`${product.name} product image`}
-                            fill
-                            className="object-cover transform group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
-                            draggable={false}
-                            onDragStart={(e) => e.preventDefault()}
-                            style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
-                            loading="lazy"
-                            onError={(e) => {
-                              e.currentTarget.src = '/placeholder-image.png';
-                            }}
-                          />
-                        )}
+                        {(() => {
+                          const imageUrl = getValidImageUrl(product.image);
+                          return imageUrl.startsWith('data:') ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={imageUrl}
+                              alt={`${product.name} product image`}
+                              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
+                              draggable={false}
+                              onDragStart={(e) => e.preventDefault()}
+                              style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
+                            />
+                          ) : (
+                            <Image
+                              src={imageUrl}
+                              alt={`${product.name} product image`}
+                              fill
+                              className="object-cover transform group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
+                              draggable={false}
+                              onDragStart={(e) => e.preventDefault()}
+                              style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
+                              loading="lazy"
+                              onError={(e) => {
+                                e.currentTarget.src = '/placeholder-image.png';
+                              }}
+                            />
+                          );
+                        })()}
                       </div>
 
                       {/* Product Info */}
@@ -939,7 +1339,7 @@ export default function FilteringSystem() {
                   onClick={showMoreProducts}
                   className="px-6 py-3 border-2 border-fuchsia-500 text-fuchsia-500 rounded-lg hover:bg-fuchsia-50 transition-colors font-medium font-['Poppins']"
                 >
-                  Load More Products
+                  See More
                 </button>
               </div>
             )}
@@ -947,7 +1347,46 @@ export default function FilteringSystem() {
 
           {/* Products Grid - Mobile only (2 per row) */}
           <div className="md:hidden grid grid-cols-2 gap-4">
-            {displayedProducts.map((product) => (
+            {loading ? (
+              // Skeleton Loading for Mobile
+              [...Array(6)].map((_, index) => (
+                <div
+                  key={`mobile-skeleton-${index}`}
+                  className="p-3 bg-gray-100 rounded-xl border border-gray-200 animate-pulse"
+                >
+                  <div className="h-6 bg-gray-300 rounded mb-2"></div>
+                  <div className="h-40 bg-gray-300 rounded-lg mb-3"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                    <div className="h-5 bg-gray-300 rounded w-1/2"></div>
+                    <div className="h-3 bg-gray-300 rounded w-1/4"></div>
+                  </div>
+                </div>
+              ))
+            ) : displayedProducts.length === 0 ? (
+              <div className="col-span-2 text-center py-12">
+                <div className="text-gray-500 text-lg mb-4">No products found</div>
+                <p className="text-gray-400 mb-6">Try adjusting your filters or search terms</p>
+                <button
+                  onClick={clearAllFilters}
+                  className="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            ) : displayedProducts.length === 0 ? (
+              <div className="col-span-2 text-center py-12">
+                <div className="text-gray-500 text-lg mb-4">No products found</div>
+                <p className="text-gray-400 mb-6">Try adjusting your filters or search terms</p>
+                <button
+                  onClick={clearAllFilters}
+                  className="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            ) : (
+              displayedProducts.map((product) => (
               <Link key={product.id} href={`/client/product-details/${product.id}`}>
                 <div
                   className="p-3 bg-sky-50 rounded-xl border border-black/10 flex flex-col justify-start items-start group transition-all duration-300 ease-in-out cursor-pointer select-none"
@@ -964,33 +1403,44 @@ export default function FilteringSystem() {
                         Verified Seller
                       </div>
                     </div>
-                    <div className="cursor-pointer">
+                    <div 
+                      className="cursor-pointer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        // TODO: Add to wishlist functionality
+                        console.log('Add to wishlist:', product.id);
+                      }}
+                    >
                       <Image src="/card/icon/butterfly.svg" alt="Add to wishlist" width={24} height={24} loading="lazy" />
                     </div>
                   </div>
                   {/* Product Image */}
                   <div className="self-stretch h-40 relative mb-3 overflow-hidden rounded-lg">
-                    {product.image && product.image.startsWith('data:') ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={product.image}
-                        alt={`${product.name} product image`}
-                        className="w-full h-full object-cover select-none pointer-events-none"
-                        draggable={false}
-                      />
-                    ) : (
-                      <Image
-                        src={product.image || '/placeholder-image.png'}
-                        alt={`${product.name} product image`}
-                        fill
-                        className="object-cover select-none pointer-events-none"
-                        draggable={false}
-                        loading="lazy"
-                        onError={(e) => {
-                          e.currentTarget.src = '/placeholder-image.png';
-                        }}
-                      />
-                    )}
+                    {(() => {
+                      const imageUrl = getValidImageUrl(product.image);
+                      return imageUrl.startsWith('data:') ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={imageUrl}
+                          alt={`${product.name} product image`}
+                          className="w-full h-full object-cover select-none pointer-events-none"
+                          draggable={false}
+                        />
+                      ) : (
+                        <Image
+                          src={imageUrl}
+                          alt={`${product.name} product image`}
+                          fill
+                          className="object-cover select-none pointer-events-none"
+                          draggable={false}
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder-image.png';
+                          }}
+                        />
+                      );
+                    })()}
                   </div>
                   {/* Info */}
                   <div className="self-stretch flex flex-col justify-start items-start gap-2">
@@ -1025,7 +1475,20 @@ export default function FilteringSystem() {
                   </div>
                 </div>
               </Link>
-            ))}
+            ))
+            )}
+            
+            {/* Load More Button - Mobile */}
+            {!loading && hasMoreProducts && filteredAndSortedProducts.length > 0 && (
+              <div className="w-full flex justify-center mt-6 col-span-2">
+                <button
+                  onClick={showMoreProducts}
+                  className="px-6 py-3 border-2 border-fuchsia-500 text-fuchsia-500 rounded-lg hover:bg-fuchsia-50 transition-colors font-medium font-['Poppins']"
+                >
+                  See More
+                </button>
+              </div>
+            )}
           </div>
 
         </div>

@@ -43,7 +43,7 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch('/api/categories');
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/categories`);
         const result = await response.json();
         if (!response.ok || !result.success) {
           throw new Error(result.error || 'Failed to load categories');
@@ -92,7 +92,8 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
 
         const slug = generateSlug(category);
         
-        const response = await fetch('/api/categories', {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        const response = await fetch(`${apiUrl}/categories`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -144,7 +145,8 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
         setDeleting(true);
         setError(null);
 
-        const response = await fetch(`/api/categories/${deleteTargetId}`, {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        const response = await fetch(`${apiUrl}/categories/${deleteTargetId}`, {
           method: 'DELETE',
         });
 

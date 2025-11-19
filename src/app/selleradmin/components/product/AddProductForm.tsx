@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import SimpleSelect from '../ui/SimpleSelect';
 import SearchableMultiSelect from '../ui/SearchableMultiSelect';
 import { Color, Category } from '@/types';
+import { getApiUrl } from '@/lib/apiConfig';
 
 // Zod schema for validation
 const productSchema = z.object({
@@ -105,7 +106,7 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
       try {
         setColorsLoading(true);
         setColorsError(null);
-        const response = await fetch('/api/colors');
+        const response = await fetch(getApiUrl('colors'));
         const result = await response.json();
         if (!response.ok || !result.success) {
           throw new Error(result.error || 'Failed to load colors');
@@ -138,7 +139,7 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
       try {
         setCategoriesLoading(true);
         setCategoriesError(null);
-        const response = await fetch('/api/categories');
+        const response = await fetch(getApiUrl('categories'));
         const result = await response.json();
         if (!response.ok || !result.success) {
           throw new Error(result.error || 'Failed to load categories');

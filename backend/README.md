@@ -1,61 +1,112 @@
-# Backend Folder Overview
+# Express.js Backend API
 
-This directory isolates all server-side logic so the Next.js `app` frontend now only contains thin route adapters that re-export handlers from here. The goal is to make it easy to migrate to a dedicated backend service later without rewriting the core business logic.
+This is the Express.js backend server for the Dream e-commerce application.
 
 ## Structure
 
 ```
 backend/
-├─ README.md                 # This file
-├─ database/
-│  └─ database.json          # JSON datastore used by helper methods
-├─ lib/
-│  └─ db.ts                  # Database helpers for products, orders, etc.
-└─ routes/
-   ├─ admin/
-   │  ├─ dashboard.ts
-   │  └─ orders/
-   │     ├─ approve.ts
-   │     ├─ cancel.ts
-   │     ├─ index.ts
-   │     ├─ recent.ts
-   │     └─ reject.ts
-   ├─ auth/
-   │  ├─ login.ts
-   │  └─ register.ts
-   ├─ cart/
-   │  └─ index.ts
-   ├─ categories/
-   │  ├─ id.ts
-   │  └─ index.ts
-   ├─ colors/
-   │  ├─ id.ts
-   │  └─ index.ts
-   └─ products/
-      ├─ id.ts
-      ├─ images.ts
-      └─ index.ts
+├── server.ts              # Main Express server entry point
+├── express-lib/           # Database and utility functions
+│   └── db.ts             # Database helper functions
+├── express-routes/        # API route handlers
+│   ├── products.ts
+│   ├── categories.ts
+│   ├── colors.ts
+│   ├── orders.ts
+│   ├── auth.ts
+│   ├── cart.ts
+│   └── admin.ts
+└── database/              # JSON database files
+    ├── products.json
+    ├── categories.json
+    ├── colors.json
+    ├── orders.json
+    └── users.json
 ```
 
-## How the Frontend Uses These Handlers
+## Setup
 
-- Each file in `src/app/api/**/route.ts` simply re-exports the exported handler functions (`GET`, `POST`, etc.) from this folder.
-- `tsconfig.json` defines the `@backend/*` alias so both the frontend and backend code share consistent import paths.
-- Database utilities (`@backend/lib/db`) now live here and point to `backend/database/database.json`.
+1. Install dependencies:
+```bash
+pnpm install
+```
 
-## Migrating to a Dedicated Backend Later
+2. Create `.env` file (copy from `.env.example`):
+```bash
+cp backend/.env.example backend/.env
+```
 
-1. **Choose a server framework** (e.g. Express, Fastify, Nest). Each handler already uses native `NextRequest`/`NextResponse`; for another framework, wrap the logic in adapters that translate to/from Express `req/res`.
-2. **Reuse the route files** as controller logic:
-   - Replace the `NextRequest`/`NextResponse` types with the equivalents from your backend framework.
-   - Keep the same handler signatures to minimise changes.
-3. **Keep using `lib/db.ts`** for the JSON datastore or replace it with your real database layer. All handlers call helpers like `getProducts`, `saveProduct`, etc., so swapping the implementation is straightforward.
-4. **Update the frontend** to call the new backend URL instead of `/api/...` once the backend is deployed. Until then, the Next.js API routes keep everything working locally.
-5. **Authentication hooks** are still TODOs inside the handlers. When migrating, wire them to your real auth middleware instead of the placeholder comments.
+3. Start development server:
+```bash
+pnpm backend:dev
+```
 
-## Notes for Future Developers
+Or run both frontend and backend together:
+```bash
+pnpm dev:all
+```
 
-- If you add a new API route, create the logic under `backend/routes/**` and let the corresponding Next.js route simply re-export the handler.
-- Keep server-only utilities (DB clients, third-party SDK usage, etc.) inside this directory.
-- Run `npm run build` to ensure the type checker sees the `@backend/*` alias and that import paths are correct.
+## API Endpoints
 
+### Products
+- `GET /api/products` - Get all products (with filtering, pagination)
+- `GET /api/products/:id` - Get single product
+- `POST /api/products` - Create product
+- `PUT /api/products/:id` - Update product
+- `DELETE /api/products/:id` - Delete product
+
+### Categories
+- `GET /api/categories` - Get all categories
+- `GET /api/categories/:id` - Get single category
+- `POST /api/categories` - Create category
+- `PUT /api/categories/:id` - Update category
+- `DELETE /api/categories/:id` - Delete category
+
+### Colors
+- `GET /api/colors` - Get all colors
+- `GET /api/colors/:id` - Get single color
+- `POST /api/colors` - Create color
+- `PUT /api/colors/:id` - Update color
+- `DELETE /api/colors/:id` - Delete color
+
+### Orders
+- `GET /api/orders` - Get all orders
+- `GET /api/orders/:id` - Get single order
+- `POST /api/orders` - Create order
+- `PUT /api/orders/:id` - Update order
+
+### Auth
+- `POST /api/auth/login` - User login
+- `POST /api/auth/register` - User registration
+
+### Cart
+- `GET /api/cart` - Get cart
+- `POST /api/cart` - Add to cart
+- `PUT /api/cart` - Update cart
+- `DELETE /api/cart` - Remove from cart
+
+### Admin
+- `GET /api/admin/dashboard` - Dashboard statistics
+- `GET /api/admin/orders` - Get all orders (admin)
+- `GET /api/admin/orders/recent` - Get recent orders
+- `POST /api/admin/orders/:id/approve` - Approve order
+- `POST /api/admin/orders/:id/reject` - Reject order
+- `POST /api/admin/orders/:id/cancel` - Cancel order
+
+## Database
+
+The backend uses separate JSON files for each entity:
+- `products.json` - All products
+- `categories.json` - All categories
+- `colors.json` - All colors
+- `orders.json` - All orders
+- `users.json` - All users
+
+Each file is cached in memory for 5 minutes to improve performance.
+
+## Development
+
+The server runs on `http://localhost:5000` by default.
+
+To change the port, set `BACKEND_PORT` in `.env` file.

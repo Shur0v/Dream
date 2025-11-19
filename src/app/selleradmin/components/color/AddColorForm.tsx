@@ -31,7 +31,7 @@ export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColor
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch('/api/colors');
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/colors`);
         const result = await response.json();
         if (!response.ok || !result.success) {
           throw new Error(result.error || 'Failed to load colors');
@@ -63,7 +63,8 @@ export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColor
         setSaving(true);
         setError(null);
         
-        const response = await fetch('/api/colors', {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        const response = await fetch(`${apiUrl}/colors`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -112,7 +113,8 @@ export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColor
         setDeleting(true);
         setError(null);
         
-        const response = await fetch(`/api/colors/${deleteTargetId}`, {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        const response = await fetch(`${apiUrl}/colors/${deleteTargetId}`, {
           method: 'DELETE',
         });
 

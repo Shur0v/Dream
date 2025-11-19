@@ -1,0 +1,98 @@
+[
+  {
+    "id": "color-1",
+    "name": "Black",
+    "hexCode": "#000000",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "color-2",
+    "name": "White",
+    "hexCode": "#FFFFFF",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "color-3",
+    "name": "Red",
+    "hexCode": "#FF0000",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "color-4",
+    "name": "Blue",
+    "hexCode": "#0000FF",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "color-5",
+    "name": "Green",
+    "hexCode": "#00FF00",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "color-6",
+    "name": "Yellow",
+    "hexCode": "#FFFF00",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "color-7",
+    "name": "Gray",
+    "hexCode": "#808080",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "color-8",
+    "name": "Navy",
+    "hexCode": "#000080",
+    "isActive": true,
+    "createdAt": "2024-01-01T00:00:00Z",
+    "updatedAt": "2024-01-01T00:00:00Z"
+  },
+  {
+    "id": "color-1763494361769",
+    "name": "dfgdf",
+    "hexCode": "#FE7171",
+    "isActive": true,
+    "createdAt": "2025-11-18T19:32:41.769Z",
+    "updatedAt": "2025-11-18T19:32:41.769Z"
+  },
+  {
+    "id": "color-1763585918316",
+    "name": "paste",
+    "hexCode": "#53B2AB",
+    "isActive": true,
+    "createdAt": "2025-11-19T20:58:38.316Z",
+    "updatedAt": "2025-11-19T20:58:38.316Z"
+  },
+  {
+    "id": "color-1763595244801",
+    "name": "color 1",
+    "hexCode": "#B5934A",
+    "isActive": true,
+    "createdAt": "2025-11-19T23:34:04.801Z",
+    "updatedAt": "2025-11-19T23:34:04.801Z"
+  },
+  {
+    "id": "color-1763595361732",
+    "name": "color 2",
+    "hexCode": "#2873B8",
+    "isActive": true,
+    "createdAt": "2025-11-19T23:36:01.732Z",
+    "updatedAt": "2025-11-19T23:36:01.732Z"
+  }
+]

@@ -58,21 +58,24 @@ const validationSchema = (values: CheckoutFormData): Record<string, string> => {
   return errors;
 };
 
+// Stable initial values object (outside component to prevent recreation)
+const defaultCheckoutFormData: CheckoutFormData = {
+  name: '',
+  phoneNumber: '',
+  email: '',
+  district: '',
+  upazila: '',
+  thana: '',
+  postOffice: '',
+};
+
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
 }) => {
   const { values, errors, handleChange, handleBlur, handleSubmit, touched, reset } = useForm<CheckoutFormData>(
-    {
-      name: '',
-      phoneNumber: '',
-      email: '',
-      district: '',
-      upazila: '',
-      thana: '',
-      postOffice: '',
-    },
+    defaultCheckoutFormData,
     validationSchema
   );
 

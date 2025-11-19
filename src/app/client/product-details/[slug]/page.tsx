@@ -5,20 +5,41 @@ import RelatedProduct from "../components/RelatedProduct";
 import ShopInstagram from "../components/ShopInstagram";
 import ForYou from "../../home/components/ForYou";
 import DeliveryInfo from "../components/toppart/DeliveryInfo";
-import { getProductById, getColors } from "@backend/lib/db";
 
 export default async function ProductDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   
-  // Fetch product data directly from database using the slug (which is the product ID)
-  // Try exact match first, then try without any trailing suffix (e.g., "-0", "-1")
-  let product = await getProductById(slug);
+  // Fetch product data from Express backend API
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  
+  // Try exact match first
+  let productResponse = await fetch(`${apiUrl}/products/${slug}`, {
+    cache: 'no-store',
+  }).catch(() => null);
+  
+  let product = null;
+  
+  if (productResponse && productResponse.ok) {
+    const result = await productResponse.json();
+    if (result.success && result.data) {
+      product = result.data;
+    }
+  }
   
   // If not found, try removing trailing suffix pattern (e.g., "product-123-0" -> "product-123")
   if (!product && slug.includes('-')) {
     const baseId = slug.replace(/-\d+$/, ''); // Remove trailing "-number" pattern
     if (baseId !== slug) {
-      product = await getProductById(baseId);
+      const baseResponse = await fetch(`${apiUrl}/products/${baseId}`, {
+        cache: 'no-store',
+      }).catch(() => null);
+      
+      if (baseResponse && baseResponse.ok) {
+        const baseResult = await baseResponse.json();
+        if (baseResult.success && baseResult.data) {
+          product = baseResult.data;
+        }
+      }
     }
   }
 
@@ -55,19 +76,30 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
   }
   
   if (productColors.length > 0) {
-    // Fetch all colors to create a lookup map
-    const allColors = await getColors();
+    // Fetch all colors from Express backend API
+    const colorsResponse = await fetch(`${apiUrl}/colors`, {
+      cache: 'no-store',
+    }).catch(() => null);
+    
+    let allColors: Array<{ id: string; name: string; hexCode: string }> = [];
+    if (colorsResponse && colorsResponse.ok) {
+      const colorsResult = await colorsResponse.json();
+      if (colorsResult.success && colorsResult.data) {
+        allColors = colorsResult.data;
+      }
+    }
+    
     const colorMap = new Map(allColors.map(c => [c.id, c]));
     
     // Map color IDs to color names and hexCodes
     colorNames = productColors
-      .map(colorId => {
+      .map((colorId: string) => {
         // Handle both color IDs (like "color-1") and direct color names (like "Black")
         let color = colorMap.get(colorId);
         
         // If not found by ID, check if it's already a color name
         if (!color) {
-          color = allColors.find(c => c.name === colorId);
+          color = allColors.find((c: { id: string; name: string; hexCode: string }) => c.name === colorId);
         }
         
         if (color) {
@@ -83,7 +115,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
         
         return null;
       })
-      .filter((name): name is string => name !== null);
+      .filter((name: string | null): name is string => name !== null);
     
     // Debug: Log mapped colors
     if (process.env.NODE_ENV === 'development') {

@@ -27,7 +27,7 @@ export default function AddProductPage() {
         console.log('[AddProductPage] Processing colors array:', data.colors);
         
         // Fetch colors to validate the IDs
-        const colorsResponse = await fetch('/api/colors');
+        const colorsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/colors`);
         if (colorsResponse.ok) {
           const colorsData = await colorsResponse.json();
           const colors = colorsData.data || [];
@@ -88,7 +88,7 @@ export default function AddProductPage() {
       console.log('[AddProductPage] Colors in product data:', productData.colors);
 
       // Save product via API
-      const response = await fetch('/api/products', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
