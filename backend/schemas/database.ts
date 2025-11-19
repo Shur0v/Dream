@@ -64,10 +64,19 @@ const ProductSchema = z.object({
     updatedAt: TimestampSchema,
   });
 
-const OrderItemSchema = z.object({
+  const MinimalProductSnapshotSchema = z.object({
+    id: z.string(),
+    name: z.string().default(''),
+    price: z.number().default(0),
+    category: z.string().optional(),
+    sellerId: z.string().optional(),
+    // Keep it open-ended so older snapshots still pass
+  }).passthrough();
+  
+  const OrderItemSchema = z.object({
     id: z.string(),
     productId: z.string(),
-    product: ProductSchema.optional(),
+    product: MinimalProductSnapshotSchema.optional(),
     quantity: z.number().int().nonnegative().default(1),
     price: z.number().nonnegative().default(0),
     color: z.string().optional(),
