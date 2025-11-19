@@ -15,8 +15,7 @@ const TimestampSchema = z
   .or(z.literal(''))
   .default(() => new Date().toISOString());
 
-const ColorSchema = z
-  .object({
+const ColorSchema = z.object({
     id: z.string().min(1),
     name: z.string().min(1),
     hexCode: z
@@ -26,11 +25,9 @@ const ColorSchema = z
     isActive: z.boolean().default(true),
     createdAt: TimestampSchema,
     updatedAt: TimestampSchema,
-  })
-  .passthrough();
+  });
 
-const CategorySchema = z
-  .object({
+const CategorySchema = z.object({
     id: z.string().min(1),
     name: z.string().min(1),
     slug: z.string().min(1),
@@ -40,11 +37,9 @@ const CategorySchema = z
     isActive: z.boolean().default(true),
     createdAt: TimestampSchema,
     updatedAt: TimestampSchema,
-  })
-  .passthrough();
+  });
 
-const ProductSchema = z
-  .object({
+const ProductSchema = z.object({
     id: z.string().min(1),
     name: z.string().min(1),
     description: z.string().default(''),
@@ -55,23 +50,21 @@ const ProductSchema = z
     category: z.string(),
     categoryId: z.string().optional(),
     subcategory: z.string().optional(),
-    brand: z.string().optional(),
-    sku: z.string().optional(),
+    brand: z.string().default(''),
+    sku: z.string().default(''),
     stock: z.number().int().nonnegative().default(0),
     colors: z.array(z.string()).optional(),
     colorOptions: z.array(ColorSchema).optional(),
     size: z.array(z.string()).optional(),
     isActive: z.boolean().default(true),
     tags: z.array(z.string()).default([]),
-    specifications: z.record(z.any()).optional(),
+    specifications: z.record(z.string(), z.unknown()).optional(),
     sellerId: z.string().min(1),
     createdAt: TimestampSchema,
     updatedAt: TimestampSchema,
-  })
-  .passthrough();
+  });
 
-const OrderItemSchema = z
-  .object({
+const OrderItemSchema = z.object({
     id: z.string(),
     productId: z.string(),
     product: ProductSchema.optional(),
@@ -79,53 +72,60 @@ const OrderItemSchema = z
     price: z.number().nonnegative().default(0),
     color: z.string().optional(),
     size: z.string().optional(),
-  })
-  .passthrough();
+  });
 
-const AddressSchema = z
-  .object({
-    street: z.string(),
-    city: z.string(),
-    state: z.string(),
-    zipCode: z.string(),
-    country: z.string(),
-  })
-  .partial()
-  .passthrough();
+const AddressSchema = z.object({
+  street: z.string().default(''),
+  city: z.string().default(''),
+  state: z.string().default(''),
+  zipCode: z.string().default(''),
+  country: z.string().default(''),
+});
 
-const OrderSchema = z
-  .object({
+const OrderStatusSchema = z.enum([
+  'pending',
+  'confirmed',
+  'approved',
+  'rejected',
+  'shipped',
+  'delivered',
+  'cancelled',
+  'refunded',
+]);
+
+const PaymentStatusSchema = z.enum(['pending', 'paid', 'failed', 'refunded']);
+
+const OrderSchema = z.object({
     id: z.string(),
     userId: z.string(),
     items: z.array(OrderItemSchema).default([]),
-    status: z.string(),
+  status: OrderStatusSchema.default('pending'),
     totalAmount: z.number().nonnegative().default(0),
     shippingAddress: AddressSchema,
     billingAddress: AddressSchema.optional(),
-    paymentMethod: z.string().optional(),
-    paymentStatus: z.string().optional(),
+  paymentMethod: z.string().default(''),
+  paymentStatus: PaymentStatusSchema.default('pending'),
     trackingNumber: z.string().optional(),
     notes: z.string().optional(),
     createdAt: TimestampSchema,
     updatedAt: TimestampSchema,
-  })
-  .passthrough();
+  });
 
-const UserSchema = z
-  .object({
+const UserRoleSchema = z.enum(['client', 'seller', 'reseller', 'super-admin']);
+
+const UserSchema = z.object({
     id: z.string(),
     email: z.string().email(),
     firstName: z.string(),
     lastName: z.string(),
-    role: z.string(),
+  role: UserRoleSchema.default('client'),
     avatar: z.string().optional(),
     phone: z.string().optional(),
     address: AddressSchema.optional(),
     isEmailVerified: z.boolean().default(false),
     createdAt: TimestampSchema,
     updatedAt: TimestampSchema,
-  })
-  .passthrough();
+  });
 
 export const DatabaseSchema = z.object({
   products: z.array(ProductSchema).default([]),

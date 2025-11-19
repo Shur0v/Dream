@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
         order.id.toLowerCase().includes(searchLower) ||
         order.userId.toLowerCase().includes(searchLower) ||
         order.items.some(item =>
-          item.product.name.toLowerCase().includes(searchLower)
+          item.product?.name?.toLowerCase().includes(searchLower)
         )
       );
     }

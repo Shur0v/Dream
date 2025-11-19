@@ -110,7 +110,7 @@ export type OrderStatus = 'pending' | 'confirmed' | 'approved' | 'rejected' | 's
 export interface OrderItem {
   id: string;
   productId: string;
-  product: Product;
+  product?: Product;
   quantity: number;
   price: number;
   color?: string; // Selected color ID or name

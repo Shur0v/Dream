@@ -13,7 +13,7 @@
 
 import { Product, Order, Category, Color, User } from '@/types';
 import { readJsonStore, writeJsonStore } from '../lib/jsonStore';
-import { DatabaseSchema } from '@backend/schemas/database';
+import { DatabaseSchema, DatabaseShape } from '@backend/schemas/database';
 
 type Database = ReturnType<typeof DatabaseSchema.parse>;
 
@@ -29,7 +29,7 @@ let colorsCache: { data: Color[]; timestamp: number } | null = null;
  * @returns Promise<Database> - The entire database object
  */
 export async function readDatabase(): Promise<Database> {
-  const raw = await readJsonStore<unknown>('database', { fileName: 'database' });
+  const raw = await readJsonStore<DatabaseShape>('database', { fileName: 'database' });
   return DatabaseSchema.parse(raw ?? {});
 }
 

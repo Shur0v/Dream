@@ -106,7 +106,7 @@ async function writeToRedis<T>(store: string, data: T, ttlSeconds?: number): Pro
 /**
  * Read a JSON blob by key, prioritising Redis, then filesystem, then memory.
  */
-export async function readJsonStore<T extends JsonValue>(
+export async function readJsonStore<T = JsonValue>(
   store: string,
   options?: JsonStoreOptions
 ): Promise<T> {
@@ -131,15 +131,15 @@ export async function readJsonStore<T extends JsonValue>(
   }
 
   // As a last resort, initialise empty object/array.
-  const fallback: JsonValue = {};
+  const fallback = {} as T;
   memoryStore.set(store, JSON.stringify(fallback));
-  return fallback as T;
+  return fallback;
 }
 
 /**
  * Persist a JSON blob by key to Redis + filesystem (with graceful degradation).
  */
-export async function writeJsonStore<T extends JsonValue>(
+export async function writeJsonStore<T = JsonValue>(
   store: string,
   data: T,
   options?: JsonStoreOptions
