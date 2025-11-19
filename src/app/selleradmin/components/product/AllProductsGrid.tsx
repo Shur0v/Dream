@@ -65,15 +65,39 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
     }));
   }, [rawProducts]);
 
-  // Fetch products from API
+  // Fetch products from API with localStorage caching
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/products?limit=1000');
+      
+      // Check localStorage cache first
+      const cacheKey = 'products_cache';
+      const cacheTimestampKey = 'products_cache_timestamp';
+      const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+      
+      const cachedData = localStorage.getItem(cacheKey);
+      const cachedTimestamp = localStorage.getItem(cacheTimestampKey);
+      
+      if (cachedData && cachedTimestamp) {
+        const age = Date.now() - parseInt(cachedTimestamp, 10);
+        if (age < CACHE_TTL) {
+          const parsed = JSON.parse(cachedData);
+          if (parsed.success && parsed.data) {
+            setRawProducts(parsed.data);
+            setLoading(false);
+            return;
+          }
+        }
+      }
+      
+      const response = await fetch('/api/products?limit=40');
       const result = await response.json();
       
       if (result.success && result.data) {
         setRawProducts(result.data);
+        // Cache the response
+        localStorage.setItem(cacheKey, JSON.stringify(result));
+        localStorage.setItem(cacheTimestampKey, Date.now().toString());
       }
     } catch (error) {
       console.error('Error fetching products:', error);

@@ -19,10 +19,11 @@ type Database = ReturnType<typeof DatabaseSchema.parse>;
 
 // In-memory cache for products (with TTL)
 let productsCache: { data: Product[]; timestamp: number } | null = null;
-const CACHE_TTL = 5000; // 5 seconds cache
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
 
 // In-memory cache for colors
 let colorsCache: { data: Color[]; timestamp: number } | null = null;
+const COLORS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
 
 /**
  * Read database from JSON file
@@ -283,7 +284,7 @@ export async function deleteCategory(id: string): Promise<Category | null> {
 export async function getColors(): Promise<Color[]> {
   // Check cache validity
   const now = Date.now();
-  if (colorsCache && (now - colorsCache.timestamp) < CACHE_TTL) {
+  if (colorsCache && (now - colorsCache.timestamp) < COLORS_CACHE_TTL) {
     return colorsCache.data;
   }
   

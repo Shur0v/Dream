@@ -145,10 +145,30 @@ export async function writeJsonStore<T = JsonValue>(
   options?: JsonStoreOptions
 ): Promise<void> {
   memoryStore.set(store, JSON.stringify(data));
-  await Promise.allSettled([
+  const results = await Promise.allSettled([
     writeToFile(store, data, options),
     writeToRedis(store, data, options?.ttlSeconds),
   ]);
+  
+  // Log any failures but don't throw (graceful degradation)
+  results.forEach((result, index) => {
+    if (result.status === 'rejected') {
+      const source = index === 0 ? 'filesystem' : 'Redis';
+      console.error(`[jsonStore] Failed to write to ${source}:`, result.reason);
+    }
+  });
+  
+  // Update cache version timestamp for client-side cache invalidation
+  if (store === 'database') {
+    try {
+      const cacheVersion = Date.now().toString();
+      if (redisClient) {
+        await redisClient.set('database_cache_version', cacheVersion);
+      }
+    } catch (error) {
+      console.warn('[jsonStore] Failed to update cache version:', error);
+    }
+  }
 }
 
 /**

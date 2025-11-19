@@ -96,26 +96,73 @@ export default function FilteringSystem() {
       .map((c: any) => ({ name: c.name, count: 0 }));
   }, [rawCategories]);
 
-  // Fetch products and categories from API
+  // Fetch products and categories from API with localStorage caching
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         
-        // Fetch products
-        const productsResponse = await fetch('/api/products?limit=1000');
-        const productsResult = await productsResponse.json();
+        // Check localStorage cache first for products
+        const productsCacheKey = 'products_cache';
+        const productsCacheTimestampKey = 'products_cache_timestamp';
+        const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
         
-        if (productsResult.success && productsResult.data) {
-          setRawProducts(productsResult.data);
+        const cachedProducts = localStorage.getItem(productsCacheKey);
+        const cachedProductsTimestamp = localStorage.getItem(productsCacheTimestampKey);
+        
+        if (cachedProducts && cachedProductsTimestamp) {
+          const age = Date.now() - parseInt(cachedProductsTimestamp, 10);
+          if (age < CACHE_TTL) {
+            const parsed = JSON.parse(cachedProducts);
+            if (parsed.success && parsed.data) {
+              setRawProducts(parsed.data);
+            }
+          }
         }
         
-        // Fetch categories
-        const categoriesResponse = await fetch('/api/categories');
-        const categoriesResult = await categoriesResponse.json();
+        // Check localStorage cache for categories
+        const categoriesCacheKey = 'categories_cache';
+        const categoriesCacheTimestampKey = 'categories_cache_timestamp';
         
-        if (categoriesResult.success && categoriesResult.data) {
-          setRawCategories(categoriesResult.data);
+        const cachedCategories = localStorage.getItem(categoriesCacheKey);
+        const cachedCategoriesTimestamp = localStorage.getItem(categoriesCacheTimestampKey);
+        
+        if (cachedCategories && cachedCategoriesTimestamp) {
+          const age = Date.now() - parseInt(cachedCategoriesTimestamp, 10);
+          if (age < CACHE_TTL) {
+            const parsed = JSON.parse(cachedCategories);
+            if (parsed.success && parsed.data) {
+              setRawCategories(parsed.data);
+            }
+          }
+        }
+        
+        // Fetch products if not cached or expired
+        if (!cachedProducts || !cachedProductsTimestamp || 
+            (Date.now() - parseInt(cachedProductsTimestamp, 10)) >= CACHE_TTL) {
+          const productsResponse = await fetch('/api/products?limit=40');
+          const productsResult = await productsResponse.json();
+          
+          if (productsResult.success && productsResult.data) {
+            setRawProducts(productsResult.data);
+            // Cache the response
+            localStorage.setItem(productsCacheKey, JSON.stringify(productsResult));
+            localStorage.setItem(productsCacheTimestampKey, Date.now().toString());
+          }
+        }
+        
+        // Fetch categories if not cached or expired
+        if (!cachedCategories || !cachedCategoriesTimestamp || 
+            (Date.now() - parseInt(cachedCategoriesTimestamp, 10)) >= CACHE_TTL) {
+          const categoriesResponse = await fetch('/api/categories');
+          const categoriesResult = await categoriesResponse.json();
+          
+          if (categoriesResult.success && categoriesResult.data) {
+            setRawCategories(categoriesResult.data);
+            // Cache the response
+            localStorage.setItem(categoriesCacheKey, JSON.stringify(categoriesResult));
+            localStorage.setItem(categoriesCacheTimestampKey, Date.now().toString());
+          }
         }
       } catch (error) {
         console.error('Error fetching data:', error);

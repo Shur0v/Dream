@@ -161,6 +161,11 @@ export async function PUT(
       success: true,
       data: updatedProduct,
       message: 'Product updated successfully',
+    }, {
+      headers: {
+        'Cache-Control': 'no-store',
+        'X-Cache-Invalidate': 'true',
+      },
     });
 
   } catch (error) {
@@ -193,6 +198,11 @@ export async function DELETE(
       success: true,
       data: deletedProduct,
       message: 'Product deleted successfully',
+    }, {
+      headers: {
+        'Cache-Control': 'no-store',
+        'X-Cache-Invalidate': 'true',
+      },
     });
 
   } catch (error) {

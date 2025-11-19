@@ -276,6 +276,11 @@ export async function POST(request: NextRequest) {
       success: true,
       data: newProduct,
       message: 'Product created successfully',
+    }, {
+      headers: {
+        'Cache-Control': 'no-store',
+        'X-Cache-Invalidate': 'true',
+      },
     });
 
   } catch (error) {
