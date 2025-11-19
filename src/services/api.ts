@@ -12,7 +12,8 @@
  * @version 1.0.0
  */
 
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import { AxiosInstance } from 'axios';
+import axiosClient, { clearClientAuthToken, setClientAuthToken } from '../lib/axiosClient';
 import { ApiResponse, PaginatedResponse, Product, User, CartItem, Order, WishlistItem } from '../types';
 
 /**
@@ -28,66 +29,19 @@ class ApiService {
   private api: AxiosInstance;
 
   constructor() {
-    this.api = axios.create({
-      baseURL: process.env.NEXT_PUBLIC_API_URL || '/api',
-      timeout: 10000,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    this.setupInterceptors();
+    this.api = axiosClient;
+    this.syncTokenFromStorage();
   }
 
   /**
-   * Setup request and response interceptors
-   * 
-   * @description Handles:
-   * - Adding authentication tokens
-   * - Request/response logging
-   * - Error handling and formatting
+   * Sync axios client auth header with localStorage token (client-side only)
    */
-  private setupInterceptors() {
-    // Request interceptor
-    this.api.interceptors.request.use(
-      (config) => {
-        // Add auth token if available
-        const token = this.getAuthToken();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-      },
-      (error) => {
-        return Promise.reject(error);
-      }
-    );
-
-    // Response interceptor
-    this.api.interceptors.response.use(
-      (response: AxiosResponse) => {
-        return response;
-      },
-      (error) => {
-        // Handle common errors
-        if (error.response?.status === 401) {
-          // Token expired or invalid
-          this.clearAuthToken();
-          window.location.href = '/auth/login';
-        }
-        return Promise.reject(this.formatError(error));
-      }
-    );
-  }
-
-  /**
-   * Get authentication token from localStorage
-   * 
-   * @returns JWT token or null
-   */
-  private getAuthToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('auth_token');
+  private syncTokenFromStorage(): void {
+    if (typeof window === 'undefined') return;
+    const token = localStorage.getItem('auth_token');
+    if (token) {
+      setClientAuthToken(token);
+    }
   }
 
   /**
@@ -96,6 +50,7 @@ class ApiService {
   private clearAuthToken(): void {
     if (typeof window === 'undefined') return;
     localStorage.removeItem('auth_token');
+    clearClientAuthToken();
   }
 
   /**
@@ -123,8 +78,19 @@ class ApiService {
    * @returns Promise with authentication response
    */
   async login(credentials: { email: string; password: string }): Promise<ApiResponse<{ user: User; token: string; refreshToken: string }>> {
-    const response = await this.api.post('/auth/login', credentials);
-    return response.data;
+    try {
+      const response = await this.api.post('/auth/login', credentials);
+      const token = response.data?.data?.token;
+      if (token) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auth_token', token);
+        }
+        setClientAuthToken(token);
+      }
+      return response.data;
+    } catch (error) {
+      throw new Error(this.formatError(error));
+    }
   }
 
   /**
@@ -141,8 +107,19 @@ class ApiService {
     role: string;
     phone?: string;
   }): Promise<ApiResponse<{ user: User; token: string; refreshToken: string }>> {
-    const response = await this.api.post('/auth/register', userData);
-    return response.data;
+    try {
+      const response = await this.api.post('/auth/register', userData);
+      const token = response.data?.data?.token;
+      if (token) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('auth_token', token);
+        }
+        setClientAuthToken(token);
+      }
+      return response.data;
+    } catch (error) {
+      throw new Error(this.formatError(error));
+    }
   }
 
   /**

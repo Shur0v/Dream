@@ -11,21 +11,11 @@
  * @version 1.0.0
  */
 
-import { promises as fs } from 'fs';
-import path from 'path';
 import { Product, Order, Category, Color, User } from '@/types';
+import { readJsonStore, writeJsonStore } from '../lib/jsonStore';
+import { DatabaseSchema } from '@backend/schemas/database';
 
-// Database file path
-const DB_PATH = path.join(process.cwd(), 'backend/database/database.json');
-
-// Database schema interface
-interface Database {
-  products: Product[];
-  orders: Order[];
-  categories: Category[];
-  colors: Color[];
-  users: User[];
-}
+type Database = ReturnType<typeof DatabaseSchema.parse>;
 
 // In-memory cache for products (with TTL)
 let productsCache: { data: Product[]; timestamp: number } | null = null;
@@ -39,20 +29,8 @@ let colorsCache: { data: Color[]; timestamp: number } | null = null;
  * @returns Promise<Database> - The entire database object
  */
 export async function readDatabase(): Promise<Database> {
-  try {
-    const fileContents = await fs.readFile(DB_PATH, 'utf-8');
-    return JSON.parse(fileContents) as Database;
-  } catch (error) {
-    console.error('Error reading database:', error);
-    // Return empty database if file doesn't exist
-    return {
-      products: [],
-      orders: [],
-      categories: [],
-      colors: [],
-      users: [],
-    };
-  }
+  const raw = await readJsonStore<unknown>('database', { fileName: 'database' });
+  return DatabaseSchema.parse(raw ?? {});
 }
 
 /**
@@ -62,12 +40,13 @@ export async function readDatabase(): Promise<Database> {
  */
 export async function writeDatabase(data: Database): Promise<void> {
   try {
-    const jsonData = JSON.stringify(data, null, 2);
-    await fs.writeFile(DB_PATH, jsonData, 'utf-8');
+    await writeJsonStore('database', data, { fileName: 'database' });
     console.log('Database written successfully');
   } catch (error) {
     console.error('Error writing database:', error);
-    throw new Error(`Failed to write to database: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to write to database: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 

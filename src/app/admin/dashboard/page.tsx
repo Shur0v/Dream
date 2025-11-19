@@ -15,6 +15,7 @@
 'use client';
 
 import React from 'react';
+import { format, endOfWeek, startOfWeek, subWeeks } from 'date-fns';
 import MainLayout from '../../../components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/Card';
 import { Button } from '../../../components/ui/Button';
@@ -47,6 +48,18 @@ import {
  * @returns JSX dashboard element
  */
 export default function AdminDashboard() {
+  const now = new Date();
+  const currentWeekStart = startOfWeek(now, { weekStartsOn: 1 });
+  const currentWeekEnd = endOfWeek(now, { weekStartsOn: 1 });
+  const previousWeekStart = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+  const previousWeekEnd = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+  const currentWeekRange = `${format(currentWeekStart, 'MMM d')} - ${format(currentWeekEnd, 'MMM d')}`;
+  const previousWeekRange = `${format(previousWeekStart, 'MMM d')} - ${format(
+    previousWeekEnd,
+    'MMM d'
+  )}`;
+  const todayLabel = format(now, 'EEEE, MMM d');
+
   /**
    * Handle search functionality
    */
@@ -111,7 +124,7 @@ export default function AdminDashboard() {
               <Users className="h-8 w-8 text-blue-500 mx-auto mb-2" />
               <h3 className="text-2xl font-bold text-gray-900">2,456</h3>
               <p className="text-sm text-gray-600">Total Users</p>
-              <p className="text-xs text-green-600 mt-1">+15% from last month</p>
+              <p className="text-xs text-green-600 mt-1">+15% vs {previousWeekRange}</p>
             </CardContent>
           </Card>
           <Card className="text-center">
@@ -119,7 +132,7 @@ export default function AdminDashboard() {
               <Package className="h-8 w-8 text-green-500 mx-auto mb-2" />
               <h3 className="text-2xl font-bold text-gray-900">1,234</h3>
               <p className="text-sm text-gray-600">Total Products</p>
-              <p className="text-xs text-green-600 mt-1">+8% from last month</p>
+              <p className="text-xs text-green-600 mt-1">+8% vs {previousWeekRange}</p>
             </CardContent>
           </Card>
           <Card className="text-center">
@@ -127,7 +140,7 @@ export default function AdminDashboard() {
               <DollarSign className="h-8 w-8 text-purple-500 mx-auto mb-2" />
               <h3 className="text-2xl font-bold text-gray-900">$125,430</h3>
               <p className="text-sm text-gray-600">Platform Revenue</p>
-              <p className="text-xs text-green-600 mt-1">+22% from last month</p>
+              <p className="text-xs text-green-600 mt-1">+22% vs {previousWeekRange}</p>
             </CardContent>
           </Card>
           <Card className="text-center">
@@ -135,7 +148,7 @@ export default function AdminDashboard() {
               <TrendingUp className="h-8 w-8 text-orange-500 mx-auto mb-2" />
               <h3 className="text-2xl font-bold text-gray-900">89</h3>
               <p className="text-sm text-gray-600">Active Sellers</p>
-              <p className="text-xs text-green-600 mt-1">+12% from last month</p>
+              <p className="text-xs text-green-600 mt-1">+12% vs {previousWeekRange}</p>
             </CardContent>
           </Card>
         </div>
@@ -146,8 +159,12 @@ export default function AdminDashboard() {
             <div className="flex items-center">
               <AlertTriangle className="h-6 w-6 text-yellow-500 mr-3" />
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-900">System Alerts</h3>
-                <p className="text-gray-600">3 pending user verifications, 2 low stock alerts</p>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  System Alerts • {currentWeekRange}
+                </h3>
+                <p className="text-gray-600">
+                  3 pending user verifications, 2 low stock alerts (updated {todayLabel})
+                </p>
               </div>
               <Button variant="outline" size="sm" className="border-yellow-500 text-yellow-600 hover:bg-yellow-50">
                 View All Alerts
@@ -348,7 +365,7 @@ export default function AdminDashboard() {
             <CardHeader>
               <CardTitle className="flex items-center">
                 <BarChart3 className="h-5 w-5 mr-2 text-blue-500" />
-                Quick Stats
+                Quick Stats · Updated {todayLabel}
               </CardTitle>
             </CardHeader>
             <CardContent>
