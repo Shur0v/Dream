@@ -384,7 +384,7 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
                   </div>
                 </div>
 
-                <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="w-full flex flex-col gap-2.5">
                     <label className="self-stretch text-neutral-600 text-base font-medium font-['Poppins'] leading-6">
                       Category <span className="text-red-500">*</span>
