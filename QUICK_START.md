@@ -56,3 +56,4 @@ If this file doesn't exist, create it.
 - Check `backend/database/products.json` has data
 - If empty, you may need to seed the database
 
+

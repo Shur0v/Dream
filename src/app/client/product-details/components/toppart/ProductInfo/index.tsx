@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Minus, Plus, Heart, ShoppingCart, Star } from 'lucide-react';
 import { CheckoutModal } from '@/components/cart/CheckoutModal';
+import { apiService } from '@/services/api';
 
 interface ProductInfoProps {
   product: {
@@ -22,16 +23,18 @@ interface ProductInfoProps {
     sizes: string[];
     inStock: boolean;
   };
+  images?: string[];
   className?: string;
 }
 
-const ProductInfo: React.FC<ProductInfoProps> = ({ product, className }) => {
+const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], className }) => {
   const [quantity, setQuantity] = useState(2);
   const [selectedColor, setSelectedColor] = useState<string | null>(
     product.colors && product.colors.length > 0 ? product.colors[0] : null
   );
   const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] ?? 'M');
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleQuantityChange = (amount: number) => {
     setQuantity((prev) => Math.max(1, prev + amount));
@@ -41,7 +44,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, className }) => {
     setIsCheckoutOpen(true);
   };
 
-  const handleCheckoutSubmit = (formData: {
+  const handleCheckoutSubmit = async (formData: {
     name: string;
     phoneNumber: string;
     email: string;
@@ -50,16 +53,78 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, className }) => {
     thana: string;
     postOffice: string;
   }) => {
-    // Log checkout data with product info
-    console.log('Buy Now - Form data:', formData);
-    console.log('Buy Now - Product:', product);
-    console.log('Buy Now - Quantity:', quantity);
-    console.log('Buy Now - Selected Color:', selectedColor);
-    console.log('Buy Now - Selected Size:', selectedSize);
-    console.log('Buy Now - Total Price:', (product.price * quantity).toFixed(2));
+    setIsSubmitting(true);
     
-    // Close modal
-    setIsCheckoutOpen(false);
+    try {
+      // Get or create a temporary userId (in production, this would come from auth)
+      const tempUserId = `user-${Date.now()}`;
+      
+      // Calculate total amount
+      const totalAmount = product.price * quantity;
+      
+      // Get product image (first image or placeholder)
+      const productImage = images && images.length > 0 ? images[0] : '/placeholder-image.png';
+      
+      // Create order item with product snapshot
+      const orderItem = {
+        productId: product.id,
+        product: {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          category: product.category,
+          sellerId: product.seller,
+          images: images.length > 0 ? images : ['/placeholder-image.png'],
+        },
+        quantity: quantity,
+        price: product.price,
+        color: selectedColor || undefined,
+        size: selectedSize || undefined,
+      };
+      
+      // Create shipping address from form data
+      const shippingAddress = {
+        street: `${formData.thana}, ${formData.upazila}`,
+        city: formData.district,
+        state: formData.district,
+        zipCode: formData.postOffice,
+        country: 'Bangladesh',
+      };
+      
+      // Create order data
+      const orderData = {
+        userId: tempUserId,
+        items: [orderItem],
+        shippingAddress: shippingAddress,
+        paymentMethod: 'Cash on Delivery',
+        // Store customer info in notes for now (can be enhanced later)
+        notes: JSON.stringify({
+          customerName: formData.name,
+          phoneNumber: formData.phoneNumber,
+          email: formData.email,
+          district: formData.district,
+          upazila: formData.upazila,
+          thana: formData.thana,
+          postOffice: formData.postOffice,
+        }),
+      };
+      
+      // Submit order via API
+      const response = await apiService.createOrder(orderData);
+      
+      if (response.success) {
+        console.log('Order created successfully:', response.data);
+        alert('Order placed successfully! Your order ID is: ' + response.data.id);
+        setIsCheckoutOpen(false);
+      } else {
+        throw new Error(response.error || 'Failed to create order');
+      }
+    } catch (error: any) {
+      console.error('Error creating order:', error);
+      alert('Failed to place order. Please try again. Error: ' + (error.message || 'Unknown error'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Visual map for color swatches - use database colors if available, otherwise fallback to hardcoded map
@@ -272,6 +337,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, className }) => {
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
         onSubmit={handleCheckoutSubmit}
+        isSubmitting={isSubmitting}
       />
     </div>
   );

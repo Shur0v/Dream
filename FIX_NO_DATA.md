@@ -98,3 +98,4 @@ NEXT_PUBLIC_API_URL=http://localhost:5001/api
 - Make sure `backend/.env` has: `FRONTEND_URL=http://localhost:3000`
 - Restart backend server
 
+

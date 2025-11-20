@@ -143,7 +143,7 @@ export default function FilteringSystem() {
     if (trimmed.startsWith('data:')) {
       return trimmed;
     }
-    
+
     // Invalid URL, return placeholder
     return '/placeholder-image.png';
   };
@@ -226,7 +226,7 @@ export default function FilteringSystem() {
         }
       }
     };
-    
+
     preloadCategories();
   }, []);
 

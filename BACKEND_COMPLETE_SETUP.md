@@ -179,3 +179,4 @@ NEXT_PUBLIC_API_URL=http://localhost:5001/api
 3. ✅ Start frontend: `pnpm dev`
 4. ✅ Test adding colors/categories - should work now!
 
+

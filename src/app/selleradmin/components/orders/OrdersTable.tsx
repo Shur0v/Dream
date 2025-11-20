@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Eye, X, Check, Trash2 } from 'lucide-react';
 import OrderDetailModal from './OrderDetailModal';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
+import { Order as ApiOrder } from '@/types';
 
 // Order data structure matching checkout form data
 export interface OrderItem {
@@ -36,126 +37,136 @@ export interface Order {
   createdAt: string;
 }
 
-// Mock orders data
-const mockOrders: Order[] = [
-  {
-    id: '1',
-    orderId: 'ORD-2024-001',
-    items: [
-      {
-        id: '1',
-        productId: 'prod-1',
-        name: 'Premium Wireless Headphones',
-        image: '/common/cart/image1.png',
-        price: 89.99,
-        quantity: 2,
-        color: 'Black',
-        size: 'Standard'
-      },
-      {
-        id: '2',
-        productId: 'prod-2',
-        name: 'Smart Watch Series 8',
-        image: '/common/cart/image2.jpg',
-        price: 299.99,
-        quantity: 1,
-        color: 'Silver',
-        size: '42mm'
-      }
-    ],
-    customerInfo: {
-      name: 'John Doe',
-      phoneNumber: '+8801712345678',
-      email: 'john.doe@example.com',
-      district: 'Dhaka',
-      upazila: 'Dhanmondi',
-      thana: 'Dhanmondi',
-      postOffice: 'Dhanmondi'
-    },
-    totalAmount: 479.97,
-    status: 'pending',
-    createdAt: '2024-01-15T10:30:00Z'
-  },
-  {
-    id: '2',
-    orderId: 'ORD-2024-002',
-    items: [
-      {
-        id: '3',
-        productId: 'prod-3',
-        name: 'Gaming Mechanical Keyboard',
-        image: '/common/cart/image3.png',
-        price: 149.99,
-        quantity: 1,
-        color: 'RGB',
-        size: 'Full Size'
-      }
-    ],
-    customerInfo: {
-      name: 'Jane Smith',
-      phoneNumber: '+8801812345678',
-      email: 'jane.smith@example.com',
-      district: 'Chittagong',
-      upazila: 'Agrabad',
-      thana: 'Agrabad',
-      postOffice: 'Agrabad'
-    },
-    totalAmount: 149.99,
-    status: 'pending',
-    createdAt: '2024-01-16T14:20:00Z'
-  },
-  {
-    id: '3',
-    orderId: 'ORD-2024-003',
-    items: [
-      {
-        id: '4',
-        productId: 'prod-4',
-        name: 'Wireless Mouse Pro',
-        image: '/common/cart/image4.png',
-        price: 79.99,
-        quantity: 3,
-        color: 'White',
-        size: 'Standard'
-      },
-      {
-        id: '5',
-        productId: 'prod-5',
-        name: 'USB-C Hub Adapter',
-        image: '/common/cart/image5.jpg',
-        price: 45.99,
-        quantity: 2,
-        color: 'Silver',
-        size: 'Standard'
-      }
-    ],
-    customerInfo: {
-      name: 'Ahmed Rahman',
-      phoneNumber: '+8801912345678',
-      email: 'ahmed.rahman@example.com',
-      district: 'Sylhet',
-      upazila: 'Sylhet Sadar',
-      thana: 'Sylhet Sadar',
-      postOffice: 'Sylhet Sadar'
-    },
-    totalAmount: 331.95,
-    status: 'pending',
-    createdAt: '2024-01-17T09:15:00Z'
+/**
+ * Transform API Order to OrdersTable Order format
+ */
+function transformApiOrderToTableOrder(apiOrder: ApiOrder): Order {
+  // Parse customer info from notes if available
+  let customerInfo = {
+    name: 'Unknown',
+    phoneNumber: 'N/A',
+    email: 'N/A',
+    district: apiOrder.shippingAddress?.city || 'N/A',
+    upazila: 'N/A',
+    thana: 'N/A',
+    postOffice: apiOrder.shippingAddress?.zipCode || 'N/A',
+  };
+
+  if (apiOrder.notes) {
+    try {
+      const notesData = JSON.parse(apiOrder.notes);
+      customerInfo = {
+        name: notesData.customerName || customerInfo.name,
+        phoneNumber: notesData.phoneNumber || customerInfo.phoneNumber,
+        email: notesData.email || customerInfo.email,
+        district: notesData.district || customerInfo.district,
+        upazila: notesData.upazila || customerInfo.upazila,
+        thana: notesData.thana || customerInfo.thana,
+        postOffice: notesData.postOffice || customerInfo.postOffice,
+      };
+    } catch (e) {
+      // If parsing fails, use default values
+      console.warn('Failed to parse order notes:', e);
+    }
   }
-];
+
+  // Transform order items
+  const transformedItems = apiOrder.items.map((item, index) => ({
+    id: item.id || `item-${index}`,
+    productId: item.productId,
+    name: item.product?.name || 'Unknown Product',
+    image: item.product?.images?.[0] || '/placeholder-image.png',
+    price: item.price || 0,
+    quantity: item.quantity || 1,
+    color: item.color,
+    size: item.size,
+  }));
+
+  // Map API status to table status
+  const statusMap: Record<string, 'pending' | 'accepted' | 'rejected'> = {
+    pending: 'pending',
+    confirmed: 'accepted',
+    approved: 'accepted',
+    rejected: 'rejected',
+    shipped: 'accepted',
+    delivered: 'accepted',
+    cancelled: 'rejected',
+    refunded: 'rejected',
+  };
+
+  return {
+    id: apiOrder.id,
+    orderId: `ORD-${apiOrder.id.slice(-8).padStart(8, '0')}`,
+    items: transformedItems,
+    customerInfo: customerInfo,
+    totalAmount: apiOrder.totalAmount || 0,
+    status: statusMap[apiOrder.status] || 'pending',
+    createdAt: apiOrder.createdAt,
+  };
+}
 
 /**
  * Orders Table Component
  * Displays orders in a table with product details, color, size, and action buttons
  */
 export default function OrdersTable() {
-  const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [orderToReject, setOrderToReject] = useState<Order | null>(null);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch orders from API
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // Fetch orders from admin API endpoint
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        const response = await fetch(`${apiUrl}/admin/orders?limit=1000`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch orders');
+        }
+
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          // Transform API orders to table format
+          const transformedOrders = result.data.map((apiOrder: ApiOrder) =>
+            transformApiOrderToTableOrder(apiOrder)
+          );
+          setOrders(transformedOrders);
+        } else {
+          throw new Error(result.error || 'Failed to fetch orders');
+        }
+      } catch (err: any) {
+        console.error('Error fetching orders:', err);
+        setError(err.message || 'Failed to load orders');
+        // Fallback to empty array on error
+        setOrders([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrders();
+    
+    // Refresh orders every 30 seconds
+    const interval = setInterval(fetchOrders, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleViewDetails = (order: Order) => {
     setSelectedOrder(order);
@@ -167,26 +178,73 @@ export default function OrdersTable() {
     setIsRejectModalOpen(true);
   };
 
-  const handleRejectConfirm = () => {
+  const handleRejectConfirm = async () => {
     if (orderToReject) {
-      setOrders(prev => prev.map(order => 
-        order.id === orderToReject.id 
-          ? { ...order, status: 'rejected' as const }
-          : order
-      ));
-      setIsRejectModalOpen(false);
-      setOrderToReject(null);
+      try {
+        // Update order status via API
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        const response = await fetch(`${apiUrl}/orders/${orderToReject.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            status: 'rejected',
+          }),
+        });
+
+        if (response.ok) {
+          setOrders(prev => prev.map(order => 
+            order.id === orderToReject.id 
+              ? { ...order, status: 'rejected' as const }
+              : order
+          ));
+          setIsRejectModalOpen(false);
+          setOrderToReject(null);
+        } else {
+          throw new Error('Failed to reject order');
+        }
+      } catch (err) {
+        console.error('Error rejecting order:', err);
+        alert('Failed to reject order. Please try again.');
+      }
     }
   };
 
-  const handleAcceptOrder = (orderId: string) => {
-    setOrders(prev => prev.map(order => 
-      order.id === orderId 
-        ? { ...order, status: 'accepted' as const }
-        : order
-    ));
-    setIsDetailModalOpen(false);
-    setSelectedOrder(null);
+  const handleAcceptOrder = async (orderId: string) => {
+    try {
+      // Update order status via API
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const order = orders.find(o => o.id === orderId);
+      
+      if (!order) return;
+
+      // Find the original API order ID
+      const response = await fetch(`${apiUrl}/orders/${orderId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: 'approved',
+        }),
+      });
+
+      if (response.ok) {
+        setOrders(prev => prev.map(o => 
+          o.id === orderId 
+            ? { ...o, status: 'accepted' as const }
+            : o
+        ));
+        setIsDetailModalOpen(false);
+        setSelectedOrder(null);
+      } else {
+        throw new Error('Failed to update order');
+      }
+    } catch (err) {
+      console.error('Error accepting order:', err);
+      alert('Failed to accept order. Please try again.');
+    }
   };
 
   const handleDeleteClick = (order: Order) => {
@@ -225,6 +283,36 @@ export default function OrdersTable() {
       </span>
     );
   };
+
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        <div className="flex justify-center items-center">
+          <div className="text-gray-600">Loading orders...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        <div className="flex justify-center items-center">
+          <div className="text-red-600">Error: {error}</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (orders.length === 0) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+        <div className="flex justify-center items-center">
+          <div className="text-gray-600">No orders found</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

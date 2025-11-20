@@ -62,7 +62,7 @@ export default function TopPart({ product, images }: TopPartProps) {
         <div className="layer-1 flex flex-col gap-6 md:flex-row md:items-start" data-layer="1">
           <div className="flex flex-col gap-6 md:flex-row md:flex-[1.1] md:items-start">
             <ProductGallery images={imageData} className="md:flex-1" />
-            <ProductInfo product={productData} className="md:flex-1" />
+            <ProductInfo product={productData} images={imageData} className="md:flex-1" />
           </div>
           <div className="hidden min-[1200px]:block min-[1200px]:flex-[0.45] w-full">
             <DeliveryInfo />

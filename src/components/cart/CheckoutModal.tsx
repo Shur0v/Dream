@@ -18,6 +18,7 @@ interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: CheckoutFormData) => void;
+  isSubmitting?: boolean;
 }
 
 const validationSchema = (values: CheckoutFormData): Record<string, string> => {
@@ -73,6 +74,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   isOpen,
   onClose,
   onSubmit,
+  isSubmitting = false,
 }) => {
   const { values, errors, handleChange, handleBlur, handleSubmit, touched, reset } = useForm<CheckoutFormData>(
     defaultCheckoutFormData,
@@ -266,10 +268,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full max-w-[808px] h-12 px-6 py-3 bg-fuchsia-500 rounded-lg flex justify-center items-center gap-2.5 hover:bg-fuchsia-600 transition-colors"
+              disabled={isSubmitting}
+              className="w-full max-w-[808px] h-12 px-6 py-3 bg-fuchsia-500 rounded-lg flex justify-center items-center gap-2.5 hover:bg-fuchsia-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="text-white text-base font-medium font-['Inter'] leading-5">
-                Confirm
+                {isSubmitting ? 'Submitting...' : 'Confirm'}
               </span>
             </button>
           </form>

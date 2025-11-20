@@ -66,3 +66,4 @@ npx ts-node server.ts
 
 I've added a fallback in the code - if Express backend is not available, it will try to use Next.js API routes. But **you should start the Express backend** for best performance.
 
+
