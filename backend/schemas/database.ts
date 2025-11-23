@@ -118,6 +118,15 @@ const BestSellingProductSchema = z.object({
     bestSellingAt: TimestampSchema, // When it was marked as best selling
   });
 
+const HeroBannerSchema = z.object({
+    id: z.string().min(1),
+    sliderImages: z.array(z.string()).default([]), // Main slider images (left side)
+    rightBanners: z.array(z.string()).default([]), // Right side banners: [0] = header/top image, [1] = first bottom, [2] = second bottom (max 3)
+    isActive: z.boolean().default(true),
+    createdAt: TimestampSchema,
+    updatedAt: TimestampSchema,
+  });
+
   const MinimalProductSnapshotSchema = z.object({
     id: z.string(),
     name: z.string().default(''),
@@ -198,6 +207,7 @@ export const DatabaseSchema = z.object({
   users: z.array(UserSchema).default([]),
   featuredProducts: z.array(FeaturedProductSchema).default([]),
   bestSellingProducts: z.array(BestSellingProductSchema).default([]),
+  heroBanners: z.array(HeroBannerSchema).default([]),
 });
 
 export type DatabaseShape = z.infer<typeof DatabaseSchema>;

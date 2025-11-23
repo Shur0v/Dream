@@ -138,6 +138,16 @@ export interface BestSellingProduct {
   bestSellingAt: string; // When it was marked as best selling
 }
 
+// Hero Banner Interface
+export interface HeroBanner {
+  id: string;
+  sliderImages: string[]; // Main slider images (left side)
+  rightBanners: string[]; // Right side banners: [0] = header/top image, [1] = first bottom, [2] = second bottom (max 3)
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface OrderProductSnapshot extends Partial<Product> {
   id: string;
   name: string;

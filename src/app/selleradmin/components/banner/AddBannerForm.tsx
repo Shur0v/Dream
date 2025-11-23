@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Upload, X, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { HeroBanner } from '@/types';
 
 interface AddBannerFormProps {
   onBack?: () => void;
@@ -18,12 +19,47 @@ export default function AddBannerForm({ onBack, onSave }: AddBannerFormProps) {
   const [sliderImages, setSliderImages] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [currentBannerId, setCurrentBannerId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const sliderIconInputRef = useRef<HTMLInputElement | null>(null);
-  const headerFileRefs = [useRef<HTMLInputElement | null>(null), useRef<HTMLInputElement | null>(null), useRef<HTMLInputElement | null>(null)];
-  const [headerPreviews, setHeaderPreviews] = useState<Array<string | null>>([null, null, null]);
-  const rightBannerRefs = [useRef<HTMLInputElement | null>(null), useRef<HTMLInputElement | null>(null)];
-  const [rightBannerPreviews, setRightBannerPreviews] = useState<Array<string | null>>([null, null]);
+  // rightBanners structure: [0] = header/top image, [1] = first bottom, [2] = second bottom
+  const rightBannerRefs = [useRef<HTMLInputElement | null>(null), useRef<HTMLInputElement | null>(null), useRef<HTMLInputElement | null>(null)];
+  const [rightBannerPreviews, setRightBannerPreviews] = useState<Array<string | null>>([null, null, null]);
+
+  // Fetch existing hero banner on load
+  useEffect(() => {
+    const fetchHeroBanner = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/hero-banners`);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          const banner: HeroBanner = result.data;
+          setCurrentBannerId(banner.id);
+          setSliderImages(banner.sliderImages || []);
+          // Map rightBanners back to positions: [0] = header, [1] = first bottom, [2] = second bottom
+          // Backend preserves positions with empty strings, so we map them back to null
+          const rightBanners = banner.rightBanners || [];
+          // Ensure we always have 3 positions, mapping empty strings to null
+          setRightBannerPreviews([
+            (rightBanners[0] && rightBanners[0].trim() !== '') ? rightBanners[0] : null, // Header at position 0
+            (rightBanners[1] && rightBanners[1].trim() !== '') ? rightBanners[1] : null,  // First bottom at position 1
+            (rightBanners[2] && rightBanners[2].trim() !== '') ? rightBanners[2] : null  // Second bottom at position 2
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching hero banner:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHeroBanner();
+  }, []);
 
   useEffect(() => {
     // Reset current index if images changed
@@ -46,53 +82,89 @@ export default function AddBannerForm({ onBack, onSave }: AddBannerFormProps) {
     fileInputRef.current?.click();
   };
 
-  const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    setPreviewImage(url);
+  // Upload image to server
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await fetch('/api/upload-image', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to upload image');
+    }
+    
+    return result.data.url;
   };
 
-  const handleAddToSlider = () => {
-    if (!previewImage) return;
-    setSliderImages((prev) => [...prev, previewImage]);
-    setPreviewImage(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+  const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Show preview immediately and store file for upload
+    const url = URL.createObjectURL(file);
+    setPreviewImage(url);
+    setPreviewFile(file);
+  };
+
+  const handleAddToSlider = async () => {
+    if (!previewImage || !previewFile) return;
+    
+    try {
+      // Upload image to server
+      const uploadedUrl = await uploadImage(previewFile);
+      setSliderImages((prev) => [...prev, uploadedUrl]);
+      setPreviewImage(null);
+      setPreviewFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image. Please try again.');
+    }
   };
 
   // Upload from top-right icon: instantly add to slider
-  const handleSliderIconChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+  const handleSliderIconChange: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    setSliderImages((prev) => {
-      const next = [...prev, url];
-      setCurrentIndex(next.length - 1);
-      return next;
-    });
+    
+    try {
+      // Upload image to server
+      const uploadedUrl = await uploadImage(file);
+      setSliderImages((prev) => {
+        const next = [...prev, uploadedUrl];
+        setCurrentIndex(next.length - 1);
+        return next;
+      });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image. Please try again.');
+    }
+    
     if (sliderIconInputRef.current) sliderIconInputRef.current.value = '';
-  };
-
-  const handleChooseHeaderFile = (i: number) => {
-    headerFileRefs[i].current?.click();
-  };
-
-  const handleHeaderFileChange = (i: number): React.ChangeEventHandler<HTMLInputElement> => (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    setHeaderPreviews((prev) => prev.map((v, idx) => (idx === i ? url : v)));
   };
 
   const handleChooseRightBanner = (i: number) => {
     rightBannerRefs[i].current?.click();
   };
 
-  const handleRightBannerChange = (i: number): React.ChangeEventHandler<HTMLInputElement> => (e) => {
+  const handleRightBannerChange = (i: number): React.ChangeEventHandler<HTMLInputElement> => async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    setRightBannerPreviews((prev) => prev.map((v, idx) => (idx === i ? url : v)));
+    
+    try {
+      // Upload image to server immediately
+      const uploadedUrl = await uploadImage(file);
+      setRightBannerPreviews((prev) => prev.map((v, idx) => (idx === i ? uploadedUrl : v)));
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image. Please try again.');
+    }
+    
+    if (rightBannerRefs[i].current) rightBannerRefs[i].current.value = '';
   };
 
   const removeSlide = (i: number) => {
@@ -104,15 +176,50 @@ export default function AddBannerForm({ onBack, onSave }: AddBannerFormProps) {
     });
   };
 
-  const clearHeaderPreview = () => setHeaderPreviews((prev) => prev.map((v, i) => (i === 0 ? null : v)));
   const clearRightBannerPreview = (i: number) => setRightBannerPreviews((prev) => prev.map((v, idx) => (idx === i ? null : v)));
 
-  const handleSave = () => {
-    onSave?.({
-      sliderImages,
-      headerImage: headerPreviews[0],
-      rightBanners: rightBannerPreviews,
-    });
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      
+      // Keep rightBanners in order: [0] = header, [1] = first bottom, [2] = second bottom
+      // Save all 3 positions to preserve order, using empty strings for missing positions
+      const validRightBanners: string[] = rightBannerPreviews.map(banner => banner || '');
+      
+      const bannerData = {
+        id: currentBannerId || `hero-${Date.now()}`,
+        sliderImages,
+        rightBanners: validRightBanners,
+        isActive: true,
+      };
+      
+      const response = await fetch(`/api/hero-banners`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bannerData),
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setCurrentBannerId(result.data.id);
+        onSave?.({
+          sliderImages,
+          headerImage: rightBannerPreviews[0] || null,
+          rightBanners: rightBannerPreviews,
+        });
+        alert('Hero banners saved successfully!');
+      } else {
+        alert(result.error || 'Failed to save hero banners');
+      }
+    } catch (error) {
+      console.error('Error saving hero banner:', error);
+      alert('An error occurred while saving. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -136,6 +243,11 @@ export default function AddBannerForm({ onBack, onSave }: AddBannerFormProps) {
       </div>
 
       {/* Content */}
+      {loading ? (
+        <div className="w-full p-6 bg-white rounded-xl border border-gray-200 flex items-center justify-center py-12">
+          <div className="text-neutral-500">Loading hero banners...</div>
+        </div>
+      ) : (
       <div className="w-full p-6 bg-white rounded-xl border border-gray-200">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left: Slider (50% width) */}
@@ -219,22 +331,22 @@ export default function AddBannerForm({ onBack, onSave }: AddBannerFormProps) {
           {/* Right: Header and Right Banners */}
           <div>
             <div className="border border-gray-200 rounded-xl p-4">
-              {/* Top row: single header card */}
+              {/* Top row: Header Image (rightBanners[0]) */}
               <div className="grid grid-cols-1 gap-4">
                 <div className="relative border border-gray-200 rounded-xl p-3">
                   <div className="text-sm font-medium mb-2">Header Image</div>
                   <div className="bg-gray-50 rounded-lg overflow-hidden aspect-[492/229] flex items-center justify-center">
-                    {headerPreviews[0] ? (
+                    {rightBannerPreviews[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={headerPreviews[0] as string} alt={`header-1`} className="w-full h-full object-contain" />
+                      <img src={rightBannerPreviews[0] as string} alt={`header`} className="w-full h-full object-contain" />
                     ) : (
                       <span className="text-gray-400 text-sm">Preview</span>
                     )}
                   </div>
                   <div className="absolute top-3 right-3 flex items-center justify-center gap-4">
-                    {headerPreviews[0] && (
+                    {rightBannerPreviews[0] && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); clearHeaderPreview(); }}
+                        onClick={(e) => { e.stopPropagation(); clearRightBannerPreview(0); }}
                         className="px-3 py-1.5 rounded-md bg-white shadow inline-flex items-center justify-center hover:bg-gray-50 text-sm text-neutral-700"
                         aria-label="Clear header image"
                       >
@@ -242,27 +354,27 @@ export default function AddBannerForm({ onBack, onSave }: AddBannerFormProps) {
                       </button>
                     )}
                     <button
-                      onClick={() => handleChooseHeaderFile(0)}
+                      onClick={() => handleChooseRightBanner(0)}
                       className="px-3 py-1.5 rounded-md bg-white shadow inline-flex items-center gap-2 hover:bg-gray-50 text-sm font-medium text-neutral-700"
-                      aria-label={`Upload header image`}
+                      aria-label="Upload header image"
                     >
                       <Upload className="w-4 h-4" />
                       Upload
                     </button>
                   </div>
-                  <input ref={headerFileRefs[0]} type="file" accept="image/*" className="hidden" onChange={handleHeaderFileChange(0)} />
+                  <input ref={rightBannerRefs[0]} type="file" accept="image/*" className="hidden" onChange={handleRightBannerChange(0)} />
                 </div>
               </div>
 
-              {/* Bottom row: two big boxes */}
+              {/* Bottom row: Two banners side by side (rightBanners[1] and rightBanners[2]) */}
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {[0, 1].map((i) => (
+                {[1, 2].map((i) => (
                   <div key={`rb-${i}`} className="relative border border-gray-200 rounded-xl p-3">
-                    <div className="text-sm font-medium mb-2">Right Banner {i + 1}</div>
+                    <div className="text-sm font-medium mb-2">Right Banner {i}</div>
                     <div className="bg-gray-50 rounded-lg overflow-hidden aspect-[234/260] flex items-center justify-center">
                       {rightBannerPreviews[i] ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={rightBannerPreviews[i] as string} alt={`right-${i + 1}`} className="w-full h-full object-contain" />
+                        <img src={rightBannerPreviews[i] as string} alt={`right-${i}`} className="w-full h-full object-contain" />
                       ) : (
                         <span className="text-gray-400 text-sm">Preview</span>
                       )}
@@ -272,7 +384,7 @@ export default function AddBannerForm({ onBack, onSave }: AddBannerFormProps) {
                         <button
                           onClick={(e) => { e.stopPropagation(); clearRightBannerPreview(i); }}
                           className="px-3 py-1.5 rounded-md bg-white shadow inline-flex items-center justify-center hover:bg-gray-50 text-sm text-neutral-700"
-                          aria-label={`Clear right banner ${i + 1}`}
+                          aria-label={`Clear right banner ${i}`}
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -280,7 +392,7 @@ export default function AddBannerForm({ onBack, onSave }: AddBannerFormProps) {
                       <button
                         onClick={() => handleChooseRightBanner(i)}
                         className="px-3 py-1.5 rounded-md bg-white shadow inline-flex items-center gap-2 hover:bg-gray-50 text-sm font-medium text-neutral-700"
-                        aria-label={`Upload right banner ${i + 1}`}
+                        aria-label={`Upload right banner ${i}`}
                       >
                         <Upload className="w-4 h-4" />
                         Upload
@@ -304,12 +416,14 @@ export default function AddBannerForm({ onBack, onSave }: AddBannerFormProps) {
           </button>
           <button
             onClick={handleSave}
-            className="h-[40px] px-5 rounded-lg bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 text-white text-sm font-semibold hover:opacity-90"
+            disabled={saving}
+            className="h-[40px] px-5 rounded-lg bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50"
           >
-            Save
+            {saving ? 'Saving...' : 'Save'}
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 }

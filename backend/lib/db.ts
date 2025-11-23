@@ -11,7 +11,7 @@
  * @version 1.0.0
  */
 
-import { Product, Order, Category, Color, User, FeaturedProduct, BestSellingProduct } from '@/types';
+import { Product, Order, Category, Color, User, FeaturedProduct, BestSellingProduct, HeroBanner } from '@/types';
 import { readJsonStore, writeJsonStore } from '../lib/jsonStore';
 import { DatabaseSchema, DatabaseShape } from '@backend/schemas/database';
 
@@ -643,5 +643,92 @@ export async function updateBestSellingProduct(productId: string): Promise<BestS
   
   await writeDatabase(db);
   return db.bestSellingProducts[bestSellingProductIndex];
+}
+
+/**
+ * Get active hero banner
+ * @returns Promise<HeroBanner | null>
+ */
+export async function getHeroBanner(): Promise<HeroBanner | null> {
+  const db = await readDatabase();
+  const activeBanner = db.heroBanners.find(hb => hb.isActive);
+  return activeBanner || null;
+}
+
+/**
+ * Get hero banner by ID
+ * @param id - Hero Banner ID
+ * @returns Promise<HeroBanner | undefined>
+ */
+export async function getHeroBannerById(id: string): Promise<HeroBanner | undefined> {
+  const db = await readDatabase();
+  return db.heroBanners.find(hb => hb.id === id);
+}
+
+/**
+ * Save hero banner (create or update)
+ * @param heroBanner - Hero Banner to save
+ * @returns Promise<HeroBanner>
+ */
+export async function saveHeroBanner(heroBanner: HeroBanner): Promise<HeroBanner> {
+  const db = await readDatabase();
+  const index = db.heroBanners.findIndex(hb => hb.id === heroBanner.id);
+  
+  if (index >= 0) {
+    // Update existing
+    db.heroBanners[index] = {
+      ...heroBanner,
+      updatedAt: new Date().toISOString(),
+    };
+  } else {
+    // Create new
+    const newBanner: HeroBanner = {
+      ...heroBanner,
+      id: heroBanner.id || `hero-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    db.heroBanners.push(newBanner);
+  }
+  
+  // If this banner is set to active, deactivate all others
+  if (heroBanner.isActive) {
+    db.heroBanners.forEach((hb, idx) => {
+      if (hb.id !== heroBanner.id && hb.isActive) {
+        db.heroBanners[idx].isActive = false;
+      }
+    });
+  }
+  
+  await writeDatabase(db);
+  return db.heroBanners.find(hb => hb.id === heroBanner.id) || heroBanner;
+}
+
+/**
+ * Delete hero banner (soft delete)
+ * @param id - Hero Banner ID
+ * @returns Promise<HeroBanner | null>
+ */
+export async function deleteHeroBanner(id: string): Promise<HeroBanner | null> {
+  const db = await readDatabase();
+  const heroBanner = db.heroBanners.find(hb => hb.id === id);
+  
+  if (heroBanner) {
+    heroBanner.isActive = false;
+    heroBanner.updatedAt = new Date().toISOString();
+    await writeDatabase(db);
+    return heroBanner;
+  }
+  
+  return null;
+}
+
+/**
+ * Get all hero banners (including inactive)
+ * @returns Promise<HeroBanner[]>
+ */
+export async function getAllHeroBanners(): Promise<HeroBanner[]> {
+  const db = await readDatabase();
+  return db.heroBanners;
 }
 
