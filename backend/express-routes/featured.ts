@@ -9,7 +9,7 @@ import {
   addFeaturedProduct,
   removeFeaturedProduct,
   getProductById,
-} from '../express-lib/db';
+} from '../lib/db';
 
 const router = Router();
 
@@ -39,11 +39,11 @@ router.get('/featured', async (req: Request, res: Response) => {
 /**
  * POST /api/admin/feature
  * Add a product to featured products (idempotent)
- * Payload: { productId, name, slug, price, thumbnail, featuredAt? }
+ * Payload: { productId }
  */
 router.post('/admin/feature', async (req: Request, res: Response) => {
   try {
-    const { productId, name, slug, price, thumbnail, featuredAt } = req.body;
+    const { productId } = req.body;
 
     // Validation
     if (!productId || typeof productId !== 'string' || productId.trim() === '') {
@@ -54,40 +54,8 @@ router.post('/admin/feature', async (req: Request, res: Response) => {
       });
     }
 
-    if (!name || typeof name !== 'string' || name.trim() === '') {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid name',
-        message: 'name is required and must be a non-empty string',
-      });
-    }
-
-    if (!slug || typeof slug !== 'string' || slug.trim() === '') {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid slug',
-        message: 'slug is required and must be a non-empty string',
-      });
-    }
-
-    if (typeof price !== 'number' || price < 0) {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid price',
-        message: 'price is required and must be a non-negative number',
-      });
-    }
-
-    if (!thumbnail || typeof thumbnail !== 'string' || thumbnail.trim() === '') {
-      return res.status(400).json({
-        success: false,
-        error: 'Invalid thumbnail',
-        message: 'thumbnail is required and must be a non-empty string',
-      });
-    }
-
     // Optional: Verify product exists in products database
-    const product = await getProductById(productId);
+    const product = await getProductById(productId.trim());
     if (!product) {
       return res.status(404).json({
         success: false,
@@ -97,13 +65,7 @@ router.post('/admin/feature', async (req: Request, res: Response) => {
     }
 
     // Add or update featured product (idempotent)
-    const featuredProduct = await addFeaturedProduct({
-      productId: productId.trim(),
-      name: name.trim(),
-      slug: slug.trim(),
-      price,
-      thumbnail: thumbnail.trim(),
-    });
+    const featuredProduct = await addFeaturedProduct(productId.trim());
 
     res.json({
       success: true,

@@ -211,4 +211,3 @@ export const DatabaseSchema = z.object({
 });
 
 export type DatabaseShape = z.infer<typeof DatabaseSchema>;
-

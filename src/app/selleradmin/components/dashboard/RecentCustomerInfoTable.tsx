@@ -5,6 +5,8 @@ import { MoreVertical, DollarSign, CheckCircle2, XCircle, Eye } from 'lucide-rea
 import { cn } from '@/lib/utils';
 import type { CustomerOrderItem } from '../../types/customer';
 import { Modal } from '../ui/Modal';
+import Pagination from '../ui/Pagination';
+import { Order as ApiOrder } from '@/types';
 
 interface RecentCustomerInfoTableProps {
   className?: string;
@@ -17,90 +19,166 @@ interface RecentCustomerInfoTableProps {
  * @description Professional and functional table for displaying customer order information
  * with proper alignment, spacing, and interactive elements
  */
+/**
+ * Transform API Order to CustomerOrderItem format (order-level, same as OrdersTable)
+ */
+function transformApiOrderToCustomerOrderItem(apiOrder: ApiOrder): CustomerOrderItem {
+  // Parse customer info from notes if available
+  let customerInfo = {
+    name: 'Unknown',
+    phoneNumber: 'N/A',
+    email: 'N/A',
+    district: apiOrder.shippingAddress?.city || 'N/A',
+    upazila: 'N/A',
+    thana: 'N/A',
+    postOffice: apiOrder.shippingAddress?.zipCode || 'N/A',
+  };
+
+  if (apiOrder.notes) {
+    try {
+      const notesData = JSON.parse(apiOrder.notes);
+      customerInfo = {
+        name: notesData.customerName || customerInfo.name,
+        phoneNumber: notesData.phoneNumber || customerInfo.phoneNumber,
+        email: notesData.email || customerInfo.email,
+        district: notesData.district || customerInfo.district,
+        upazila: notesData.upazila || customerInfo.upazila,
+        thana: notesData.thana || customerInfo.thana,
+        postOffice: notesData.postOffice || customerInfo.postOffice,
+      };
+    } catch (e) {
+      // If parsing fails, use default values
+      console.warn('Failed to parse order notes:', e);
+    }
+  }
+
+  // Map API status to table status
+  const statusMap: Record<string, 'pending' | 'approved' | 'cancelled'> = {
+    pending: 'pending',
+    confirmed: 'approved',
+    approved: 'approved',
+    rejected: 'cancelled',
+    shipped: 'approved',
+    delivered: 'approved',
+    cancelled: 'cancelled',
+    refunded: 'cancelled',
+  };
+
+  const orderStatus = statusMap[apiOrder.status] || 'pending';
+
+  // Get first item for display (same as OrdersTable shows first product)
+  const firstItem = apiOrder.items[0];
+  const totalQuantity = apiOrder.items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+
+  // Transform order to CustomerOrderItem (order-level, not item-level)
+  return {
+    id: apiOrder.id,
+    productName: firstItem?.product?.name || 'Multiple Products',
+    productId: `ORD-${apiOrder.id.slice(-8).padStart(8, '0')}`,
+    quantity: totalQuantity,
+    color: firstItem?.color || 'N/A',
+    category: firstItem?.product?.category || 'Multiple',
+    amount: apiOrder.totalAmount || 0,
+    currency: 'BDT',
+    status: orderStatus,
+    createdAt: apiOrder.createdAt,
+    name: customerInfo.name,
+    phoneNumber: customerInfo.phoneNumber,
+    email: customerInfo.email,
+    district: customerInfo.district,
+    upazila: customerInfo.upazila,
+    thana: customerInfo.thana,
+    postOffice: customerInfo.postOffice,
+  };
+}
+
 export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = ({
   className,
-  data = [
-    {
-      id: '1',
-      productName: 'T-shirt',
-      productId: '#12345678A',
-      quantity: 5985,
-      color: 'Red',
-      category: 'T-shirt',
-      amount: 809.99,
-      currency: 'USD',
-      status: 'pending',
-    },
-    {
-      id: '2',
-      productName: 'Casual Shirt',
-      productId: '#87654321B',
-      quantity: 2450,
-      color: 'Blue',
-      category: 'Shirt',
-      amount: 599.50,
-      currency: 'USD',
-      status: 'pending',
-    },
-    {
-      id: '3',
-      productName: 'Jeans',
-      productId: '#11223344C',
-      quantity: 3200,
-      color: 'Black',
-      category: 'Pants',
-      amount: 1299.00,
-      currency: 'USD',
-      status: 'approved',
-      name: 'John Doe',
-      phoneNumber: '+1 234 567 8900',
-      email: 'john.doe@example.com',
-      district: 'Dhaka',
-      upazila: 'Dhanmondi',
-      thana: 'Dhanmondi',
-      postOffice: 'Dhanmondi',
-    },
-    {
-      id: '4',
-      productName: 'Sneakers',
-      productId: '#55667788D',
-      quantity: 1500,
-      color: 'White',
-      category: 'Footwear',
-      amount: 2499.75,
-      currency: 'USD',
-      status: 'pending',
-    },
-    {
-      id: '5',
-      productName: 'Jacket',
-      productId: '#99887766E',
-      quantity: 800,
-      color: 'Brown',
-      category: 'Outerwear',
-      amount: 1899.25,
-      currency: 'USD',
-      status: 'pending',
-    },
-    {
-      id: '6',
-      productName: 'Watch',
-      productId: '#44332211F',
-      quantity: 250,
-      color: 'Silver',
-      category: 'Accessories',
-      amount: 1599.00,
-      currency: 'USD',
-      status: 'cancelled',
-    },
-  ],
+  data: propData,
 }) => {
+  const [orders, setOrders] = useState<CustomerOrderItem[]>(propData || []);
+  const [isLoading, setIsLoading] = useState(!propData);
+  const [error, setError] = useState<string | null>(null);
   const [openMenuIndex, setOpenMenuIndex] = useState<number | null>(null);
   const [approvedOrders, setApprovedOrders] = useState<Set<string>>(
-    new Set(data.filter(item => item.status === 'approved').map(item => item.id))
+    new Set(orders.filter(item => item.status === 'approved').map(item => item.id))
   );
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<CustomerOrderItem | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const itemsPerPage = 10;
+
+  // Fetch orders from API
+  useEffect(() => {
+    if (propData) {
+      // If data is provided as prop, use it
+      setOrders(propData);
+      return;
+    }
+
+    const fetchOrders = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // Fetch orders from admin API endpoint with pagination (same as OrdersTable)
+        const response = await fetch(`/api/admin/orders?page=${currentPage}&limit=${itemsPerPage}&sortBy=createdAt&sortOrder=desc`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch orders');
+        }
+
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          // Transform API orders to CustomerOrderItem format (order-level, same as OrdersTable)
+          const transformedOrders = result.data.map((apiOrder: ApiOrder) =>
+            transformApiOrderToCustomerOrderItem(apiOrder)
+          );
+          
+          // Update pagination info from API response
+          if (result.pagination) {
+            setTotalItems(result.pagination.total);
+            setTotalPages(result.pagination.totalPages);
+          } else {
+            // Fallback if pagination not in response
+            setTotalItems(transformedOrders.length);
+            setTotalPages(Math.ceil(transformedOrders.length / itemsPerPage));
+          }
+          
+          setOrders(transformedOrders);
+          setApprovedOrders(
+            new Set(transformedOrders.filter((item: CustomerOrderItem) => item.status === 'approved').map((item: CustomerOrderItem) => item.id))
+          );
+        } else {
+          throw new Error(result.error || 'Failed to fetch orders');
+        }
+      } catch (err: any) {
+        console.error('Error fetching orders:', err);
+        setError(err.message || 'Failed to load orders');
+        setOrders([]);
+        setTotalItems(0);
+        setTotalPages(0);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchOrders();
+    
+    // Refresh orders every 30 seconds
+    const interval = setInterval(fetchOrders, 30000);
+    return () => clearInterval(interval);
+  }, [propData, currentPage, itemsPerPage]);
 
   // Handle click outside to close menu
   useEffect(() => {
@@ -134,26 +212,72 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
     setOpenMenuIndex(openMenuIndex === index ? null : index);
   };
 
-  const handleApprove = (index: number) => {
-    const order = data[index];
-    setApprovedOrders(prev => new Set([...prev, order.id]));
-    // Update status to approved
-    if (order.status !== 'approved') {
-      order.status = 'approved';
+  const handleApprove = async (index: number) => {
+    const order = orders[index];
+    try {
+      // Extract order ID from the item ID (format: orderId-itemId)
+      const orderId = order.id.split('-')[0];
+      
+      // Approve order via API
+      const response = await fetch(`/api/admin/orders/${orderId}/approve`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        setApprovedOrders(prev => new Set([...prev, order.id]));
+        setOrders(prev => prev.map((item, idx) => 
+          idx === index ? { ...item, status: 'approved' as const } : item
+        ));
+      } else {
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to approve order');
+      }
+    } catch (err: any) {
+      console.error('Error approving order:', err);
+      alert(err.message || 'Failed to approve order. Please try again.');
     }
-    console.log('Approve', order);
     setOpenMenuIndex(null);
   };
 
   const handleDetail = (index: number) => {
-    const order = data[index];
+    const order = orders[index];
     setSelectedOrder(order);
     setDetailModalOpen(true);
     setOpenMenuIndex(null);
   };
 
-  const handleCancel = (index: number) => {
-    console.log('Cancel', data[index]);
+  const handleCancel = async (index: number) => {
+    const order = orders[index];
+    try {
+      // Extract order ID from the item ID (format: orderId-itemId)
+      const orderId = order.id.split('-')[0];
+      
+      // Cancel order via API
+      const response = await fetch(`/api/admin/orders/${orderId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reason: 'Cancelled from dashboard',
+        }),
+      });
+
+      if (response.ok) {
+        setOrders(prev => prev.map((item, idx) => 
+          idx === index ? { ...item, status: 'cancelled' as const } : item
+        ));
+      } else {
+        const result = await response.json();
+        throw new Error(result.error || 'Failed to cancel order');
+      }
+    } catch (err: any) {
+      console.error('Error cancelling order:', err);
+      alert(err.message || 'Failed to cancel order. Please try again.');
+    }
     setOpenMenuIndex(null);
   };
 
@@ -189,6 +313,40 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
         );
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className={cn('self-stretch bg-white rounded-xl border border-neutral-200 shadow-sm', className)}>
+        <div className="px-6 py-4 border-b border-neutral-200">
+          <h3 className="text-neutral-950 text-2xl font-semibold font-['Poppins'] leading-8">
+            Recent Customer Info
+          </h3>
+        </div>
+        <div className="px-6 py-12 text-center">
+          <div className="text-neutral-500 text-sm font-normal font-['Poppins']">
+            Loading orders...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={cn('self-stretch bg-white rounded-xl border border-neutral-200 shadow-sm', className)}>
+        <div className="px-6 py-4 border-b border-neutral-200">
+          <h3 className="text-neutral-950 text-2xl font-semibold font-['Poppins'] leading-8">
+            Recent Customer Info
+          </h3>
+        </div>
+        <div className="px-6 py-12 text-center">
+          <div className="text-red-500 text-sm font-normal font-['Poppins']">
+            Error: {error}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn('self-stretch bg-white rounded-xl border border-neutral-200 shadow-sm', className)}>
@@ -250,7 +408,7 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
 
           {/* Table Body */}
           <tbody className="divide-y divide-neutral-200">
-            {data.map((row, index) => (
+            {orders.map((row, index) => (
               <tr
                 key={row.id || index}
                 className="hover:bg-neutral-50 transition-colors"
@@ -340,8 +498,19 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
         </table>
       </div>
 
+      {/* Pagination */}
+      {totalItems > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
+      )}
+
       {/* Table Footer (Optional - for pagination or summary) */}
-      {data.length === 0 && (
+      {orders.length === 0 && !isLoading && (
         <div className="px-6 py-12 text-center">
           <div className="text-neutral-500 text-sm font-normal font-['Poppins']">
             No customer orders found

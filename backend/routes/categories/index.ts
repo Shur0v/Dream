@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const includeInactive = searchParams.get('includeInactive') === 'true';
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit') || '0') : undefined;
 
     const allCategories = await getCategories();
     const filteredCategories = includeInactive
@@ -17,9 +18,14 @@ export async function GET(request: NextRequest) {
 
     filteredCategories.sort((a, b) => a.name.localeCompare(b.name));
 
+    // Apply limit if specified
+    const limitedCategories = limit && limit > 0 
+      ? filteredCategories.slice(0, limit)
+      : filteredCategories;
+
     return NextResponse.json({
       success: true,
-      data: filteredCategories,
+      data: limitedCategories,
       message: 'Categories retrieved successfully',
     });
 

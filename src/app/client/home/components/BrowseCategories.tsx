@@ -15,6 +15,7 @@ export default function BrowseCategories() {
   const wasDragRef = useRef(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   
   /**
    * Handle category click navigation
@@ -28,16 +29,16 @@ export default function BrowseCategories() {
     }
   };
 
-  // Fetch categories from API
+  // Fetch categories from API with limit 80
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/categories`);
+        const response = await fetch(`/api/categories?limit=80`);
         const result = await response.json();
         
         if (result.success && result.data) {
-          // Only show active categories
+          // API already filters active categories, but we ensure only active ones
           const activeCategories = result.data.filter((cat: Category) => cat.isActive);
           setCategories(activeCategories);
         }
@@ -216,21 +217,28 @@ export default function BrowseCategories() {
                     >
                       {/* layer-5 = individual category button */}
                       
-                      <div className="layer-6 w-full h-20 md:h-40 rounded-lg overflow-hidden flex-shrink-0" data-layer="6">
+                      <div className="layer-6 w-full h-20 md:h-40 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" data-layer="6">
                         {/* layer-6 = category image container */}
-                        <img 
-                          className="w-full h-full object-cover select-none pointer-events-none" 
-                          src={category.image || '/categories/image/category1.png'} 
-                          alt={`${category.name} category`}
-                          loading="lazy"
-                          draggable="false"
-                          onDragStart={(e) => e.preventDefault()}
-                          onError={(e) => {
-                            // Fallback to default image if category image fails to load
-                            const target = e.target as HTMLImageElement;
-                            target.src = '/categories/image/category1.png';
-                          }}
-                        />
+                        {category.image && !imageErrors.has(`${category.id}-${index}`) ? (
+                          <img 
+                            className="w-full h-full object-cover select-none pointer-events-none" 
+                            src={category.image} 
+                            alt={`${category.name} category`}
+                            loading="lazy"
+                            draggable="false"
+                            onDragStart={(e) => e.preventDefault()}
+                            onError={() => {
+                              // If image fails to load, mark it as error to show name instead
+                              setImageErrors(prev => new Set([...prev, `${category.id}-${index}`]));
+                            }}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-fuchsia-100 flex items-center justify-center p-2">
+                            <span className="text-fuchsia-600 text-xs md:text-sm font-semibold font-['Poppins'] text-center leading-tight break-words">
+                              {category.name}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       
                       <div className="layer-7 w-full text-center justify-center text-black text-sm md:text-base font-medium font-['Poppins'] leading-tight md:leading-normal select-none pointer-events-none flex-shrink-0 whitespace-nowrap overflow-hidden text-ellipsis" data-layer="7" title={category.name}>

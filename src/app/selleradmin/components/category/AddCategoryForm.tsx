@@ -43,7 +43,7 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/categories`);
+        const response = await fetch(`/api/categories`);
         const result = await response.json();
         if (!response.ok || !result.success) {
           throw new Error(result.error || 'Failed to load categories');
@@ -69,19 +69,50 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
     };
   }, []);
 
-  const handleChoose = () => fileRef.current?.click();
-
-  const handleFiles = (files: FileList | null) => {
-    if (!files || !files.length) return;
-    const reader = new FileReader();
-    reader.onload = () => setImage(String(reader.result));
-    reader.readAsDataURL(files[0]);
+  // Upload image to server
+  const uploadImage = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await fetch('/api/upload-image', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    const result = await response.json();
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to upload image');
+    }
+    
+    return result.data.url;
   };
 
-  const handleDrop: React.DragEventHandler<HTMLDivElement> = (e) => {
+  const handleChoose = () => fileRef.current?.click();
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || !files.length) return;
+    const file = files[0];
+    
+    try {
+      // Show preview immediately
+      const reader = new FileReader();
+      reader.onload = () => setImage(String(reader.result));
+      reader.readAsDataURL(file);
+      
+      // Upload image to server
+      const uploadedUrl = await uploadImage(file);
+      setImage(uploadedUrl);
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Failed to upload image. Please try again.');
+      setImage(null);
+    }
+  };
+
+  const handleDrop: React.DragEventHandler<HTMLDivElement> = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    handleFiles(e.dataTransfer.files);
+    await handleFiles(e.dataTransfer.files);
   };
 
   const handleConfirm = async () => {
@@ -92,8 +123,7 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
 
         const slug = generateSlug(category);
         
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        const response = await fetch(`${apiUrl}/categories`, {
+        const response = await fetch(`/api/categories`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -145,8 +175,7 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
         setDeleting(true);
         setError(null);
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        const response = await fetch(`${apiUrl}/categories/${deleteTargetId}`, {
+        const response = await fetch(`/api/categories/${deleteTargetId}`, {
           method: 'DELETE',
         });
 
@@ -333,8 +362,10 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
                     loading="lazy"
                   />
                 ) : (
-                  <div className="w-full h-20 md:h-40 rounded-lg bg-gray-200 flex items-center justify-center">
-                    <ImagePlus className="w-8 h-8 text-gray-400" />
+                  <div className="w-full h-20 md:h-40 rounded-lg bg-fuchsia-100 flex items-center justify-center p-2">
+                    <span className="text-fuchsia-600 text-xs md:text-sm font-semibold font-['Poppins'] text-center leading-tight break-words">
+                      {cat.name}
+                    </span>
                   </div>
                 )}
 

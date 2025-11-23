@@ -67,6 +67,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
       
       // Create order item with product snapshot
       const orderItem = {
+        id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         productId: product.id,
         product: {
           id: product.id,

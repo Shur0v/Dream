@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Eye, X, Check, Trash2 } from 'lucide-react';
 import OrderDetailModal from './OrderDetailModal';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
+import Pagination from '../ui/Pagination';
 import { Order as ApiOrder } from '@/types';
 
 // Order data structure matching checkout form data
@@ -119,6 +120,12 @@ export default function OrdersTable() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const itemsPerPage = 10;
 
   // Fetch orders from API
   useEffect(() => {
@@ -127,9 +134,8 @@ export default function OrdersTable() {
         setIsLoading(true);
         setError(null);
         
-        // Fetch orders from admin API endpoint
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        const response = await fetch(`${apiUrl}/admin/orders?limit=1000`, {
+        // Fetch orders from admin API endpoint with pagination
+        const response = await fetch(`/api/admin/orders?page=${currentPage}&limit=${itemsPerPage}&sortBy=createdAt&sortOrder=desc`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -148,6 +154,12 @@ export default function OrdersTable() {
             transformApiOrderToTableOrder(apiOrder)
           );
           setOrders(transformedOrders);
+          
+          // Update pagination info
+          if (result.pagination) {
+            setTotalItems(result.pagination.total);
+            setTotalPages(result.pagination.totalPages);
+          }
         } else {
           throw new Error(result.error || 'Failed to fetch orders');
         }
@@ -156,6 +168,8 @@ export default function OrdersTable() {
         setError(err.message || 'Failed to load orders');
         // Fallback to empty array on error
         setOrders([]);
+        setTotalItems(0);
+        setTotalPages(0);
       } finally {
         setIsLoading(false);
       }
@@ -166,7 +180,7 @@ export default function OrdersTable() {
     // Refresh orders every 30 seconds
     const interval = setInterval(fetchOrders, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [currentPage, itemsPerPage]);
 
   const handleViewDetails = (order: Order) => {
     setSelectedOrder(order);
@@ -443,6 +457,15 @@ export default function OrdersTable() {
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
       </div>
 
       {/* Order Detail Modal */}
