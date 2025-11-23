@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Category } from '@/types';
 
 /**
  * Browse Categories Component
@@ -12,55 +13,53 @@ export default function BrowseCategories() {
   const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const wasDragRef = useRef(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
   
   /**
    * Handle category click navigation
    */
-  const handleCategoryClick = (categoryName: string) => {
-    // Navigate to categories page
-    router.push('/client/categories');
+  const handleCategoryClick = (categoryName: string, categorySlug?: string) => {
+    // Navigate to categories page with category filter
+    if (categorySlug) {
+      router.push(`/client/categories?category=${categorySlug}`);
+    } else {
+      router.push('/client/categories');
+    }
   };
-  
-  const categories = [
-    { 
-      id: 1, 
-      name: 'Jacket', 
-      image: '/categories/image/category1.png'
-    },
-    { 
-      id: 2, 
-      name: 'Trousers', 
-      image: '/categories/image/category2.png'
-    },
-    { 
-      id: 3, 
-      name: 'Hoodie', 
-      image: '/categories/image/category3.png'
-    },
-    { 
-      id: 4, 
-      name: 'Muffler', 
-      image: '/categories/image/category4.png'
-    },
-    { 
-      id: 5, 
-      name: 'Combo', 
-      image: '/categories/image/category5.png'
-    },
-    { 
-      id: 6, 
-      name: 'Shoe', 
-      image: '/categories/image/category6.png'
-    },
-  ];
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/categories`);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          // Only show active categories
+          const activeCategories = result.data.filter((cat: Category) => cat.isActive);
+          setCategories(activeCategories);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   // Calculate how many times to loop categories to fill 8000rem
   // Approximate: each card with gap ~15rem on large screen, so ~533 sets needed
   // But we'll loop enough times to ensure smooth scrolling
-  const loopedCategories: typeof categories = [];
-  const setsNeeded = Math.ceil(8000 / 15); // Approximate calculation
-  for (let i = 0; i < setsNeeded; i++) {
-    loopedCategories.push(...categories.map(cat => ({ ...cat })));
+  const loopedCategories: Category[] = [];
+  if (categories.length > 0) {
+    const setsNeeded = Math.ceil(8000 / 15); // Approximate calculation
+    for (let i = 0; i < setsNeeded; i++) {
+      loopedCategories.push(...categories.map(cat => ({ ...cat })));
+    }
   }
 
   // Enable mouse wheel and drag scrolling on large screens
@@ -180,54 +179,68 @@ export default function BrowseCategories() {
             >
               {/* layer-4 = categories scrollable container */}
               
-              <div 
-                className="inline-flex justify-start items-center gap-4 md:gap-6 select-none"
-                style={{ width: '8000rem', userSelect: 'none' }}
-              >
-                {/* Inner flex container for cards - 8000rem width with looping categories */}
-                
-                {loopedCategories.map((category, index) => (
-                  <button 
-                    key={`${category.id}-${index}`}
-                    className="layer-5 flex-shrink-0 w-auto md:w-auto md:flex-1 self-stretch p-1.5 md:p-3 bg-fuchsia-400/10 rounded-xl inline-flex flex-col justify-start items-center gap-1.5 md:gap-6 cursor-pointer select-none"
-                    style={{ 
-                      width: 'auto',
-                      minWidth: 'fit-content',
-                      userSelect: 'none',
-                      WebkitUserSelect: 'none',
-                      MozUserSelect: 'none',
-                      msUserSelect: 'none'
-                    }}
-                    onClick={(e) => {
-                      // Only navigate if it wasn't a drag
-                      if (!wasDragRef.current) {
-                        e.preventDefault();
-                        handleCategoryClick(category.name);
-                      }
-                    }}
-                    aria-label={`Browse ${category.name} category`}
-                    data-layer="5"
-                  >
-                    {/* layer-5 = individual category button */}
-                    
-                    <img 
-                      className="layer-6 self-stretch h-20 md:h-40 rounded-lg object-cover select-none pointer-events-none" 
-                      src={category.image} 
-                      alt={`${category.name} category`}
-                      loading="lazy"
-                      draggable="false"
-                      onDragStart={(e) => e.preventDefault()}
-                      data-layer="6"
-                    />
-                    {/* layer-6 = category image */}
-                    
-                    <div className="layer-7 self-stretch text-center justify-start text-black text-sm md:text-3xl font-medium font-['Poppins'] leading-tight md:leading-loose select-none pointer-events-none" data-layer="7">
-                      {/* layer-7 = category name */}
-                      {category.name}
-                    </div>
-                  </button>
-                ))}
-              </div>
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-neutral-500">Loading categories...</div>
+                </div>
+              ) : categories.length === 0 ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-neutral-500">No categories available</div>
+                </div>
+              ) : (
+                <div 
+                  className="inline-flex justify-start items-center gap-4 md:gap-6 select-none"
+                  style={{ width: '8000rem', userSelect: 'none' }}
+                >
+                  {/* Inner flex container for cards - 8000rem width with looping categories */}
+                  
+                  {loopedCategories.map((category, index) => (
+                    <button 
+                      key={`${category.id}-${index}`}
+                      className="layer-5 flex-shrink-0 w-[140px] md:w-[220px] h-[140px] md:h-[220px] p-1.5 md:p-3 bg-fuchsia-400/10 rounded-xl inline-flex flex-col justify-start items-center gap-1.5 md:gap-4 cursor-pointer select-none"
+                      style={{ 
+                        userSelect: 'none',
+                        WebkitUserSelect: 'none',
+                        MozUserSelect: 'none',
+                        msUserSelect: 'none'
+                      }}
+                      onClick={(e) => {
+                        // Only navigate if it wasn't a drag
+                        if (!wasDragRef.current) {
+                          e.preventDefault();
+                          handleCategoryClick(category.name, category.slug);
+                        }
+                      }}
+                      aria-label={`Browse ${category.name} category`}
+                      data-layer="5"
+                    >
+                      {/* layer-5 = individual category button */}
+                      
+                      <div className="layer-6 w-full h-20 md:h-40 rounded-lg overflow-hidden flex-shrink-0" data-layer="6">
+                        {/* layer-6 = category image container */}
+                        <img 
+                          className="w-full h-full object-cover select-none pointer-events-none" 
+                          src={category.image || '/categories/image/category1.png'} 
+                          alt={`${category.name} category`}
+                          loading="lazy"
+                          draggable="false"
+                          onDragStart={(e) => e.preventDefault()}
+                          onError={(e) => {
+                            // Fallback to default image if category image fails to load
+                            const target = e.target as HTMLImageElement;
+                            target.src = '/categories/image/category1.png';
+                          }}
+                        />
+                      </div>
+                      
+                      <div className="layer-7 w-full text-center justify-center text-black text-sm md:text-base font-medium font-['Poppins'] leading-tight md:leading-normal select-none pointer-events-none flex-shrink-0 whitespace-nowrap overflow-hidden text-ellipsis" data-layer="7" title={category.name}>
+                        {/* layer-7 = category name - nowrap to keep full name in one line */}
+                        {category.name}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
