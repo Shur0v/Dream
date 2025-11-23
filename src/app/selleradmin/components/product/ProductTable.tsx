@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight, MoreVertical, Star, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { products as allProducts, getBestSellingProducts, getFeaturedProducts } from '@/lib/productData';
 import SimpleSelect from '../ui/SimpleSelect';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
+import { Product, FeaturedProduct } from '@/types';
 
 export type TableMode = 'all' | 'featured' | 'best-selling';
 
@@ -17,36 +17,72 @@ interface ProductTableProps {
 export default function ProductTable({ mode = 'all' }: ProductTableProps) {
   const [page, setPage] = useState(1);
   const perPage = 10;
-  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
-  const [deletedIds, setDeletedIds] = useState<Set<number>>(new Set());
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleteTargetName, setDeleteTargetName] = useState<string>('');
-
-  const [featuredIds, setFeaturedIds] = useState<Set<number>>(
-    () => new Set(getFeaturedProducts().map((p) => p.id))
-  );
-  const [bestIds, setBestIds] = useState<Set<number>>(
-    () => new Set(getBestSellingProducts().map((p) => p.id))
-  );
-
-  // Filters
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    allProducts.forEach((p) => set.add(p.category));
-    return Array.from(set).sort();
-  }, []);
+  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<FeaturedProduct[]>([]);
+  const [featuredIds, setFeaturedIds] = useState<Set<string>>(new Set());
+  const [bestIds, setBestIds] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | ''>('');
 
+  // Fetch products from API
+  const fetchProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/products?limit=100`);
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setProducts(result.data);
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch featured products from API
+  const fetchFeaturedProducts = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/featured-products`);
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setFeaturedProducts(result.data);
+        setFeaturedIds(new Set(result.data.map((fp: FeaturedProduct) => fp.productId)));
+      }
+    } catch (error) {
+      console.error('Error fetching featured products:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchProducts();
+    fetchFeaturedProducts();
+  }, [fetchProducts, fetchFeaturedProducts]);
+
+  // Categories filter
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach((p) => set.add(p.category));
+    return Array.from(set).sort();
+  }, [products]);
+
   const filtered = useMemo(() => {
-    return allProducts.filter((p) => {
+    return products.filter((p) => {
       if (deletedIds.has(p.id)) return false;
+      if (!p.isActive) return false;
       const nameOk = p.name.toLowerCase().includes(query.trim().toLowerCase());
       const catOk = category ? p.category === category : true;
       return nameOk && catOk;
     });
-  }, [query, category, deletedIds]);
+  }, [query, category, deletedIds, products]);
 
   const data = filtered;
   const total = data.length;
@@ -55,14 +91,69 @@ export default function ProductTable({ mode = 'all' }: ProductTableProps) {
   const end = Math.min(start + perPage, total);
   const pageData = data.slice(start, end);
 
-  const toggleFeatured = (id: number) => {
-    setFeaturedIds((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+  const toggleFeatured = async (productId: string) => {
+    console.log('Toggle featured clicked for product:', productId);
+    const isFeatured = featuredIds.has(productId);
+    console.log('Is currently featured:', isFeatured);
+    
+    try {
+      if (isFeatured) {
+        // Remove from featured
+        const featuredProduct = featuredProducts.find(fp => fp.productId === productId);
+        console.log('Featured product to remove:', featuredProduct);
+        if (featuredProduct) {
+          const response = await fetch(`/api/featured-products/${featuredProduct.id}`, {
+            method: 'DELETE',
+          });
+          const result = await response.json();
+          console.log('Delete response:', result);
+          
+          if (result.success) {
+            setFeaturedIds((prev) => {
+              const next = new Set(prev);
+              next.delete(productId);
+              return next;
+            });
+            await fetchFeaturedProducts(); // Refresh list
+          } else {
+            console.error('Failed to remove featured product:', result.error);
+            alert(result.error || 'Failed to remove featured product');
+          }
+        } else {
+          console.warn('Featured product not found in list');
+        }
+      } else {
+        // Add to featured
+        console.log('Adding product to featured:', productId);
+        const response = await fetch(`/api/featured-products`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ productId }),
+        });
+        const result = await response.json();
+        console.log('Add response:', result);
+        
+        if (result.success) {
+          setFeaturedIds((prev) => {
+            const next = new Set(prev);
+            next.add(productId);
+            return next;
+          });
+          await fetchFeaturedProducts(); // Refresh list
+        } else {
+          console.error('Failed to add featured product:', result.error);
+          alert(result.error || 'Failed to add featured product');
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling featured product:', error);
+      alert('An error occurred. Please check the console for details.');
+    }
   };
-  const toggleBest = (id: number) => {
+
+  const toggleBest = (id: string) => {
     setBestIds((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -70,7 +161,7 @@ export default function ProductTable({ mode = 'all' }: ProductTableProps) {
     });
   };
 
-  const handleDeleteClick = (id: number, name: string) => {
+  const handleDeleteClick = (id: string, name: string) => {
     setDeleteTargetId(id);
     setDeleteTargetName(name);
     setDeleteModalOpen(true);
@@ -88,6 +179,14 @@ export default function ProductTable({ mode = 'all' }: ProductTableProps) {
       setDeleteTargetName('');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="w-full flex items-center justify-center py-12">
+        <div className="text-neutral-500">Loading products...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full flex flex-col gap-4">
@@ -142,21 +241,32 @@ export default function ProductTable({ mode = 'all' }: ProductTableProps) {
           <div key={p.id} className="px-6 py-4 border-t border-neutral-200 text-sm hover:bg-neutral-50 transition-colors">
             <div className="flex items-center gap-4">
               <div className="flex-1 grid place-items-center">
-                <Image src={p.image} alt={p.name} width={40} height={40} className="w-10 h-10 rounded-[10px] border object-cover" />
+                <Image 
+                  src={p.images && p.images.length > 0 ? p.images[0] : '/placeholder-product.png'} 
+                  alt={p.name} 
+                  width={40} 
+                  height={40} 
+                  className="w-10 h-10 rounded-[10px] border object-cover" 
+                />
               </div>
               <div className="flex-1 text-neutral-950 truncate">{p.name}</div>
               <div className="flex-1 text-center text-neutral-950">{p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '-'}</div>
-              <div className="flex-1 text-center text-neutral-950">{p.colors?.[0] ?? '-'}</div>
+              <div className="flex-1 text-center text-neutral-950">{p.colors && p.colors.length > 0 ? p.colors[0] : '-'}</div>
               <div className="flex-1 text-center text-neutral-950">{p.category}</div>
-              <div className="flex-1 text-center text-neutral-900">{p.currency || '$'}{p.price.toFixed(2)}</div>
-              <div className="flex-1 text-center text-neutral-900">{p.inStock ? 'Active' : 'Inactive'}</div>
+              <div className="flex-1 text-center text-neutral-900">${p.price.toFixed(2)}</div>
+              <div className="flex-1 text-center text-neutral-900">{p.isActive ? 'Active' : 'Inactive'}</div>
               <div className="flex-1 grid place-items-center">
                 <div className="relative inline-flex items-center">
                   {(mode === 'all' || mode === 'featured') && (
                     <button
+                      type="button"
                       title="Toggle Featured"
                       className={cn('p-2 rounded-md outline outline-1 outline-gray-200 hover:bg-neutral-50 mr-2', featuredIds.has(p.id) && 'bg-yellow-50')}
-                      onClick={() => toggleFeatured(p.id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleFeatured(p.id);
+                      }}
                     >
                       <Star className={cn('w-5 h-5', featuredIds.has(p.id) ? 'text-yellow-500' : 'text-neutral-800')} />
                     </button>

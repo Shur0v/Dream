@@ -82,6 +82,34 @@ export interface Product {
   updatedAt: string;
 }
 
+// Featured Product Interface
+export interface FeaturedProduct {
+  id: string;
+  productId: string; // Reference to original product
+  name: string;
+  description: string;
+  price: number;
+  originalPrice?: number;
+  discount?: number;
+  images: string[];
+  category: string;
+  categoryId?: string;
+  subcategory?: string;
+  brand: string;
+  sku: string;
+  stock: number;
+  colors?: string[]; // Array of color IDs
+  colorOptions?: Color[]; // Full color objects
+  size?: string[];
+  isActive: boolean;
+  tags: string[];
+  specifications?: Record<string, any>;
+  sellerId: string;
+  createdAt: string;
+  updatedAt: string;
+  featuredAt: string; // When it was marked as featured
+}
+
 export interface OrderProductSnapshot extends Partial<Product> {
   id: string;
   name: string;

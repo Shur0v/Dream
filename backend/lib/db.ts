@@ -11,7 +11,7 @@
  * @version 1.0.0
  */
 
-import { Product, Order, Category, Color, User } from '@/types';
+import { Product, Order, Category, Color, User, FeaturedProduct } from '@/types';
 import { readJsonStore, writeJsonStore } from '../lib/jsonStore';
 import { DatabaseSchema, DatabaseShape } from '@backend/schemas/database';
 
@@ -375,5 +375,139 @@ export async function getUsers(): Promise<User[]> {
 export async function getUserById(id: string): Promise<User | undefined> {
   const db = await readDatabase();
   return db.users.find(u => u.id === id);
+}
+
+/**
+ * Get all featured products (only active ones)
+ * @returns Promise<FeaturedProduct[]>
+ */
+export async function getFeaturedProducts(): Promise<FeaturedProduct[]> {
+  const db = await readDatabase();
+  return db.featuredProducts.filter(fp => fp.isActive);
+}
+
+/**
+ * Get featured product by ID
+ * @param id - Featured Product ID
+ * @returns Promise<FeaturedProduct | undefined>
+ */
+export async function getFeaturedProductById(id: string): Promise<FeaturedProduct | undefined> {
+  const db = await readDatabase();
+  return db.featuredProducts.find(fp => fp.id === id);
+}
+
+/**
+ * Get featured product by product ID
+ * @param productId - Original Product ID
+ * @returns Promise<FeaturedProduct | undefined>
+ */
+export async function getFeaturedProductByProductId(productId: string): Promise<FeaturedProduct | undefined> {
+  const db = await readDatabase();
+  return db.featuredProducts.find(fp => fp.productId === productId && fp.isActive);
+}
+
+/**
+ * Add product as featured (creates a copy from the original product)
+ * @param productId - Product ID to feature
+ * @returns Promise<FeaturedProduct>
+ */
+export async function addFeaturedProduct(productId: string): Promise<FeaturedProduct> {
+  const db = await readDatabase();
+  
+  // Check if already featured
+  const existing = db.featuredProducts.find(fp => fp.productId === productId && fp.isActive);
+  if (existing) {
+    return existing;
+  }
+  
+  // Get the original product
+  const product = db.products.find(p => p.id === productId);
+  if (!product) {
+    throw new Error(`Product with ID ${productId} not found`);
+  }
+  
+  // Create a copy of the product as featured product
+  const featuredProduct: FeaturedProduct = {
+    ...product,
+    id: `featured-${productId}-${Date.now()}`, // Unique ID for featured product
+    productId: product.id, // Reference to original
+    featuredAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  
+  db.featuredProducts.push(featuredProduct);
+  await writeDatabase(db);
+  
+  return featuredProduct;
+}
+
+/**
+ * Remove product from featured (soft delete)
+ * @param productId - Product ID to remove from featured
+ * @returns Promise<FeaturedProduct | null>
+ */
+export async function removeFeaturedProduct(productId: string): Promise<FeaturedProduct | null> {
+  const db = await readDatabase();
+  const featuredProduct = db.featuredProducts.find(fp => fp.productId === productId && fp.isActive);
+  
+  if (featuredProduct) {
+    featuredProduct.isActive = false;
+    featuredProduct.updatedAt = new Date().toISOString();
+    await writeDatabase(db);
+    return featuredProduct;
+  }
+  
+  return null;
+}
+
+/**
+ * Remove featured product by featured product ID
+ * @param id - Featured Product ID
+ * @returns Promise<FeaturedProduct | null>
+ */
+export async function removeFeaturedProductById(id: string): Promise<FeaturedProduct | null> {
+  const db = await readDatabase();
+  const featuredProduct = db.featuredProducts.find(fp => fp.id === id);
+  
+  if (featuredProduct) {
+    featuredProduct.isActive = false;
+    featuredProduct.updatedAt = new Date().toISOString();
+    await writeDatabase(db);
+    return featuredProduct;
+  }
+  
+  return null;
+}
+
+/**
+ * Update featured product data (syncs with original product)
+ * @param productId - Original Product ID
+ * @returns Promise<FeaturedProduct | null>
+ */
+export async function updateFeaturedProduct(productId: string): Promise<FeaturedProduct | null> {
+  const db = await readDatabase();
+  const featuredProductIndex = db.featuredProducts.findIndex(fp => fp.productId === productId && fp.isActive);
+  
+  if (featuredProductIndex === -1) {
+    return null;
+  }
+  
+  const product = db.products.find(p => p.id === productId);
+  if (!product) {
+    return null;
+  }
+  
+  // Update featured product with latest product data
+  const featuredProduct = db.featuredProducts[featuredProductIndex];
+  db.featuredProducts[featuredProductIndex] = {
+    ...product,
+    id: featuredProduct.id, // Keep the featured product ID
+    productId: product.id,
+    featuredAt: featuredProduct.featuredAt, // Keep original featured date
+    updatedAt: new Date().toISOString(),
+  };
+  
+  await writeDatabase(db);
+  return db.featuredProducts[featuredProductIndex];
 }
 
