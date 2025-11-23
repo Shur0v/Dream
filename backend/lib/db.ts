@@ -11,7 +11,7 @@
  * @version 1.0.0
  */
 
-import { Product, Order, Category, Color, User, FeaturedProduct } from '@/types';
+import { Product, Order, Category, Color, User, FeaturedProduct, BestSellingProduct } from '@/types';
 import { readJsonStore, writeJsonStore } from '../lib/jsonStore';
 import { DatabaseSchema, DatabaseShape } from '@backend/schemas/database';
 
@@ -509,5 +509,139 @@ export async function updateFeaturedProduct(productId: string): Promise<Featured
   
   await writeDatabase(db);
   return db.featuredProducts[featuredProductIndex];
+}
+
+/**
+ * Get all best selling products (only active ones)
+ * @returns Promise<BestSellingProduct[]>
+ */
+export async function getBestSellingProducts(): Promise<BestSellingProduct[]> {
+  const db = await readDatabase();
+  return db.bestSellingProducts.filter(bs => bs.isActive);
+}
+
+/**
+ * Get best selling product by ID
+ * @param id - Best Selling Product ID
+ * @returns Promise<BestSellingProduct | undefined>
+ */
+export async function getBestSellingProductById(id: string): Promise<BestSellingProduct | undefined> {
+  const db = await readDatabase();
+  return db.bestSellingProducts.find(bs => bs.id === id);
+}
+
+/**
+ * Get best selling product by product ID
+ * @param productId - Original Product ID
+ * @returns Promise<BestSellingProduct | undefined>
+ */
+export async function getBestSellingProductByProductId(productId: string): Promise<BestSellingProduct | undefined> {
+  const db = await readDatabase();
+  return db.bestSellingProducts.find(bs => bs.productId === productId && bs.isActive);
+}
+
+/**
+ * Add product as best selling (creates a copy from the original product)
+ * @param productId - Product ID to mark as best selling
+ * @returns Promise<BestSellingProduct>
+ */
+export async function addBestSellingProduct(productId: string): Promise<BestSellingProduct> {
+  const db = await readDatabase();
+  
+  // Check if already best selling
+  const existing = db.bestSellingProducts.find(bs => bs.productId === productId && bs.isActive);
+  if (existing) {
+    return existing;
+  }
+  
+  // Get the original product
+  const product = db.products.find(p => p.id === productId);
+  if (!product) {
+    throw new Error(`Product with ID ${productId} not found`);
+  }
+  
+  // Create a copy of the product as best selling product
+  const bestSellingProduct: BestSellingProduct = {
+    ...product,
+    id: `bestselling-${productId}-${Date.now()}`, // Unique ID for best selling product
+    productId: product.id, // Reference to original
+    bestSellingAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  
+  db.bestSellingProducts.push(bestSellingProduct);
+  await writeDatabase(db);
+  
+  return bestSellingProduct;
+}
+
+/**
+ * Remove product from best selling (soft delete)
+ * @param productId - Product ID to remove from best selling
+ * @returns Promise<BestSellingProduct | null>
+ */
+export async function removeBestSellingProduct(productId: string): Promise<BestSellingProduct | null> {
+  const db = await readDatabase();
+  const bestSellingProduct = db.bestSellingProducts.find(bs => bs.productId === productId && bs.isActive);
+  
+  if (bestSellingProduct) {
+    bestSellingProduct.isActive = false;
+    bestSellingProduct.updatedAt = new Date().toISOString();
+    await writeDatabase(db);
+    return bestSellingProduct;
+  }
+  
+  return null;
+}
+
+/**
+ * Remove best selling product by best selling product ID
+ * @param id - Best Selling Product ID
+ * @returns Promise<BestSellingProduct | null>
+ */
+export async function removeBestSellingProductById(id: string): Promise<BestSellingProduct | null> {
+  const db = await readDatabase();
+  const bestSellingProduct = db.bestSellingProducts.find(bs => bs.id === id);
+  
+  if (bestSellingProduct) {
+    bestSellingProduct.isActive = false;
+    bestSellingProduct.updatedAt = new Date().toISOString();
+    await writeDatabase(db);
+    return bestSellingProduct;
+  }
+  
+  return null;
+}
+
+/**
+ * Update best selling product data (syncs with original product)
+ * @param productId - Original Product ID
+ * @returns Promise<BestSellingProduct | null>
+ */
+export async function updateBestSellingProduct(productId: string): Promise<BestSellingProduct | null> {
+  const db = await readDatabase();
+  const bestSellingProductIndex = db.bestSellingProducts.findIndex(bs => bs.productId === productId && bs.isActive);
+  
+  if (bestSellingProductIndex === -1) {
+    return null;
+  }
+  
+  const product = db.products.find(p => p.id === productId);
+  if (!product) {
+    return null;
+  }
+  
+  // Update best selling product with latest product data
+  const bestSellingProduct = db.bestSellingProducts[bestSellingProductIndex];
+  db.bestSellingProducts[bestSellingProductIndex] = {
+    ...product,
+    id: bestSellingProduct.id, // Keep the best selling product ID
+    productId: product.id,
+    bestSellingAt: bestSellingProduct.bestSellingAt, // Keep original best selling date
+    updatedAt: new Date().toISOString(),
+  };
+  
+  await writeDatabase(db);
+  return db.bestSellingProducts[bestSellingProductIndex];
 }
 

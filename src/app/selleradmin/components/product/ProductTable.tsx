@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, MoreVertical, Star, TrendingUp } from 'lucid
 import { cn } from '@/lib/utils';
 import SimpleSelect from '../ui/SimpleSelect';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
-import { Product, FeaturedProduct } from '@/types';
+import { Product, FeaturedProduct, BestSellingProduct } from '@/types';
 
 export type TableMode = 'all' | 'featured' | 'best-selling';
 
@@ -25,6 +25,7 @@ export default function ProductTable({ mode = 'all' }: ProductTableProps) {
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
   const [featuredProducts, setFeaturedProducts] = useState<FeaturedProduct[]>([]);
+  const [bestSellingProducts, setBestSellingProducts] = useState<BestSellingProduct[]>([]);
   const [featuredIds, setFeaturedIds] = useState<Set<string>>(new Set());
   const [bestIds, setBestIds] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState('');
@@ -62,10 +63,26 @@ export default function ProductTable({ mode = 'all' }: ProductTableProps) {
     }
   }, []);
 
+  // Fetch best selling products from API
+  const fetchBestSellingProducts = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/best-selling-products`);
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setBestSellingProducts(result.data);
+        setBestIds(new Set(result.data.map((bs: BestSellingProduct) => bs.productId)));
+      }
+    } catch (error) {
+      console.error('Error fetching best selling products:', error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchProducts();
     fetchFeaturedProducts();
-  }, [fetchProducts, fetchFeaturedProducts]);
+    fetchBestSellingProducts();
+  }, [fetchProducts, fetchFeaturedProducts, fetchBestSellingProducts]);
 
   // Categories filter
   const categories = useMemo(() => {
@@ -153,12 +170,66 @@ export default function ProductTable({ mode = 'all' }: ProductTableProps) {
     }
   };
 
-  const toggleBest = (id: string) => {
-    setBestIds((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+  const toggleBest = async (productId: string) => {
+    console.log('Toggle best selling clicked for product:', productId);
+    const isBestSelling = bestIds.has(productId);
+    console.log('Is currently best selling:', isBestSelling);
+    
+    try {
+      if (isBestSelling) {
+        // Remove from best selling
+        const bestSellingProduct = bestSellingProducts.find(bs => bs.productId === productId);
+        console.log('Best selling product to remove:', bestSellingProduct);
+        if (bestSellingProduct) {
+          const response = await fetch(`/api/best-selling-products/${bestSellingProduct.id}`, {
+            method: 'DELETE',
+          });
+          const result = await response.json();
+          console.log('Delete response:', result);
+          
+          if (result.success) {
+            setBestIds((prev) => {
+              const next = new Set(prev);
+              next.delete(productId);
+              return next;
+            });
+            await fetchBestSellingProducts(); // Refresh list
+          } else {
+            console.error('Failed to remove best selling product:', result.error);
+            alert(result.error || 'Failed to remove best selling product');
+          }
+        } else {
+          console.warn('Best selling product not found in list');
+        }
+      } else {
+        // Add to best selling
+        console.log('Adding product to best selling:', productId);
+        const response = await fetch(`/api/best-selling-products`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ productId }),
+        });
+        const result = await response.json();
+        console.log('Add response:', result);
+        
+        if (result.success) {
+          setBestIds((prev) => {
+            const next = new Set(prev);
+            next.add(productId);
+            return next;
+          });
+          await fetchBestSellingProducts(); // Refresh list
+        } else {
+          console.error('Failed to add best selling product:', result.error);
+          alert(result.error || 'Failed to add best selling product');
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling best selling product:', error);
+      alert('An error occurred. Please check the console for details.');
+    }
   };
 
   const handleDeleteClick = (id: string, name: string) => {
@@ -273,9 +344,14 @@ export default function ProductTable({ mode = 'all' }: ProductTableProps) {
                   )}
                   {(mode === 'all' || mode === 'best-selling') && (
                     <button
+                      type="button"
                       title="Toggle Best Selling"
                       className={cn('p-2 rounded-md outline outline-1 outline-gray-200 hover:bg-neutral-50', bestIds.has(p.id) && 'bg-green-50')}
-                      onClick={() => toggleBest(p.id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleBest(p.id);
+                      }}
                     >
                       <TrendingUp className={cn('w-5 h-5', bestIds.has(p.id) ? 'text-green-600' : 'text-neutral-800')} />
                     </button>

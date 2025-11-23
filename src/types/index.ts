@@ -110,6 +110,34 @@ export interface FeaturedProduct {
   featuredAt: string; // When it was marked as featured
 }
 
+// Best Selling Product Interface
+export interface BestSellingProduct {
+  id: string;
+  productId: string; // Reference to original product
+  name: string;
+  description: string;
+  price: number;
+  originalPrice?: number;
+  discount?: number;
+  images: string[];
+  category: string;
+  categoryId?: string;
+  subcategory?: string;
+  brand: string;
+  sku: string;
+  stock: number;
+  colors?: string[]; // Array of color IDs
+  colorOptions?: Color[]; // Full color objects
+  size?: string[];
+  isActive: boolean;
+  tags: string[];
+  specifications?: Record<string, any>;
+  sellerId: string;
+  createdAt: string;
+  updatedAt: string;
+  bestSellingAt: string; // When it was marked as best selling
+}
+
 export interface OrderProductSnapshot extends Partial<Product> {
   id: string;
   name: string;

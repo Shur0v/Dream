@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getBestSellingProducts } from '@/lib/productData';
+import { BestSellingProduct } from '@/types';
 
 /**
  * Best Selling Component
@@ -11,10 +11,31 @@ import { getBestSellingProducts } from '@/lib/productData';
  */
 export default function BestSelling() {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  const [products, setProducts] = useState<BestSellingProduct[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Get best selling products from unified dataset - Limit to 4 for responsive grid
-  const allProducts = getBestSellingProducts();
-  const products = allProducts.slice(0, 4);
+  // Fetch best selling products from API
+  useEffect(() => {
+    const fetchBestSellingProducts = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/best-selling-products?limit=4`);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          // Only show active best selling products
+          const activeProducts = result.data.filter((p: BestSellingProduct) => p.isActive);
+          setProducts(activeProducts.slice(0, 4));
+        }
+      } catch (error) {
+        console.error('Error fetching best selling products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBestSellingProducts();
+  }, []);
 
   return (
     <section className="father w-full py-6 sm:py-10 md:py-14 lg:py-20 bg-white flex flex-col justify-start items-center gap-2.5 sm:gap-5 md:gap-6 lg:gap-8" role="region" aria-labelledby="best-selling-heading" data-layer="father">
@@ -51,8 +72,17 @@ export default function BestSelling() {
         <div className="layer-5 self-stretch grid grid-cols-2 md:flex md:justify-center md:items-center md:h-[582px] gap-4 md:gap-6 my-6 md:my-2" data-layer="5">
           {/* layer-5 = products grid container */}
           
-          {products.map((product, index) => (
-             <Link key={product.id} href={`/client/product-details/${product.id}`} className="block h-full md:flex md:items-center">
+          {loading ? (
+            <div className="col-span-2 md:col-span-1 flex items-center justify-center py-12">
+              <div className="text-neutral-500">Loading best selling products...</div>
+            </div>
+          ) : products.length === 0 ? (
+            <div className="col-span-2 md:col-span-1 flex items-center justify-center py-12">
+              <div className="text-neutral-500">No best selling products available</div>
+            </div>
+          ) : (
+            products.map((product, index) => (
+             <Link key={product.id} href={`/client/product-details/${product.productId || product.id}`} className="block h-full md:flex md:items-center">
                <div
                  className="layer-6 w-full md:w-[312px] h-full md:h-auto p-3 md:p-4 bg-sky-50 rounded-xl border border-black/10 flex flex-col justify-start items-start group md:hover:shadow-md md:hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
                  style={{ transformOrigin: 'center', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
@@ -106,7 +136,7 @@ export default function BestSelling() {
                 {/* layer-12 = product image container */}
                 
                 <Image
-                  src={product.image}
+                  src={product.images && product.images.length > 0 ? product.images[0] : '/placeholder-product.png'}
                   alt={`${product.name} product image`}
                   fill
                   className="object-cover transform md:group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
@@ -147,18 +177,20 @@ export default function BestSelling() {
                         {/* layer-18 = current price */}
                         <div className="layer-19 justify-start text-black text-lg md:text-2xl font-semibold font-['Poppins'] leading-6 md:leading-9" data-layer="19">
                           {/* layer-19 = current price display */}
-                          {product.currency}{product.price}
+                          ${product.price.toFixed(2)}
                         </div>
                       </div>
                       
-                      <div className="layer-20 justify-start" data-layer="20">
-                        {/* layer-20 = original price */}
-                        <span className="text-red-500 text-xs md:text-base font-normal font-['Poppins'] leading-normal">(</span>
-                        <span className="text-red-500 text-xs md:text-base font-normal font-['Poppins'] line-through leading-normal">
-                          ${product.originalPrice}
-                        </span>
-                        <span className="text-red-500 text-xs md:text-base font-normal font-['Poppins'] leading-normal">)</span>
-                      </div>
+                      {product.originalPrice && product.originalPrice > product.price && (
+                        <div className="layer-20 justify-start" data-layer="20">
+                          {/* layer-20 = original price */}
+                          <span className="text-red-500 text-xs md:text-base font-normal font-['Poppins'] leading-normal">(</span>
+                          <span className="text-red-500 text-xs md:text-base font-normal font-['Poppins'] line-through leading-normal">
+                            ${product.originalPrice.toFixed(2)}
+                          </span>
+                          <span className="text-red-500 text-xs md:text-base font-normal font-['Poppins'] leading-normal">)</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -166,10 +198,10 @@ export default function BestSelling() {
                   <div className="layer-21 flex flex-col md:flex-row md:inline-flex justify-start items-start md:items-center gap-1 md:gap-1.5" data-layer="21">
                     {/* layer-21 = rating and reviews container */}
                     
-                    <div className="layer-22 flex justify-start items-center gap-0.5 md:gap-0" role="img" aria-label={`${product.rating} out of 5 stars`} data-layer="22">
+                    <div className="layer-22 flex justify-start items-center gap-0.5 md:gap-0" role="img" aria-label="Product rating" data-layer="22">
                       {/* layer-22 = star rating */}
                       
-                      {[...Array(product.rating)].map((_, i) => (
+                      {[...Array(5)].map((_, i) => (
                         <svg
                           key={i}
                           width="16"
@@ -189,13 +221,13 @@ export default function BestSelling() {
                     {/* Review count - hidden on mobile, shown on desktop next to stars */}
                     <div className="layer-23 hidden md:block text-center justify-start text-neutral-400 text-xs md:text-sm font-normal font-['Poppins'] leading-snug md:leading-relaxed whitespace-nowrap" data-layer="23">
                       {/* layer-23 = reviews count */}
-                      ( {product.reviews} Reviews )
+                      ( Reviews )
                     </div>
                     
                     {/* Review count box - shown on mobile below stars */}
                     <div className="layer-23-mobile md:hidden self-stretch px-2 py-1 bg-neutral-100 rounded-md text-center justify-start text-neutral-400 text-xs font-normal font-['Poppins'] leading-snug" data-layer="23-mobile">
                       {/* layer-23-mobile = reviews count box for mobile */}
-                      ( {product.reviews} Reviews )
+                      ( Reviews )
                     </div>
                   </div>
                 </div>
@@ -231,14 +263,16 @@ export default function BestSelling() {
               </div>
                </div>
              </Link>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Pagination Dots - Hidden on mobile */}
-        <div className="layer-28 h-2 hidden md:flex justify-center items-center gap-2 mt-8" role="tablist" aria-label="Product pagination" data-layer="28">
-          {/* layer-28 = pagination dots container */}
-          
-          {[1, 2, 3, 4].map((item, index) => (
+        {products.length > 0 && (
+          <div className="layer-28 h-2 hidden md:flex justify-center items-center gap-2 mt-8" role="tablist" aria-label="Product pagination" data-layer="28">
+            {/* layer-28 = pagination dots container */}
+            
+            {products.slice(0, 4).map((item, index) => (
             <div
               key={index}
               className={`layer-29 h-2 rounded-[10px] transition-all duration-300 ease-in-out transform origin-center ${
@@ -255,8 +289,9 @@ export default function BestSelling() {
               aria-label={`Go to product ${index + 1}`}
               data-layer="29"
             />
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

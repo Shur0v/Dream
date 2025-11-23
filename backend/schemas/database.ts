@@ -91,6 +91,33 @@ const FeaturedProductSchema = z.object({
     featuredAt: TimestampSchema, // When it was marked as featured
   });
 
+const BestSellingProductSchema = z.object({
+    id: z.string().min(1),
+    productId: z.string().min(1), // Reference to original product
+    name: z.string().min(1),
+    description: z.string().default(''),
+    price: z.preprocess((val) => (typeof val === 'string' ? Number(val) : val), z.number()).default(0),
+    originalPrice: z.number().optional(),
+    discount: z.number().optional(),
+    images: z.array(z.string()).default([]),
+    category: z.string(),
+    categoryId: z.string().optional(),
+    subcategory: z.string().optional(),
+    brand: z.string().default(''),
+    sku: z.string().default(''),
+    stock: z.number().int().nonnegative().default(0),
+    colors: z.array(z.string()).optional(),
+    colorOptions: z.array(ColorSchema).optional(),
+    size: z.array(z.string()).optional(),
+    isActive: z.boolean().default(true),
+    tags: z.array(z.string()).default([]),
+    specifications: z.record(z.string(), z.unknown()).optional(),
+    sellerId: z.string().min(1),
+    createdAt: TimestampSchema,
+    updatedAt: TimestampSchema,
+    bestSellingAt: TimestampSchema, // When it was marked as best selling
+  });
+
   const MinimalProductSnapshotSchema = z.object({
     id: z.string(),
     name: z.string().default(''),
@@ -170,6 +197,7 @@ export const DatabaseSchema = z.object({
   colors: z.array(ColorSchema).default([]),
   users: z.array(UserSchema).default([]),
   featuredProducts: z.array(FeaturedProductSchema).default([]),
+  bestSellingProducts: z.array(BestSellingProductSchema).default([]),
 });
 
 export type DatabaseShape = z.infer<typeof DatabaseSchema>;
