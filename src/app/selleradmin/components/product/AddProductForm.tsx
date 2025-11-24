@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import SimpleSelect from '../ui/SimpleSelect';
 import SearchableMultiSelect from '../ui/SearchableMultiSelect';
 import { Color, Category } from '@/types';
+import { fetchCategories as loadCategoriesFromApi } from '@/lib/categories';
 
 // Zod schema for validation
 const productSchema = z.object({
@@ -134,17 +135,13 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
   // Fetch categories from database
   useEffect(() => {
     let active = true;
-    const fetchCategories = async () => {
+    const loadCategories = async () => {
       try {
         setCategoriesLoading(true);
         setCategoriesError(null);
-        const response = await fetch(`/api/categories`);
-        const result = await response.json();
-        if (!response.ok || !result.success) {
-          throw new Error(result.error || 'Failed to load categories');
-        }
+        const categories = await loadCategoriesFromApi();
         if (active) {
-          setCategoryOptions(result.data || []);
+          setCategoryOptions(categories);
         }
       } catch (error) {
         console.error('Error fetching categories:', error);
@@ -158,7 +155,7 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
       }
     };
 
-    fetchCategories();
+    loadCategories();
     return () => {
       active = false;
     };
@@ -418,7 +415,7 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
                     <label className="self-stretch text-neutral-600 text-base font-medium font-['Poppins'] leading-6">
                       Subcategory
                     </label>
-                    <div className="w-full h-14 px-5 py-3.5 rounded-md outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex items-center gap-2.5">
+                    <div className="w-full h-14 px-5 py-3.5 rounded-md outline-1 outline-offset-[-1px] outline-gray-200 inline-flex items-center gap-2.5">
                       <input
                         {...register('subcategory')}
                         placeholder="Subcategory"
@@ -433,7 +430,7 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
                     <label className="self-stretch text-neutral-600 text-base font-medium font-['Poppins'] leading-6">
                       Brand <span className="text-red-500">*</span>
                     </label>
-                    <div className="w-full h-14 px-5 py-3.5 rounded-md outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex items-center gap-2.5">
+                    <div className="w-full h-14 px-5 py-3.5 rounded-md outline-1 outline-offset-[-1px] outline-gray-200 inline-flex items-center gap-2.5">
                       <input
                         {...register('brand')}
                         placeholder="Brand Name"
@@ -449,7 +446,7 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
                     <label className="self-stretch text-neutral-600 text-base font-medium font-['Poppins'] leading-6">
                       SKU <span className="text-red-500">*</span>
                     </label>
-                    <div className="w-full h-14 px-5 py-3.5 rounded-md outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex items-center gap-2.5">
+                    <div className="w-full h-14 px-5 py-3.5 rounded-md outline-1 outline-offset-[-1px] outline-gray-200 inline-flex items-center gap-2.5">
                       <input
                         {...register('sku')}
                         placeholder="SKU-001"
@@ -467,7 +464,7 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
                     <label className="self-stretch text-neutral-600 text-base font-medium font-['Poppins'] leading-6">
                       Stock <span className="text-red-500">*</span>
                     </label>
-                    <div className="w-full h-14 px-5 py-3.5 rounded-md outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex items-center gap-2.5">
+                    <div className="w-full h-14 px-5 py-3.5 rounded-md outline-1 outline-offset-[-1px] outline-gray-200 inline-flex items-center gap-2.5">
                       <input
                         type="number"
                         {...register('stock', { valueAsNumber: true })}

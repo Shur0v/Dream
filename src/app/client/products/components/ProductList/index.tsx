@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import ProductCard from '@/components/product/ProductCard';
-import { Product } from '@/types';
+import { Product, Category } from '@/types';
+import { fetchCategories as loadCategoriesFromApi } from '@/lib/categories';
 
 /**
  * ProductList component for displaying products with filtering and sorting
@@ -25,6 +26,9 @@ export default function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
 
   // Fetch products from API with localStorage caching
   useEffect(() => {
@@ -72,6 +76,35 @@ export default function ProductList() {
     };
 
     fetchProducts();
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        setCategoriesError(null);
+        const fetchedCategories = await loadCategoriesFromApi();
+        if (active) {
+          setCategories(fetchedCategories);
+        }
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+        if (active) {
+          setCategoriesError(err instanceof Error ? err.message : 'Failed to load categories');
+        }
+      } finally {
+        if (active) {
+          setCategoriesLoading(false);
+        }
+      }
+    };
+
+    loadCategories();
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Sample products data (fallback)
@@ -150,7 +183,35 @@ export default function ProductList() {
     }
   ];
 
-  const categories = ['All', 'Electronics', 'Fashion', 'Home & Garden', 'Sports', 'Beauty'];
+  const categoryFilterOptions = useMemo(() => {
+    const normalizeValue = (category: Category) => {
+      if (category.slug) return category.slug;
+      if (category.id) return category.id;
+      return category.name.toLowerCase().replace(/\s+/g, '-');
+    };
+
+    return [
+      { label: 'All', value: 'all' },
+      ...categories.map((cat) => ({
+        label: cat.name,
+        value: normalizeValue(cat),
+      })),
+    ];
+  }, [categories]);
+
+  const filteredProducts = useMemo(() => {
+    return products.filter((product) => {
+      if (filters.category !== 'all') {
+        const normalizedProductCategory = product.category
+          ? product.category.toLowerCase().replace(/\s+/g, '-')
+          : '';
+        if (normalizedProductCategory !== filters.category) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [products, filters.category]);
 
   const handleFilterChange = (filterType: string, value: string) => {
     setFilters(prev => ({ ...prev, [filterType]: value }));
@@ -171,19 +232,27 @@ export default function ProductList() {
           <div>
             <h3 className="font-semibold text-gray-900 mb-3">Category</h3>
             <div className="space-y-2">
-              {categories.map((category) => (
-                <label key={category} className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="category"
-                    value={category.toLowerCase()}
-                    checked={filters.category === category.toLowerCase()}
-                    onChange={(e) => handleFilterChange('category', e.target.value)}
-                    className="text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="text-gray-700">{category}</span>
-                </label>
-              ))}
+              {categoriesLoading ? (
+                <div className="text-gray-500 text-sm py-2">Loading categories...</div>
+              ) : categoriesError ? (
+                <div className="text-red-500 text-sm py-2">{categoriesError}</div>
+              ) : categories.length === 0 ? (
+                <div className="text-gray-500 text-sm py-2">No categories available</div>
+              ) : (
+                categoryFilterOptions.map((category) => (
+                  <label key={category.value} className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="category"
+                      value={category.value}
+                      checked={filters.category === category.value}
+                      onChange={(e) => handleFilterChange('category', e.target.value)}
+                      className="text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="text-gray-700">{category.label}</span>
+                  </label>
+                ))
+              )}
             </div>
           </div>
 
@@ -244,7 +313,7 @@ export default function ProductList() {
           {/* Sort Options */}
           <div className="flex justify-between items-center mb-6">
             <p className="text-gray-600">
-              Showing {products.length} products
+              Showing {filteredProducts.length} products
             </p>
             <div className="flex items-center gap-2">
               <span className="text-gray-700">Sort by:</span>
@@ -271,13 +340,13 @@ export default function ProductList() {
             <div className="flex justify-center items-center py-12">
               <div className="text-red-600">{error}</div>
             </div>
-          ) : products.length === 0 ? (
+          ) : filteredProducts.length === 0 ? (
             <div className="flex justify-center items-center py-12">
               <div className="text-gray-600">No products found</div>
             </div>
           ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}

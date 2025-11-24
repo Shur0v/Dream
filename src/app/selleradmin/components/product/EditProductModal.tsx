@@ -5,8 +5,9 @@ import { X, ImagePlus, Plus, Trash2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SimpleSelect from '../ui/SimpleSelect';
 import SearchableMultiSelect from '../ui/SearchableMultiSelect';
-import { Color } from '@/types';
+import { Color, Category } from '@/types';
 import { getApiUrl } from '@/lib/apiConfig';
+import { fetchCategories as loadCategoriesFromApi } from '@/lib/categories';
 
 interface EditableProduct {
   id: string;
@@ -42,7 +43,6 @@ interface EditProductModalProps {
 }
 
 const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL'];
-const categoryOptions = ['Electronics', 'Fashion', 'Home & Garden', 'Sports', 'Books', 'Toys', 'Beauty', 'Food'];
 const currencyOptions = ['৳', '$', '€', '£', '¥'];
 
 export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpdate, product }: EditProductModalProps) {
@@ -76,6 +76,9 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
   const [colorOptions, setColorOptions] = useState<Color[]>([]);
   const [colorsLoading, setColorsLoading] = useState(true);
   const [colorsError, setColorsError] = useState<string | null>(null);
+  const [categoryOptions, setCategoryOptions] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -109,6 +112,38 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
     if (isOpen) {
       fetchColors();
     }
+    return () => {
+      active = false;
+    };
+  }, [isOpen]);
+
+  // Fetch categories from database
+  useEffect(() => {
+    let active = true;
+    const loadCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        setCategoriesError(null);
+        const categories = await loadCategoriesFromApi();
+        if (active) {
+          setCategoryOptions(categories);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        if (active) {
+          setCategoriesError(error instanceof Error ? error.message : 'Unable to load categories');
+        }
+      } finally {
+        if (active) {
+          setCategoriesLoading(false);
+        }
+      }
+    };
+
+    if (isOpen) {
+      loadCategories();
+    }
+
     return () => {
       active = false;
     };
@@ -486,9 +521,17 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
                 <SimpleSelect
                   value={(form.category as any) || ''}
                   onChange={(v) => handleChange('category', v)}
-                  options={categoryOptions as readonly string[]}
-                  placeholder="Select Category"
+                  options={categoryOptions.map(cat => cat.name) as readonly string[]}
+                  placeholder={categoriesLoading ? 'Loading categories...' : 'Select Category'}
                 />
+                {categoriesError && (
+                  <p className="text-red-500 text-sm">{categoriesError}</p>
+                )}
+                {!categoriesLoading && !categoriesError && categoryOptions.length === 0 && (
+                  <p className="text-zinc-500 text-sm">
+                    No categories found. Add categories first from the category management page.
+                  </p>
+                )}
               </div>
 
               <div className="w-full flex flex-col gap-2.5">
