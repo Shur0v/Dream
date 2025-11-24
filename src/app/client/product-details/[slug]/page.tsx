@@ -177,7 +177,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
       </section>
 
       {/* Related Product Section */}
-      <RelatedProduct />
+      <RelatedProduct currentProduct={{ id: product.id, tags: product.tags }} />
 
       {/* Shop Instagram Section */}
       <ShopInstagram />
