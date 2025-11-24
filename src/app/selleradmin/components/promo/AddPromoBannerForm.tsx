@@ -1,24 +1,19 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Upload, X, Plus, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
-
-interface PromoBanner {
-  id: number;
-  image: string;
-  title: string;
-  subtitle: string;
-  initialTime: { days: number; hours: number; minutes: number; seconds: number };
-}
+import { PromoBanner, PromoBannerVariant } from '@/types';
 
 interface AddPromoBannerFormProps {
   onBack?: () => void;
   onSave?: (data: PromoBanner[]) => void;
-  onDelete?: (id: number) => void;
+  onDelete?: (id: string) => void;
 }
+
+const SLIDER_VARIANT: PromoBannerVariant = 'slider';
 
 export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddPromoBannerFormProps) {
   const router = useRouter();
@@ -31,41 +26,37 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
   const [seconds, setSeconds] = useState(0);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleteTargetName, setDeleteTargetName] = useState<string>('');
   const [isVisible, setIsVisible] = useState(true);
+  const [banners, setBanners] = useState<PromoBanner[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Existing banners
-  const [banners, setBanners] = useState<PromoBanner[]>([
-    {
-      id: 1,
-      image: '/promoslider/slider1.png',
-      title: 'Flat 30% OFF on Headphones & Accessories',
-      subtitle: "Don't miss out on today's exclusive deal.",
-      initialTime: { days: 18, hours: 19, minutes: 18, seconds: 45 }
-    },
-    {
-      id: 2,
-      image: '/promoslider/slider2.png',
-      title: 'Save 40% on Smart Watches',
-      subtitle: 'Limited time offer ends soon.',
-      initialTime: { days: 5, hours: 12, minutes: 0, seconds: 0 }
-    },
-    {
-      id: 3,
-      image: '/promoslider/slider3.png',
-      title: 'Mega Sale: Bluetooth Speakers',
-      subtitle: 'Grab premium sound at low prices.',
-      initialTime: { days: 2, hours: 6, minutes: 30, seconds: 10 }
-    },
-    {
-      id: 4,
-      image: '/promoslider/slider4.png',
-      title: 'Exclusive Deals on Gaming Gear',
-      subtitle: 'Upgrade your setup today.',
-      initialTime: { days: 10, hours: 0, minutes: 45, seconds: 20 }
+  const fetchBanners = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/promo-banners?includeInactive=true&variant=${SLIDER_VARIANT}`);
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to load promo banners');
+      }
+      const data: PromoBanner[] = Array.isArray(result.data) ? result.data : [];
+      setBanners(data);
+      setIsVisible(data.some(banner => banner.isActive));
+      onSave?.(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load promo banners');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  }, [onSave]);
+
+  useEffect(() => {
+    fetchBanners();
+  }, [fetchBanners]);
 
   const handleChooseFile = () => fileRef.current?.click();
 
@@ -82,41 +73,107 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
     handleFiles(e.dataTransfer.files);
   };
 
-  const handleConfirm = () => {
-    if (title.trim() && subtitle.trim() && image) {
-      const newBanner: PromoBanner = {
-        id: Math.max(...banners.map(b => b.id), 0) + 1,
-        image: image,
-        title: title.trim(),
-        subtitle: subtitle.trim(),
-        initialTime: { days, hours, minutes, seconds }
-      };
-      setBanners((prev) => [newBanner, ...prev]);
-      onSave?.(banners);
-      
-      // Reset form
-      setTitle('');
-      setSubtitle('');
-      setImage(null);
-      setDays(0);
-      setHours(0);
-      setMinutes(0);
-      setSeconds(0);
+  const handleVisibilityToggle = async () => {
+    if (!banners.length) {
+      setIsVisible(prev => !prev);
+      return;
+    }
+
+    const nextState = !isVisible;
+    setIsVisible(nextState);
+    try {
+      await Promise.all(
+        banners.map((banner) =>
+          fetch(`/api/promo-banners/${banner.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ isActive: nextState }),
+          })
+        )
+      );
+      await fetchBanners();
+    } catch (err) {
+      setIsVisible(!nextState);
+      setError(err instanceof Error ? err.message : 'Failed to update visibility');
     }
   };
 
-  const handleDeleteClick = (id: number, title: string) => {
+  const resetFormFields = () => {
+    setTitle('');
+    setSubtitle('');
+    setImage(null);
+    setDays(0);
+    setHours(0);
+    setMinutes(0);
+    setSeconds(0);
+  };
+
+  const handleConfirm = async () => {
+    if (!canConfirm || !image) {
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    try {
+      const payload = {
+        title: title.trim(),
+        subtitle: subtitle.trim(),
+        image,
+        initialTime: { days, hours, minutes, seconds },
+        variant: SLIDER_VARIANT,
+        isActive: true,
+      };
+
+      const response = await fetch('/api/promo-banners', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to save promo banner');
+      }
+
+      await fetchBanners();
+      resetFormFields();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to save promo banner');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteClick = (id: string, title: string) => {
     setDeleteTargetId(id);
     setDeleteTargetName(title);
     setDeleteModalOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
-    if (deleteTargetId !== null) {
-      setBanners((prev) => prev.filter((b) => b.id !== deleteTargetId));
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/promo-banners/${deleteTargetId}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to delete promo banner');
+      }
       onDelete?.(deleteTargetId);
+      await fetchBanners();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to delete promo banner');
+    } finally {
       setDeleteTargetId(null);
       setDeleteTargetName('');
+      setDeleteModalOpen(false);
     }
   };
 
@@ -136,7 +193,7 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
           </span>
           <button
             type="button"
-            onClick={() => setIsVisible(!isVisible)}
+            onClick={handleVisibilityToggle}
             className={cn(
               'relative inline-flex h-8 w-[60px] items-center rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:ring-offset-2 shadow-inner',
               isVisible ? 'bg-fuchsia-500' : 'bg-gray-300'
@@ -175,6 +232,12 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
           </div>
         </div>
       </div>
+
+      {error && (
+        <div className="w-full p-3 rounded-lg bg-red-50 text-red-600 text-sm font-medium">
+          {error}
+        </div>
+      )}
 
       {/* Form Grid */}
       <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-7">
@@ -312,58 +375,78 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
         <button
           type="button"
           onClick={handleConfirm}
-          disabled={!canConfirm}
-          className={cn('h-12 px-6 py-3 rounded bg-fuchsia-500 text-white font-medium', !canConfirm && 'opacity-60 cursor-not-allowed')}
+          disabled={!canConfirm || saving}
+          className={cn(
+            'h-12 px-6 py-3 rounded bg-fuchsia-500 text-white font-medium transition-opacity',
+            (!canConfirm || saving) && 'opacity-60 cursor-not-allowed'
+          )}
         >
-          Confirm
+          {saving ? 'Saving...' : 'Confirm'}
         </button>
       </div>
 
       {/* Existing Banners Section */}
-      {banners.length > 0 && (
-        <div className="w-full flex flex-col gap-4">
+      <div className="w-full flex flex-col gap-4">
+        <div className="flex items-center justify-between">
           <h3 className="text-slate-950 text-xl md:text-2xl font-medium font-['Poppins']">Existing Promo Banners</h3>
+          {!loading && (
+            <span className="text-sm text-zinc-500 font-medium">
+              {banners.filter(banner => banner.isActive).length} active / {banners.length} total
+            </span>
+          )}
+        </div>
+
+        {loading ? (
+          <div className="w-full p-4 bg-white rounded-lg border border-dashed border-neutral-200 text-center text-zinc-500">
+            Loading promo banners...
+          </div>
+        ) : banners.length === 0 ? (
+          <div className="w-full p-4 bg-white rounded-lg border border-dashed border-neutral-200 text-center text-zinc-500">
+            No promo banners yet. Add your first banner above.
+          </div>
+        ) : (
           <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {banners.map((banner) => (
-              <div
-                key={banner.id}
-                className="relative group p-4 bg-white rounded-xl border border-gray-200 flex flex-col gap-3 hover:shadow-lg transition-all duration-300"
-              >
-                {/* Delete Button */}
-                <button
-                  type="button"
-                  onClick={() => handleDeleteClick(banner.id, banner.title)}
-                  className="absolute top-2 right-2 z-10 p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                  aria-label={`Delete ${banner.title}`}
+            {banners.map((banner) => {
+              const countdown = banner.initialTime || { days: 0, hours: 0, minutes: 0, seconds: 0 };
+              return (
+                <div
+                  key={banner.id}
+                  className="relative group p-4 bg-white rounded-xl border border-gray-200 flex flex-col gap-3 hover:shadow-lg transition-all duration-300"
                 >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteClick(banner.id, banner.title)}
+                    className="absolute top-2 right-2 z-10 p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                    aria-label={`Delete ${banner.title}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
 
-                {/* Banner Image */}
-                <img
-                  className="w-full h-32 rounded-lg object-cover"
-                  src={banner.image}
-                  alt={banner.title}
-                  loading="lazy"
-                />
+                  <img
+                    className="w-full h-32 rounded-lg object-cover"
+                    src={banner.image}
+                    alt={banner.title}
+                    loading="lazy"
+                  />
 
-                {/* Banner Info */}
-                <div className="flex flex-col gap-1">
-                  <div className="text-black text-sm font-semibold font-['Poppins'] line-clamp-2">
-                    {banner.title}
-                  </div>
-                  <div className="text-zinc-600 text-xs font-normal font-['Poppins'] line-clamp-1">
-                    {banner.subtitle}
-                  </div>
-                  <div className="text-zinc-500 text-xs font-mono font-['Poppins'] mt-1">
-                    {banner.initialTime.days}d {banner.initialTime.hours}h {banner.initialTime.minutes}m {banner.initialTime.seconds}s
+                  <div className="flex flex-col gap-1">
+                    <div className="text-black text-sm font-semibold font-['Poppins'] line-clamp-2">
+                      {banner.title}
+                    </div>
+                    <div className="text-zinc-600 text-xs font-normal font-['Poppins'] line-clamp-2">
+                      {banner.subtitle || '—'}
+                    </div>
+                    <div className="text-zinc-500 text-xs font-mono font-['Poppins'] mt-1">
+                      {countdown.days}d {countdown.hours}h {countdown.minutes}m {countdown.seconds}s
+                      {!banner.isActive && <span className="ml-2 text-red-500 font-semibold">Hidden</span>}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal

@@ -148,6 +148,35 @@ export interface HeroBanner {
   updatedAt: string;
 }
 
+export type PromoBannerVariant = 'slider' | 'card';
+
+export interface PromoBannerCountdown {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+}
+
+// Promo Banner Interface (shared between slider + discount layouts)
+export interface PromoBanner {
+  id: string;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  startingBidLabel?: string;
+  priceText?: string;
+  image: string;
+  backgroundImage?: string;
+  ctaLabel?: string;
+  ctaLink?: string;
+  initialTime: PromoBannerCountdown;
+  variant: PromoBannerVariant;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface OrderProductSnapshot extends Partial<Product> {
   id: string;
   name: string;

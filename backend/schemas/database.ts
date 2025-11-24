@@ -15,6 +15,13 @@ const TimestampSchema = z
   .or(z.literal(''))
   .default(() => new Date().toISOString());
 
+const CountdownSchema = z.object({
+    days: z.number().int().nonnegative().default(0),
+    hours: z.number().int().min(0).max(23).default(0),
+    minutes: z.number().int().min(0).max(59).default(0),
+    seconds: z.number().int().min(0).max(59).default(0),
+  });
+
 const ColorSchema = z.object({
     id: z.string().min(1),
     name: z.string().min(1),
@@ -127,6 +134,30 @@ const HeroBannerSchema = z.object({
     updatedAt: TimestampSchema,
   });
 
+const PromoBannerSchema = z.object({
+    id: z.string().min(1),
+    title: z.string().min(1),
+    subtitle: z.string().default(''),
+    description: z.string().optional(),
+    startingBidLabel: z.string().optional(),
+    priceText: z.string().optional(),
+    image: z.string().min(1),
+    backgroundImage: z.string().optional(),
+    ctaLabel: z.string().optional(),
+    ctaLink: z.string().optional(),
+    initialTime: CountdownSchema.default({
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      seconds: 0,
+    }),
+    variant: z.enum(['slider', 'card']).default('slider'),
+    order: z.number().int().nonnegative().default(0),
+    isActive: z.boolean().default(true),
+    createdAt: TimestampSchema,
+    updatedAt: TimestampSchema,
+  });
+
   const MinimalProductSnapshotSchema = z.object({
     id: z.string(),
     name: z.string().default(''),
@@ -208,6 +239,7 @@ export const DatabaseSchema = z.object({
   featuredProducts: z.array(FeaturedProductSchema).default([]),
   bestSellingProducts: z.array(BestSellingProductSchema).default([]),
   heroBanners: z.array(HeroBannerSchema).default([]),
+  promoBanners: z.array(PromoBannerSchema).default([]),
 });
 
 export type DatabaseShape = z.infer<typeof DatabaseSchema>;

@@ -1,46 +1,75 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { PromoBanner } from '@/types';
+
+const getInitialCountdown = (banner?: PromoBanner) => ({
+  days: banner?.initialTime?.days ?? 0,
+  hours: banner?.initialTime?.hours ?? 0,
+  minutes: banner?.initialTime?.minutes ?? 0,
+  seconds: banner?.initialTime?.seconds ?? 0,
+});
 
 /**
  * Discount Promo Component
  * Displays promotional banners with slider functionality and countdown timers
  */
 export default function DiscountPromo() {
-  const banners = [
-    {
-      id: 1,
-      title: "Apple Powerbank Aluminum Case",
-      startingBid: "Starting bid:",
-      price: "$849.00",
-      backgroundImage: "/promobanner/img1.png",
-      alt: "Powerbank",
-      initialTime: { days: 118, hours: 8, minutes: 18, seconds: 58 }
-    },
-    {
-      id: 2,
-      title: "Samsung Galaxy S24 Ultra Pro",
-      startingBid: "Starting bid:",
-      price: "$1,299.00",
-      backgroundImage: "/promobanner/img2.png",
-      alt: "Smartphone",
-      initialTime: { days: 45, hours: 12, minutes: 30, seconds: 15 }
-    }
-  ];
-
+  const [banners, setBanners] = useState<PromoBanner[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [timeLefts, setTimeLefts] = useState(
-    banners.map(b => ({ ...b.initialTime }))
-  );
+  const [timeLefts, setTimeLefts] = useState<Array<PromoBanner['initialTime']>>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Auto-slide only on mobile (hidden on lg screens)
   useEffect(() => {
+    let active = true;
+    const loadBanners = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/promo-banners?variant=card&limit=2');
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Failed to load discount promo banners');
+        }
+        const data: PromoBanner[] = Array.isArray(result.data) ? result.data : [];
+        const limited = data.slice(0, 2);
+        if (active) {
+          setBanners(limited);
+          setTimeLefts(limited.map(banner => getInitialCountdown(banner)));
+          setCurrentSlide(0);
+          setError(null);
+        }
+      } catch (err) {
+        if (active) {
+          setError(err instanceof Error ? err.message : 'Unable to load discount promo banners');
+          setBanners([]);
+          setTimeLefts([]);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadBanners();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Auto-slide only on mobile (hidden on lg screens)
+  useEffect(() => {
+    if (banners.length <= 1) {
+      return;
+    }
     const slideTimer = setInterval(() => {
       setCurrentSlide(prev => (prev + 1) % banners.length);
     }, 5000);
 
     return () => clearInterval(slideTimer);
-  }, []);
+  }, [banners.length]);
 
   const decrementTime = (
     value: { days: number; hours: number; minutes: number; seconds: number },
@@ -70,24 +99,28 @@ export default function DiscountPromo() {
 
   // Update all timers simultaneously
   useEffect(() => {
+    if (!banners.length) {
+      return;
+    }
     const timer = setInterval(() => {
       setTimeLefts(prev => {
-        return prev.map((timeLeft, index) => 
-          decrementTime(timeLeft, banners[index].initialTime)
-        );
+        return prev.map((timeLeft, index) => {
+          const fallback = getInitialCountdown(banners[index]);
+          return decrementTime(timeLeft || fallback, fallback);
+        });
       });
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [banners]);
 
   const formatTime = (value: number) => {
     return value.toString().padStart(2, '0');
   };
 
   // Render banner card component
-  const renderBannerCard = (banner: typeof banners[0], index: number) => {
-    const timeLeft = timeLefts[index];
+  const renderBannerCard = (banner: PromoBanner, index: number) => {
+    const timeLeft = timeLefts[index] || getInitialCountdown(banner);
     
     return (
       <div
@@ -103,8 +136,8 @@ export default function DiscountPromo() {
         <div className="layer-4 absolute inset-0 z-0 rounded-xl overflow-hidden" data-layer="4">
           {/* layer-4 = background image container */}
           <img 
-            src={banner.backgroundImage} 
-            alt={`${banner.title} promotional product`} 
+            src={banner.backgroundImage || banner.image || '/placeholder-image.png'} 
+            alt={`${banner.title || 'promo banner'} promotional product`} 
             className="w-full h-full object-cover"
             loading="lazy"
           />
@@ -125,7 +158,7 @@ export default function DiscountPromo() {
               data-layer="7"
             >
               {/* layer-7 = banner title */}
-              {banner.title}
+              {banner.title || 'Promotional Deal'}
             </div>
             
             <div className="layer-8 self-stretch flex flex-col justify-start items-start gap-0.5 sm:gap-1 md:gap-1" data-layer="8">
@@ -133,12 +166,12 @@ export default function DiscountPromo() {
               
               <div className="layer-9 self-stretch justify-start text-red-500 text-xs sm:text-sm md:text-base font-semibold font-['Poppins'] leading-5 sm:leading-6 md:leading-7" data-layer="9">
                 {/* layer-9 = starting bid label */}
-                {banner.startingBid}
+                {banner.startingBidLabel || 'Starting bid:'}
               </div>
               
               <div className="layer-10 self-stretch justify-start text-white text-lg sm:text-2xl md:text-3xl font-semibold font-['Poppins']" data-layer="10">
                 {/* layer-10 = price display */}
-                {banner.price}
+                {banner.priceText || '$0.00'}
               </div>
             </div>
             
@@ -269,6 +302,10 @@ export default function DiscountPromo() {
     );
   };
 
+  const displayedBanners = banners.slice(0, 2);
+  const desktopJustify = displayedBanners.length === 1 ? 'justify-center' : 'justify-start';
+  const mobileSlideIndex = displayedBanners.length ? currentSlide % displayedBanners.length : 0;
+
   return (
     <section className="father w-full py-2.5 sm:py-4 md:py-8 bg-white" role="region" aria-labelledby="discount-promo-heading" data-layer="father">
       {/* father = full width discount promo section */}
@@ -286,36 +323,49 @@ export default function DiscountPromo() {
             {/* Mobile: Show only current slide, Desktop: Show all cards */}
             <div className="md:hidden w-full flex flex-col justify-center items-center gap-6">
               {/* Mobile Slider */}
-              {renderBannerCard(banners[currentSlide], currentSlide)}
+              {displayedBanners.length === 0 ? (
+                <div className="w-full p-6 text-center text-zinc-500">
+                  {loading ? 'Loading discount promo banners...' : error || 'No discount promo banners available right now.'}
+                </div>
+              ) : (
+                renderBannerCard(displayedBanners[mobileSlideIndex], mobileSlideIndex)
+              )}
               
               {/* Pagination Dots - Mobile Only */}
-              <div className="layer-20 h-2 inline-flex justify-start items-center gap-2" role="tablist" aria-label="Discount promo navigation" data-layer="20">
-                {/* layer-20 = pagination dots container */}
-                {banners.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`h-2 rounded-[10px] transition-all duration-300 ease-in-out ${
-                      currentSlide === index
-                        ? 'w-12 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500'
-                        : index === 1
-                        ? 'w-5 bg-neutral-200'
-                        : index === 2
-                        ? 'w-3.5 bg-neutral-200'
-                        : 'w-2.5 bg-neutral-200'
-                    }`}
-                    role="tab"
-                    aria-selected={currentSlide === index}
-                    aria-label={`Go to slide ${index + 1}`}
-                    aria-controls={`discount-promo-slide-${index}`}
-                  />
-                ))}
-              </div>
+              {displayedBanners.length > 1 && (
+                <div className="layer-20 h-2 inline-flex justify-start items-center gap-2" role="tablist" aria-label="Discount promo navigation" data-layer="20">
+                  {displayedBanners.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentSlide(index)}
+                      className={`h-2 rounded-[10px] transition-all duration-300 ease-in-out ${
+                        mobileSlideIndex === index
+                          ? 'w-12 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500'
+                          : index === 1
+                          ? 'w-5 bg-neutral-200'
+                          : index === 2
+                          ? 'w-3.5 bg-neutral-200'
+                          : 'w-2.5 bg-neutral-200'
+                      }`}
+                      role="tab"
+                      aria-selected={mobileSlideIndex === index}
+                      aria-label={`Go to slide ${index + 1}`}
+                      aria-controls={`discount-promo-slide-${index}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
             
             {/* Desktop: Show both cards side by side */}
-            <div className="hidden md:flex w-full justify-start items-stretch gap-6">
-              {banners.map((banner, index) => renderBannerCard(banner, index))}
+            <div className={`hidden md:flex w-full ${desktopJustify} items-stretch gap-6`}>
+              {displayedBanners.length === 0 ? (
+                <div className="w-full p-6 bg-white rounded-xl border border-dashed border-neutral-200 text-center text-zinc-500">
+                  {loading ? 'Loading discount promo banners...' : error || 'No discount promo banners available right now.'}
+                </div>
+              ) : (
+                displayedBanners.map((banner, index) => renderBannerCard(banner, index))
+              )}
             </div>
           </div>
         </div>

@@ -1,26 +1,19 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Upload, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
-
-interface DiscountPromoBanner {
-  id: number;
-  title: string;
-  startingBid: string;
-  price: string;
-  backgroundImage: string;
-  alt: string;
-  initialTime: { days: number; hours: number; minutes: number; seconds: number };
-}
+import { PromoBanner, PromoBannerVariant } from '@/types';
 
 interface AddDiscountPromoFormProps {
   onBack?: () => void;
-  onSave?: (data: DiscountPromoBanner[]) => void;
-  onDelete?: (id: number) => void;
+  onSave?: (data: PromoBanner[]) => void;
+  onDelete?: (id: string) => void;
 }
+
+const CARD_VARIANT: PromoBannerVariant = 'card';
 
 export default function AddDiscountPromoForm({ onBack, onSave, onDelete }: AddDiscountPromoFormProps) {
   const router = useRouter();
@@ -34,31 +27,37 @@ export default function AddDiscountPromoForm({ onBack, onSave, onDelete }: AddDi
   const [seconds, setSeconds] = useState(0);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleteTargetName, setDeleteTargetName] = useState<string>('');
   const [isVisible, setIsVisible] = useState(true);
+  const [banners, setBanners] = useState<PromoBanner[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Existing banners
-  const [banners, setBanners] = useState<DiscountPromoBanner[]>([
-    {
-      id: 1,
-      title: "Apple Powerbank Aluminum Case",
-      startingBid: "Starting bid:",
-      price: "$849.00",
-      backgroundImage: "/promobanner/img1.png",
-      alt: "Powerbank",
-      initialTime: { days: 118, hours: 8, minutes: 18, seconds: 58 }
-    },
-    {
-      id: 2,
-      title: "Samsung Galaxy S24 Ultra Pro",
-      startingBid: "Starting bid:",
-      price: "$1,299.00",
-      backgroundImage: "/promobanner/img2.png",
-      alt: "Smartphone",
-      initialTime: { days: 45, hours: 12, minutes: 30, seconds: 15 }
+  const fetchBanners = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/promo-banners?includeInactive=true&variant=${CARD_VARIANT}`);
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to load discount promo banners');
+      }
+      const data: PromoBanner[] = Array.isArray(result.data) ? result.data : [];
+      setBanners(data);
+      setIsVisible(data.some(banner => banner.isActive));
+      onSave?.(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load discount promo banners');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  }, [onSave]);
+
+  useEffect(() => {
+    fetchBanners();
+  }, [fetchBanners]);
 
   const handleChooseFile = () => fileRef.current?.click();
 
@@ -75,44 +74,108 @@ export default function AddDiscountPromoForm({ onBack, onSave, onDelete }: AddDi
     handleFiles(e.dataTransfer.files);
   };
 
-  const handleConfirm = () => {
-    if (title.trim() && price.trim() && image) {
-      const newBanner: DiscountPromoBanner = {
-        id: Math.max(...banners.map(b => b.id), 0) + 1,
-        title: title.trim(),
-        startingBid: startingBid.trim(),
-        price: price.trim(),
-        backgroundImage: image,
-        alt: title.trim().toLowerCase().replace(/\s+/g, '-'),
-        initialTime: { days, hours, minutes, seconds }
-      };
-      setBanners((prev) => [newBanner, ...prev]);
-      onSave?.(banners);
-      
-      // Reset form
-      setTitle('');
-      setStartingBid('Starting bid:');
-      setPrice('');
-      setImage(null);
-      setDays(0);
-      setHours(0);
-      setMinutes(0);
-      setSeconds(0);
+  const handleVisibilityToggle = async () => {
+    if (!banners.length) {
+      setIsVisible(prev => !prev);
+      return;
+    }
+
+    const nextState = !isVisible;
+    setIsVisible(nextState);
+    try {
+      await Promise.all(
+        banners.map((banner) =>
+          fetch(`/api/promo-banners/${banner.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ isActive: nextState }),
+          })
+        )
+      );
+      await fetchBanners();
+    } catch (err) {
+      setIsVisible(!nextState);
+      setError(err instanceof Error ? err.message : 'Failed to update visibility');
     }
   };
 
-  const handleDeleteClick = (id: number, title: string) => {
+  const resetFormFields = () => {
+    setTitle('');
+    setStartingBid('Starting bid:');
+    setPrice('');
+    setImage(null);
+    setDays(0);
+    setHours(0);
+    setMinutes(0);
+    setSeconds(0);
+  };
+
+  const handleConfirm = async () => {
+    if (!canConfirm || !image) {
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    try {
+      const payload = {
+        title: title.trim(),
+        startingBidLabel: startingBid.trim(),
+        priceText: price.trim(),
+        image,
+        backgroundImage: image,
+        initialTime: { days, hours, minutes, seconds },
+        variant: CARD_VARIANT,
+        isActive: true,
+      };
+
+      const response = await fetch('/api/promo-banners', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to save discount promo banner');
+      }
+
+      await fetchBanners();
+      resetFormFields();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to save discount promo banner');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteClick = (id: string, title: string) => {
     setDeleteTargetId(id);
     setDeleteTargetName(title);
     setDeleteModalOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
-    if (deleteTargetId !== null) {
-      setBanners((prev) => prev.filter((b) => b.id !== deleteTargetId));
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/promo-banners/${deleteTargetId}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to delete discount promo banner');
+      }
       onDelete?.(deleteTargetId);
+      await fetchBanners();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to delete discount promo banner');
+    } finally {
       setDeleteTargetId(null);
       setDeleteTargetName('');
+      setDeleteModalOpen(false);
     }
   };
 
@@ -132,7 +195,7 @@ export default function AddDiscountPromoForm({ onBack, onSave, onDelete }: AddDi
           </span>
           <button
             type="button"
-            onClick={() => setIsVisible(!isVisible)}
+            onClick={handleVisibilityToggle}
             className={cn(
               'relative inline-flex h-8 w-[60px] items-center rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:ring-offset-2 shadow-inner',
               isVisible ? 'bg-fuchsia-500' : 'bg-gray-300'
@@ -153,6 +216,12 @@ export default function AddDiscountPromoForm({ onBack, onSave, onDelete }: AddDi
           </span>
         </div>
       </div>
+
+      {error && (
+        <div className="w-full p-3 rounded-lg bg-red-50 text-red-600 text-sm font-medium">
+          {error}
+        </div>
+      )}
 
       {/* Page Header */}
       <div className="w-full flex items-center justify-between">
@@ -320,151 +389,126 @@ export default function AddDiscountPromoForm({ onBack, onSave, onDelete }: AddDi
         <button
           type="button"
           onClick={handleConfirm}
-          disabled={!canConfirm}
-          className={cn('h-12 px-6 py-3 rounded bg-fuchsia-500 text-white font-medium', !canConfirm && 'opacity-60 cursor-not-allowed')}
+          disabled={!canConfirm || saving}
+          className={cn(
+            'h-12 px-6 py-3 rounded bg-fuchsia-500 text-white font-medium transition-opacity',
+            (!canConfirm || saving) && 'opacity-60 cursor-not-allowed'
+          )}
         >
-          Confirm
+          {saving ? 'Saving...' : 'Confirm'}
         </button>
       </div>
 
       {/* Existing Banners Section */}
-      {banners.length > 0 && (
-        <div className="w-full flex flex-col gap-4">
+      <div className="w-full flex flex-col gap-4">
+        <div className="flex items-center justify-between">
           <h3 className="text-slate-950 text-xl md:text-2xl font-medium font-['Poppins']">Existing Discount Promo Banners</h3>
+          {!loading && (
+            <span className="text-sm text-zinc-500 font-medium">
+              {banners.filter(banner => banner.isActive).length} active / {banners.length} total
+            </span>
+          )}
+        </div>
+
+        {loading ? (
+          <div className="w-full p-4 bg-white rounded-lg border border-dashed border-neutral-200 text-center text-zinc-500">
+            Loading discount promo banners...
+          </div>
+        ) : banners.length === 0 ? (
+          <div className="w-full p-4 bg-white rounded-lg border border-dashed border-neutral-200 text-center text-zinc-500">
+            No discount promo banners yet. Add your first banner above.
+          </div>
+        ) : (
           <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
-            {banners.map((banner, index) => (
-              <div
-                key={banner.id}
-                className={`relative group w-full ${index === 0 ? 'md:basis-[49%] md:max-w-[648px]' : 'md:basis-[51%] md:max-w-[648px] md:flex-1'} md:min-w-0 aspect-[648/400] bg-black/20 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300`}
-              >
-                {/* Delete Button */}
-                <button
-                  type="button"
-                  onClick={() => handleDeleteClick(banner.id, banner.title)}
-                  className="absolute top-3 right-3 z-20 p-2 bg-red-500 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg"
-                  aria-label={`Delete ${banner.title}`}
+            {banners.map((banner, index) => {
+              const countdown = banner.initialTime || { days: 0, hours: 0, minutes: 0, seconds: 0 };
+              const startingLabel = banner.startingBidLabel || 'Starting bid:';
+              const priceText = banner.priceText || '$0.00';
+              const backgroundImage = banner.backgroundImage || banner.image || '/placeholder-image.png';
+              const altText = banner.title || 'discount promo banner';
+              return (
+                <div
+                  key={banner.id}
+                  className={`relative group w-full ${index === 0 ? 'md:basis-[49%] md:max-w-[648px]' : 'md:basis-[51%] md:max-w-[648px] md:flex-1'} md:min-w-0 aspect-[648/400] bg-black/20 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300`}
                 >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteClick(banner.id, banner.title)}
+                    className="absolute top-3 right-3 z-20 p-2 bg-red-500 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg"
+                    aria-label={`Delete ${banner.title}`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
 
-                {/* Background Image */}
-                <div className="absolute inset-0 z-0 rounded-xl overflow-hidden">
-                  <img
-                    className="w-full h-full object-cover"
-                    src={banner.backgroundImage}
-                    alt={banner.alt}
-                    loading="lazy"
-                  />
-                  {/* Dark Overlay */}
-                  <div className="absolute inset-0 bg-black/15" />
-                </div>
+                  <div className="absolute inset-0 z-0 rounded-xl overflow-hidden">
+                    <img
+                      className="w-full h-full object-cover"
+                      src={backgroundImage}
+                      alt={altText}
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-black/15" />
+                    {!banner.isActive && (
+                      <span className="absolute top-3 left-3 z-20 px-3 py-1 rounded-full bg-white/80 text-red-600 text-xs font-semibold">
+                        Hidden
+                      </span>
+                    )}
+                  </div>
 
-                {/* Content Overlay - Matching Homepage Design */}
-                <div className={`absolute inset-0 z-10 flex flex-col justify-center items-start ${index === 0 ? 'px-4 sm:px-6 md:px-9' : 'px-4 sm:px-6 md:px-[38px]'} ${index === 0 ? 'py-4 sm:py-6 md:py-10' : 'py-4 sm:py-6 md:py-[40px]'} gap-2.5 sm:gap-3.5 md:gap-6`}>
-                  <div className={`w-full ${index === 0 ? 'max-w-[572px]' : 'md:w-[572px]'} flex flex-col justify-start items-start gap-2 sm:gap-2.5 md:gap-3`}>
-                    {/* Title */}
-                    <div className="w-full justify-start text-white text-base sm:text-xl md:text-3xl font-semibold font-['Poppins'] leading-tight sm:leading-7 md:leading-10">
-                      {banner.title}
-                    </div>
-                    
-                    {/* Price Info */}
-                    <div className="self-stretch flex flex-col justify-start items-start gap-0.5 sm:gap-1 md:gap-1">
-                      <div className="self-stretch justify-start text-red-500 text-xs sm:text-sm md:text-base font-semibold font-['Poppins'] leading-5 sm:leading-6 md:leading-7">
-                        {banner.startingBid}
+                  <div className={`absolute inset-0 z-10 flex flex-col justify-center items-start ${index === 0 ? 'px-4 sm:px-6 md:px-9' : 'px-4 sm:px-6 md:px-[38px]'} ${index === 0 ? 'py-4 sm:py-6 md:py-10' : 'py-4 sm:py-6 md:py-[40px]'} gap-2.5 sm:gap-3.5 md:gap-6`}>
+                    <div className={`w-full ${index === 0 ? 'max-w-[572px]' : 'md:w-[572px]'} flex flex-col justify-start items-start gap-2 sm:gap-2.5 md:gap-3`}>
+                      <div className="w-full justify-start text-white text-base sm:text-xl md:text-3xl font-semibold font-['Poppins'] leading-tight sm:leading-7 md:leading-10">
+                        {banner.title || 'Untitled banner'}
                       </div>
-                      <div className="self-stretch justify-start text-white text-lg sm:text-2xl md:text-3xl font-semibold font-['Poppins']">
-                        {banner.price}
+
+                      <div className="self-stretch flex flex-col justify-start items-start gap-0.5 sm:gap-1 md:gap-1">
+                        <div className="self-stretch justify-start text-red-500 text-xs sm:text-sm md:text-base font-semibold font-['Poppins'] leading-5 sm:leading-6 md:leading-7">
+                          {startingLabel}
+                        </div>
+                        <div className="self-stretch justify-start text-white text-lg sm:text-2xl md:text-3xl font-semibold font-['Poppins']">
+                          {priceText}
+                        </div>
                       </div>
-                    </div>
-                    
-                    {/* Countdown Timer */}
-                    <div className="self-stretch flex flex-col justify-start items-start gap-2 sm:gap-2.5 md:gap-4">
-                      <div className="flex flex-col justify-start items-center gap-1 sm:gap-1.5 md:gap-2">
-                        <div className="inline-flex justify-start items-start gap-1 sm:gap-1.5 md:gap-2">
-                          {/* Days */}
-                          <div className="inline-flex flex-col justify-start items-center gap-1 sm:gap-1.5 md:gap-1.5">
-                            <div className="w-10 sm:w-12 md:w-14 inline-flex justify-start items-center gap-0.5 sm:gap-1 md:gap-1.5">
-                              <div className="w-9 h-7 sm:w-10 sm:h-8 md:w-12 md:h-10 p-1 sm:p-1.5 md:p-2.5 bg-white rounded flex justify-center items-center">
-                                <div className="text-center justify-start text-blue-700 text-xs sm:text-sm md:text-lg font-semibold font-['PolySans_Trial']">
-                                  {String(banner.initialTime.days).padStart(2, '0')}
+
+                      <div className="self-stretch flex flex-col justify-start items-start gap-2 sm:gap-2.5 md:gap-4">
+                        <div className="flex flex-col justify-start items-center gap-1 sm:gap-1.5 md:gap-2">
+                          <div className="inline-flex justify-start items-start gap-1 sm:gap-1.5 md:gap-2">
+                            {[
+                              { label: 'DAYS', value: countdown.days },
+                              { label: 'HOURS', value: countdown.hours },
+                              { label: 'MINS', value: countdown.minutes },
+                              { label: 'SECS', value: countdown.seconds },
+                            ].map((unit) => (
+                              <div key={unit.label} className="inline-flex flex-col justify-start items-center gap-1 sm:gap-1.5 md:gap-1.5">
+                                <div className="w-10 sm:w-12 md:w-14 inline-flex justify-start items-center gap-0.5 sm:gap-1 md:gap-1.5">
+                                  <div className="w-9 h-7 sm:w-10 sm:h-8 md:w-12 md:h-10 p-1 sm:p-1.5 md:p-2.5 bg-white rounded flex justify-center items-center">
+                                    <div className="text-center justify-start text-blue-700 text-xs sm:text-sm md:text-lg font-semibold font-['PolySans_Trial']">
+                                      {String(unit.value).padStart(2, '0')}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="justify-start text-white text-[9px] sm:text-[10px] md:text-xs font-medium font-['Poppins']">
+                                  {unit.label}
                                 </div>
                               </div>
-                              <div className="inline-flex flex-col justify-start items-start gap-0.5 sm:gap-1 md:gap-1.5">
-                                <div className="w-0.5 h-0.5 sm:w-0.5 sm:h-0.5 md:w-1 md:h-1 bg-neutral-800 rounded-full" />
-                                <div className="w-0.5 h-0.5 sm:w-0.5 sm:h-0.5 md:w-1 md:h-1 bg-neutral-800 rounded-full" />
-                              </div>
-                            </div>
-                            <div className="justify-start text-white text-[9px] sm:text-[10px] md:text-xs font-medium font-['Poppins']">
-                              DAYS
-                            </div>
-                          </div>
-                          
-                          {/* Hours */}
-                          <div className="inline-flex flex-col justify-start items-center gap-1 sm:gap-1.5 md:gap-1.5">
-                            <div className="w-10 sm:w-12 md:w-14 inline-flex justify-start items-center gap-0.5 sm:gap-1 md:gap-1.5">
-                              <div className="w-9 h-7 sm:w-10 sm:h-8 md:w-12 md:h-10 p-1 sm:p-1.5 md:p-2.5 bg-white rounded flex justify-center items-center">
-                                <div className="text-center justify-start text-blue-700 text-xs sm:text-sm md:text-lg font-semibold font-['PolySans_Trial']">
-                                  {String(banner.initialTime.hours).padStart(2, '0')}
-                                </div>
-                              </div>
-                              <div className="inline-flex flex-col justify-start items-start gap-0.5 sm:gap-1 md:gap-1.5">
-                                <div className="w-0.5 h-0.5 sm:w-0.5 sm:h-0.5 md:w-1 md:h-1 bg-neutral-800 rounded-full" />
-                                <div className="w-0.5 h-0.5 sm:w-0.5 sm:h-0.5 md:w-1 md:h-1 bg-neutral-800 rounded-full" />
-                              </div>
-                            </div>
-                            <div className="justify-start text-white text-[9px] sm:text-[10px] md:text-xs font-medium font-['Poppins']">
-                              HOURS
-                            </div>
-                          </div>
-                          
-                          {/* Minutes */}
-                          <div className="inline-flex flex-col justify-start items-center gap-1 sm:gap-1.5 md:gap-1.5">
-                            <div className="w-10 sm:w-12 md:w-14 inline-flex justify-start items-center gap-0.5 sm:gap-1 md:gap-1.5">
-                              <div className="w-9 h-7 sm:w-10 sm:h-8 md:w-12 md:h-10 p-1 sm:p-1.5 md:p-2.5 bg-white rounded flex justify-center items-center">
-                                <div className="text-center justify-start text-blue-700 text-xs sm:text-sm md:text-lg font-semibold font-['PolySans_Trial']">
-                                  {String(banner.initialTime.minutes).padStart(2, '0')}
-                                </div>
-                              </div>
-                              <div className="inline-flex flex-col justify-start items-start gap-0.5 sm:gap-1 md:gap-1.5">
-                                <div className="w-0.5 h-0.5 sm:w-0.5 sm:h-0.5 md:w-1 md:h-1 bg-neutral-800 rounded-full" />
-                                <div className="w-0.5 h-0.5 sm:w-0.5 sm:h-0.5 md:w-1 md:h-1 bg-neutral-800 rounded-full" />
-                              </div>
-                            </div>
-                            <div className="justify-start text-white text-[9px] sm:text-[10px] md:text-xs font-medium font-['Poppins']">
-                              MINS
-                            </div>
-                          </div>
-                          
-                          {/* Seconds */}
-                          <div className="inline-flex flex-col justify-start items-center gap-1 sm:gap-1.5 md:gap-1.5">
-                            <div className="w-10 sm:w-12 md:w-14 inline-flex justify-start items-center gap-0.5 sm:gap-1 md:gap-1.5">
-                              <div className="w-9 h-7 sm:w-10 sm:h-8 md:w-12 md:h-10 p-1 sm:p-1.5 md:p-2.5 bg-white rounded flex justify-center items-center">
-                                <div className="text-center justify-start text-blue-700 text-xs sm:text-sm md:text-lg font-semibold font-['PolySans_Trial']">
-                                  {String(banner.initialTime.seconds).padStart(2, '0')}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="justify-start text-white text-[9px] sm:text-[10px] md:text-xs font-medium font-['Poppins']">
-                              SECS
-                            </div>
+                            ))}
                           </div>
                         </div>
                       </div>
-                    </div>
-                    
-                    {/* Buy Now Button */}
-                    <div className="h-8 sm:h-9 md:h-11 px-4 sm:px-6 md:px-8 py-1.5 sm:py-2 md:py-3 bg-fuchsia-500 hover:bg-fuchsia-600 rounded-xl inline-flex justify-center items-center cursor-pointer transition-colors duration-300">
-                      <div className="justify-start text-white text-xs sm:text-sm md:text-base font-semibold font-['Poppins'] leading-none">
-                        Buy Now
+
+                      <div className="h-8 sm:h-9 md:h-11 px-4 sm:px-6 md:px-8 py-1.5 sm:py-2 md:py-3 bg-fuchsia-500 hover:bg-fuchsia-600 rounded-xl inline-flex justify-center items-center cursor-pointer transition-colors duration-300">
+                        <div className="text-white text-xs sm:text-sm md:text-base font-semibold font-['Poppins'] leading-none">
+                          Buy Now
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal

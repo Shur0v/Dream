@@ -603,7 +603,7 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
                         className="w-full bg-transparent outline-none text-zinc-900 text-base font-normal font-['Poppins']"
                       />
                     </div>
-                    <div className="h-14 px-5 py-3.5 rounded-md outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex items-center gap-2.5">
+                    <div className="h-14 px-5 py-3.5 rounded-md outline-1 outline-offset-[-1px] outline-gray-200 inline-flex items-center gap-2.5">
                       <input
                         value={specValue}
                         onChange={(e) => setSpecValue(e.target.value)}

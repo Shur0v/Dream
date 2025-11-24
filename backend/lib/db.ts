@@ -11,7 +11,7 @@
  * @version 1.0.0
  */
 
-import { Product, Order, Category, Color, User, FeaturedProduct, BestSellingProduct, HeroBanner } from '@/types';
+import { Product, Order, Category, Color, User, FeaturedProduct, BestSellingProduct, HeroBanner, PromoBanner, PromoBannerVariant } from '@/types';
 import { readJsonStore, writeJsonStore } from '../lib/jsonStore';
 import { DatabaseSchema, DatabaseShape } from '@backend/schemas/database';
 
@@ -730,5 +730,95 @@ export async function deleteHeroBanner(id: string): Promise<HeroBanner | null> {
 export async function getAllHeroBanners(): Promise<HeroBanner[]> {
   const db = await readDatabase();
   return db.heroBanners;
+}
+
+const defaultPromoCountdown = (): PromoBanner['initialTime'] => ({
+  days: 0,
+  hours: 0,
+  minutes: 0,
+  seconds: 0,
+});
+
+type PromoBannerQueryOptions = {
+  includeInactive?: boolean;
+  variant?: PromoBannerVariant;
+  limit?: number;
+};
+
+const sortPromoBanners = (a: PromoBanner, b: PromoBanner) => {
+  if ((a.order ?? 0) !== (b.order ?? 0)) {
+    return (a.order ?? 0) - (b.order ?? 0);
+  }
+  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+};
+
+export async function getPromoBanners(options: PromoBannerQueryOptions = {}): Promise<PromoBanner[]> {
+  const { includeInactive = false, variant, limit } = options;
+  const db = await readDatabase();
+
+  let banners = db.promoBanners;
+  if (!includeInactive) {
+    banners = banners.filter(banner => banner.isActive);
+  }
+  if (variant) {
+    banners = banners.filter(banner => banner.variant === variant);
+  }
+
+  const sorted = [...banners].sort(sortPromoBanners);
+
+  if (limit && limit > 0) {
+    return sorted.slice(0, limit);
+  }
+
+  return sorted;
+}
+
+export async function getPromoBannerById(id: string): Promise<PromoBanner | undefined> {
+  const db = await readDatabase();
+  return db.promoBanners.find(banner => banner.id === id);
+}
+
+export async function savePromoBanner(promoBanner: PromoBanner): Promise<PromoBanner> {
+  const db = await readDatabase();
+  const normalized: PromoBanner = {
+    ...promoBanner,
+    id: promoBanner.id || `promo-${Date.now()}`,
+    initialTime: promoBanner.initialTime ?? defaultPromoCountdown(),
+    variant: promoBanner.variant ?? 'slider',
+    order: typeof promoBanner.order === 'number' ? promoBanner.order : db.promoBanners.length,
+    createdAt: promoBanner.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    isActive: promoBanner.isActive !== undefined ? promoBanner.isActive : true,
+  };
+
+  const index = db.promoBanners.findIndex(banner => banner.id === normalized.id);
+
+  if (index >= 0) {
+    db.promoBanners[index] = {
+      ...db.promoBanners[index],
+      ...normalized,
+      updatedAt: new Date().toISOString(),
+    };
+  } else {
+    db.promoBanners.push(normalized);
+  }
+
+  await writeDatabase(db);
+  return db.promoBanners.find(banner => banner.id === normalized.id) || normalized;
+}
+
+export async function deletePromoBanner(id: string): Promise<PromoBanner | null> {
+  const db = await readDatabase();
+  const banner = db.promoBanners.find(pb => pb.id === id);
+
+  if (!banner) {
+    return null;
+  }
+
+  banner.isActive = false;
+  banner.updatedAt = new Date().toISOString();
+  await writeDatabase(db);
+
+  return banner;
 }
 
