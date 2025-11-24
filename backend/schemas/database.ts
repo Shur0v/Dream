@@ -158,6 +158,25 @@ const PromoBannerSchema = z.object({
     updatedAt: TimestampSchema,
   });
 
+const FestivalCouponSchema = z.object({
+    code: z.string().min(1),
+    amount: z.string().min(1),
+  });
+
+const FestivalBannerSchema = z.object({
+    id: z.string().min(1),
+    title: z.string().min(1),
+    subtitle: z.string().default(''),
+    discount: z.string().min(1),
+    emi: z.string().min(1),
+    image: z.string().min(1),
+    coupons: z.array(FestivalCouponSchema).default([]),
+    order: z.number().int().nonnegative().default(0),
+    isActive: z.boolean().default(true),
+    createdAt: TimestampSchema,
+    updatedAt: TimestampSchema,
+  });
+
   const MinimalProductSnapshotSchema = z.object({
     id: z.string(),
     name: z.string().default(''),
@@ -240,6 +259,7 @@ export const DatabaseSchema = z.object({
   bestSellingProducts: z.array(BestSellingProductSchema).default([]),
   heroBanners: z.array(HeroBannerSchema).default([]),
   promoBanners: z.array(PromoBannerSchema).default([]),
+  festivalBanners: z.array(FestivalBannerSchema).default([]),
 });
 
 export type DatabaseShape = z.infer<typeof DatabaseSchema>;

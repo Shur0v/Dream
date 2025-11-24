@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import ProductCard from '@/components/product/ProductCard';
 import { Product, Category } from '@/types';
 import { fetchCategories as loadCategoriesFromApi } from '@/lib/categories';
+import FestivalBannerSection from '@/app/client/components/FestivalBannerSection';
 
 /**
  * ProductList component for displaying products with filtering and sorting
@@ -218,7 +219,9 @@ export default function ProductList() {
   };
 
   return (
-    <div className="w-full max-w-[1320px] mx-auto px-4 py-8">
+    <>
+      <FestivalBannerSection />
+      <div className="w-full max-w-[1320px] mx-auto px-4 py-8">
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">All Products</h1>
@@ -376,6 +379,7 @@ export default function ProductList() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

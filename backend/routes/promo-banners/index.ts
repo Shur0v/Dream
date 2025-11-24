@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       ctaLink: ctaLink ? String(ctaLink).trim() : undefined,
       initialTime: parseInitialTime(initialTime),
       variant: isVariant(variant) ? variant : 'slider',
-      order: Number.isFinite(order) ? Number(order) : undefined,
+      order: Number.isFinite(order) ? Number(order) : 0,
       isActive: Boolean(isActive),
       createdAt: body.createdAt,
       updatedAt: body.updatedAt,

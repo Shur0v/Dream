@@ -11,7 +11,7 @@
  * @version 1.0.0
  */
 
-import { Product, Order, Category, Color, User, FeaturedProduct, BestSellingProduct, HeroBanner, PromoBanner, PromoBannerVariant } from '@/types';
+import { Product, Order, Category, Color, User, FeaturedProduct, BestSellingProduct, HeroBanner, PromoBanner, PromoBannerVariant, FestivalBanner } from '@/types';
 import { readJsonStore, writeJsonStore } from '../lib/jsonStore';
 import { DatabaseSchema, DatabaseShape } from '@backend/schemas/database';
 
@@ -810,6 +810,94 @@ export async function savePromoBanner(promoBanner: PromoBanner): Promise<PromoBa
 export async function deletePromoBanner(id: string): Promise<PromoBanner | null> {
   const db = await readDatabase();
   const banner = db.promoBanners.find(pb => pb.id === id);
+
+  if (!banner) {
+    return null;
+  }
+
+  banner.isActive = false;
+  banner.updatedAt = new Date().toISOString();
+  await writeDatabase(db);
+
+  return banner;
+}
+
+type FestivalBannerQueryOptions = {
+  includeInactive?: boolean;
+  limit?: number;
+};
+
+const sortFestivalBanners = (a: FestivalBanner, b: FestivalBanner) => {
+  if ((a.order ?? 0) !== (b.order ?? 0)) {
+    return (a.order ?? 0) - (b.order ?? 0);
+  }
+  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+};
+
+const normalizeCoupons = (coupons?: FestivalBanner['coupons']): FestivalBanner['coupons'] => {
+  if (!Array.isArray(coupons)) return [];
+  return coupons
+    .map(coupon => ({
+      code: String(coupon?.code ?? '').trim(),
+      amount: String(coupon?.amount ?? '').trim(),
+    }))
+    .filter(coupon => coupon.code && coupon.amount);
+};
+
+export async function getFestivalBanners(options: FestivalBannerQueryOptions = {}): Promise<FestivalBanner[]> {
+  const { includeInactive = false, limit } = options;
+  const db = await readDatabase();
+
+  let banners = db.festivalBanners;
+  if (!includeInactive) {
+    banners = banners.filter(banner => banner.isActive);
+  }
+
+  const sorted = [...banners].sort(sortFestivalBanners);
+  if (limit && limit > 0) {
+    return sorted.slice(0, limit);
+  }
+
+  return sorted;
+}
+
+export async function getFestivalBannerById(id: string): Promise<FestivalBanner | undefined> {
+  const db = await readDatabase();
+  return db.festivalBanners.find(banner => banner.id === id);
+}
+
+export async function saveFestivalBanner(banner: FestivalBanner): Promise<FestivalBanner> {
+  const db = await readDatabase();
+  const normalized: FestivalBanner = {
+    ...banner,
+    id: banner.id || `festival-${Date.now()}`,
+    coupons: normalizeCoupons(banner.coupons),
+    order: typeof banner.order === 'number' ? banner.order : db.festivalBanners.length,
+    createdAt: banner.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    isActive: banner.isActive !== undefined ? banner.isActive : true,
+  };
+
+  const index = db.festivalBanners.findIndex(item => item.id === normalized.id);
+
+  if (index >= 0) {
+    db.festivalBanners[index] = {
+      ...db.festivalBanners[index],
+      ...normalized,
+      coupons: normalizeCoupons(normalized.coupons),
+      updatedAt: new Date().toISOString(),
+    };
+  } else {
+    db.festivalBanners.push(normalized);
+  }
+
+  await writeDatabase(db);
+  return db.festivalBanners.find(item => item.id === normalized.id) || normalized;
+}
+
+export async function deleteFestivalBanner(id: string): Promise<FestivalBanner | null> {
+  const db = await readDatabase();
+  const banner = db.festivalBanners.find(item => item.id === id);
 
   if (!banner) {
     return null;

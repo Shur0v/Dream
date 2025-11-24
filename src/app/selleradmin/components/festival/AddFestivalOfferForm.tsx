@@ -1,30 +1,21 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Upload, Trash2, Plus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
+import { FestivalBanner } from '@/types';
 
 interface Coupon {
   code: string;
   amount: string;
 }
 
-interface FestivalBanner {
-  id: number;
-  image: string;
-  title: string;
-  subtitle: string;
-  discount: string;
-  emi: string;
-  coupons: Coupon[];
-}
-
 interface AddFestivalOfferFormProps {
   onBack?: () => void;
   onSave?: (data: FestivalBanner[]) => void;
-  onDelete?: (id: number) => void;
+  onDelete?: (id: string) => void;
 }
 
 export default function AddFestivalOfferForm({ onBack, onSave, onDelete }: AddFestivalOfferFormProps) {
@@ -38,63 +29,14 @@ export default function AddFestivalOfferForm({ onBack, onSave, onDelete }: AddFe
   const [couponAmount, setCouponAmount] = useState('');
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleteTargetName, setDeleteTargetName] = useState<string>('');
   const [isVisible, setIsVisible] = useState(true);
-
-  // Existing banners
-  const [banners, setBanners] = useState<FestivalBanner[]>([
-    {
-      id: 1,
-      image: '/promoslider/slider1.png',
-      title: 'শারদায় শপিং ফেস্ট',
-      subtitle: 'ELECTRONIC & APPLIANCES',
-      discount: '50% OFF',
-      emi: '0% EMI AVAILABLE',
-      coupons: [
-        { code: 'puja5', amount: '1000TK*' },
-        { code: 'puja7', amount: '2500TK*' }
-      ]
-    },
-    {
-      id: 2,
-      image: '/promoslider/slider2.png',
-      title: 'শারদায় শপিং ফেস্ট',
-      subtitle: 'ELECTRONIC & APPLIANCES',
-      discount: '40% OFF',
-      emi: '0% EMI AVAILABLE',
-      coupons: [
-        { code: 'puja5', amount: '1000TK*' },
-        { code: 'puja7', amount: '2500TK*' }
-      ]
-    },
-    {
-      id: 3,
-      image: '/promoslider/slider3.png',
-      title: 'শারদায় শপিং ফেস্ট',
-      subtitle: 'ELECTRONIC & APPLIANCES',
-      discount: '60% OFF',
-      emi: '0% EMI AVAILABLE',
-      coupons: [
-        { code: 'puja5', amount: '1000TK*' },
-        { code: 'puja7', amount: '2500TK*' }
-      ]
-    },
-    {
-      id: 4,
-      image: '/promoslider/slider4.png',
-      title: 'শারদায় শপিং ফেস্ট',
-      subtitle: 'ELECTRONIC & APPLIANCES',
-      discount: '35% OFF',
-      emi: '0% EMI AVAILABLE',
-      coupons: [
-        { code: 'puja5', amount: '1000TK*' },
-        { code: 'puja7', amount: '2500TK*' }
-      ]
-    }
-  ]);
-
+  const [banners, setBanners] = useState<FestivalBanner[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleChooseFile = () => fileRef.current?.click();
 
@@ -123,44 +65,135 @@ export default function AddFestivalOfferForm({ onBack, onSave, onDelete }: AddFe
     setCoupons((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleConfirm = () => {
-    if (title.trim() && subtitle.trim() && discount.trim() && emi.trim() && image && coupons.length > 0) {
-      const newBanner: FestivalBanner = {
-        id: Math.max(...banners.map(b => b.id), 0) + 1,
-        image: image,
+  const fetchBanners = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/festival-banners?includeInactive=true');
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to load festival banners');
+      }
+
+      const data: FestivalBanner[] = Array.isArray(result.data) ? result.data : [];
+      setBanners(data);
+      setIsVisible(data.some((banner) => banner.isActive));
+      onSave?.(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load festival banners');
+      setBanners([]);
+      setIsVisible(false);
+    } finally {
+      setLoading(false);
+    }
+  }, [onSave]);
+
+  useEffect(() => {
+    fetchBanners();
+  }, [fetchBanners]);
+
+  const resetFormFields = () => {
+    setTitle('');
+    setSubtitle('');
+    setDiscount('');
+    setEmi('');
+    setImage(null);
+    setCoupons([]);
+    setCouponCode('');
+    setCouponAmount('');
+  };
+
+  const handleVisibilityToggle = async () => {
+    if (!banners.length) {
+      setIsVisible((prev) => !prev);
+      return;
+    }
+
+    const nextState = !isVisible;
+    setIsVisible(nextState);
+    try {
+      await Promise.all(
+        banners.map((banner) =>
+          fetch(`/api/festival-banners/${banner.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ isActive: nextState }),
+          })
+        )
+      );
+      await fetchBanners();
+    } catch (err) {
+      setIsVisible(!nextState);
+      setError(err instanceof Error ? err.message : 'Failed to update visibility');
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (!canConfirm || !image) {
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+    try {
+      const payload = {
         title: title.trim(),
         subtitle: subtitle.trim(),
         discount: discount.trim(),
         emi: emi.trim(),
-        coupons: [...coupons]
+        image,
+        coupons,
+        order: banners.length,
+        isActive: true,
       };
-      setBanners((prev) => [newBanner, ...prev]);
-      onSave?.(banners);
-      
-      // Reset form
-      setTitle('');
-      setSubtitle('');
-      setDiscount('');
-      setEmi('');
-      setImage(null);
-      setCoupons([]);
-      setCouponCode('');
-      setCouponAmount('');
+
+      const response = await fetch('/api/festival-banners', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to save festival banner');
+      }
+
+      await fetchBanners();
+      resetFormFields();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to save festival banner');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDeleteClick = (id: number, title: string) => {
+  const handleDeleteClick = (id: string, title: string) => {
     setDeleteTargetId(id);
     setDeleteTargetName(title);
     setDeleteModalOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
-    if (deleteTargetId !== null) {
-      setBanners((prev) => prev.filter((b) => b.id !== deleteTargetId));
+  const handleDeleteConfirm = async () => {
+    if (!deleteTargetId) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/festival-banners/${deleteTargetId}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to delete festival banner');
+      }
       onDelete?.(deleteTargetId);
+      await fetchBanners();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to delete festival banner');
+    } finally {
       setDeleteTargetId(null);
       setDeleteTargetName('');
+      setDeleteModalOpen(false);
     }
   };
 
@@ -180,7 +213,7 @@ export default function AddFestivalOfferForm({ onBack, onSave, onDelete }: AddFe
           </span>
           <button
             type="button"
-            onClick={() => setIsVisible(!isVisible)}
+            onClick={handleVisibilityToggle}
             className={cn(
               'relative inline-flex h-8 w-[60px] items-center rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:ring-offset-2 shadow-inner',
               isVisible ? 'bg-fuchsia-500' : 'bg-gray-300'
@@ -219,6 +252,12 @@ export default function AddFestivalOfferForm({ onBack, onSave, onDelete }: AddFe
           </div>
         </div>
       </div>
+
+      {error && (
+        <div className="w-full rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       {/* Form Grid */}
       <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-7">
@@ -383,24 +422,42 @@ export default function AddFestivalOfferForm({ onBack, onSave, onDelete }: AddFe
         <button
           type="button"
           onClick={handleConfirm}
-          disabled={!canConfirm}
-          className={cn('h-12 px-6 py-3 rounded bg-fuchsia-500 text-white font-medium', !canConfirm && 'opacity-60 cursor-not-allowed')}
+          disabled={!canConfirm || saving}
+          className={cn(
+            'h-12 px-6 py-3 rounded bg-fuchsia-500 text-white font-medium transition-opacity',
+            (!canConfirm || saving) && 'opacity-60 cursor-not-allowed'
+          )}
         >
-          Confirm
+          {saving ? 'Saving...' : 'Confirm'}
         </button>
       </div>
 
       {/* Existing Banners Section */}
-      {banners.length > 0 && (
-        <div className="w-full flex flex-col gap-4">
+      <div className="w-full flex flex-col gap-4">
+        <div className="flex items-center justify-between">
           <h3 className="text-slate-950 text-xl md:text-2xl font-medium font-['Poppins']">Existing Festival Offer Banners</h3>
+          {!loading && (
+            <span className="text-sm text-zinc-500 font-medium">
+              {banners.filter((banner) => banner.isActive).length} active / {banners.length} total
+            </span>
+          )}
+        </div>
+
+        {loading ? (
+          <div className="w-full p-4 bg-white rounded-lg border border-dashed border-neutral-200 text-center text-zinc-500">
+            Loading festival offer banners...
+          </div>
+        ) : banners.length === 0 ? (
+          <div className="w-full p-4 bg-white rounded-lg border border-dashed border-neutral-200 text-center text-zinc-500">
+            No festival offer banners yet. Add your first banner above.
+          </div>
+        ) : (
           <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {banners.map((banner) => (
               <div
                 key={banner.id}
                 className="relative group h-[300px] sm:h-[380px] md:h-[450px] lg:h-[512px] rounded-tl-3xl rounded-tr-xl rounded-bl-3xl rounded-br-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300"
               >
-                {/* Delete Button */}
                 <button
                   type="button"
                   onClick={() => handleDeleteClick(banner.id, banner.title)}
@@ -410,7 +467,6 @@ export default function AddFestivalOfferForm({ onBack, onSave, onDelete }: AddFe
                   <Trash2 className="w-4 h-4" />
                 </button>
 
-                {/* Background Image */}
                 <div className="absolute inset-0">
                   <img
                     className="w-full h-full object-cover"
@@ -418,9 +474,13 @@ export default function AddFestivalOfferForm({ onBack, onSave, onDelete }: AddFe
                     alt={banner.title}
                     loading="lazy"
                   />
+                  {!banner.isActive && (
+                    <span className="absolute top-3 left-3 z-20 rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-red-600">
+                      Hidden
+                    </span>
+                  )}
                 </div>
 
-                {/* Content Overlay */}
                 <div className="absolute inset-0 flex items-center justify-center z-10">
                   <div className="text-center text-white px-3 sm:px-4">
                     <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-2 md:mb-3 text-yellow-300">
@@ -429,20 +489,18 @@ export default function AddFestivalOfferForm({ onBack, onSave, onDelete }: AddFe
                     <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold mb-3 md:mb-4">
                       {banner.subtitle}
                     </h2>
-                    
-                    {/* Promotional Badge */}
+
                     <div className="px-3 md:px-4 py-2 md:py-2.5 rounded-xl inline-block mb-4 md:mb-6 bg-white/10 border border-white/20 backdrop-blur-md shadow-sm">
                       <div className="text-sm md:text-base font-semibold text-white/90">UP TO {banner.discount}</div>
                       <div className="text-xs md:text-sm text-white/80">{banner.emi}</div>
                     </div>
 
-                    {/* App Exclusive Coupons */}
                     <div className="space-y-2">
                       <h3 className="text-xs md:text-sm font-semibold mb-2 md:mb-3 text-white/90">APP EXCLUSIVE COUPON</h3>
                       <div className="flex flex-col sm:flex-row justify-center gap-2">
                         {banner.coupons.map((coupon, index) => (
                           <div
-                            key={index}
+                            key={`${banner.id}-${coupon.code}-${index}`}
                             className="px-2 md:px-3 py-1 md:py-1.5 rounded-lg font-medium text-xs md:text-sm text-white/90 bg-white/10 border border-white/20 backdrop-blur-md shadow-sm"
                           >
                             {coupon.code} • save upto {coupon.amount}
@@ -455,8 +513,8 @@ export default function AddFestivalOfferForm({ onBack, onSave, onDelete }: AddFe
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal

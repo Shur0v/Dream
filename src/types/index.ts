@@ -161,7 +161,7 @@ export interface PromoBannerCountdown {
 export interface PromoBanner {
   id: string;
   title: string;
-  subtitle?: string;
+  subtitle: string;
   description?: string;
   startingBidLabel?: string;
   priceText?: string;
@@ -171,6 +171,25 @@ export interface PromoBanner {
   ctaLink?: string;
   initialTime: PromoBannerCountdown;
   variant: PromoBannerVariant;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FestivalCoupon {
+  code: string;
+  amount: string;
+}
+
+export interface FestivalBanner {
+  id: string;
+  title: string;
+  subtitle: string;
+  discount: string;
+  emi: string;
+  image: string;
+  coupons: FestivalCoupon[];
   order: number;
   isActive: boolean;
   createdAt: string;
