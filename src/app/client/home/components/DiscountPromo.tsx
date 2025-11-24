@@ -305,6 +305,11 @@ export default function DiscountPromo() {
   const displayedBanners = banners.slice(0, 2);
   const desktopJustify = displayedBanners.length === 1 ? 'justify-center' : 'justify-start';
   const mobileSlideIndex = displayedBanners.length ? currentSlide % displayedBanners.length : 0;
+  const shouldHideSection = !loading && !error && displayedBanners.length === 0;
+
+  if (shouldHideSection) {
+    return null;
+  }
 
   return (
     <section className="father w-full py-2.5 sm:py-4 md:py-8 bg-white" role="region" aria-labelledby="discount-promo-heading" data-layer="father">

@@ -118,6 +118,11 @@ export default function PromoBanners() {
 
   const activeBanner = banners[currentSlide];
   const activeCountdown = timeLefts[currentSlide] || getInitialCountdown(activeBanner);
+  const shouldHideSection = !loading && !error && banners.length === 0;
+
+  if (shouldHideSection) {
+    return null;
+  }
 
   return (
     <section className="father w-full bg-white" role="banner" data-layer="father">
