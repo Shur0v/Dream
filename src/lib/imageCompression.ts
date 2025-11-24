@@ -42,7 +42,8 @@ export async function compressImage(
     console.log(`[ImageCompression] Compressing image from ${(originalSize / 1024).toFixed(2)}KB to max ${MAX_SIZE_KB}KB`);
 
     // Start compression with optimal settings
-    let compressedBuffer: Buffer;
+    // Initialize with input buffer as fallback
+    let compressedBuffer: Buffer = inputBuffer;
     let currentSize = originalSize;
     let attempts = 0;
     const maxAttempts = 15;
@@ -194,7 +195,9 @@ export async function compressImageFile(
                      '.jpg';
 
     // Create new File object with compressed data
-    const blob = new Blob([compressedBuffer], { type: mimeType });
+    // Convert Buffer to Uint8Array for Blob compatibility
+    const uint8Array = new Uint8Array(compressedBuffer);
+    const blob = new Blob([uint8Array], { type: mimeType });
     const fileName = file.name.replace(/\.[^/.]+$/, '') + extension;
     
     return new File([blob], fileName, { type: mimeType });

@@ -45,17 +45,17 @@ export async function POST(request: NextRequest) {
 
     // Convert File to Buffer for compression
     const arrayBuffer = await file.arrayBuffer();
-    let imageBuffer = Buffer.from(arrayBuffer);
+    const imageBuffer = Buffer.from(arrayBuffer);
     
     console.log(`[UploadImage] Original image size: ${(imageBuffer.length / 1024).toFixed(2)}KB`);
 
     // Compress image to max 200KB
-    imageBuffer = await compressImage(imageBuffer, {
+    const compressedBuffer = await compressImage(imageBuffer, {
       maxSizeKB: 200,
       format: file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpeg',
     });
 
-    console.log(`[UploadImage] Compressed image size: ${(imageBuffer.length / 1024).toFixed(2)}KB`);
+    console.log(`[UploadImage] Compressed image size: ${(compressedBuffer.length / 1024).toFixed(2)}KB`);
 
     // Determine file extension based on compressed format (use JPEG for best compression)
     const extension = '.jpg'; // Always use JPEG for compressed images
@@ -70,7 +70,9 @@ export async function POST(request: NextRequest) {
       .slice(2)}-${finalFileName}`;
 
     // Create compressed File/Blob for Vercel Blob upload
-    const compressedBlob = new Blob([imageBuffer], { type: 'image/jpeg' });
+    // Convert Buffer to Uint8Array for Blob compatibility
+    const uint8Array = new Uint8Array(compressedBuffer);
+    const compressedBlob = new Blob([uint8Array], { type: 'image/jpeg' });
     const compressedFile = new File([compressedBlob], finalFileName, { type: 'image/jpeg' });
 
     if (process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_READ_WRITE_URL) {
@@ -78,7 +80,7 @@ export async function POST(request: NextRequest) {
         access: 'public',
       });
 
-      console.log(`[UploadImage] Uploaded to Vercel Blob: ${(imageBuffer.length / 1024).toFixed(2)}KB`);
+      console.log(`[UploadImage] Uploaded to Vercel Blob: ${(compressedBuffer.length / 1024).toFixed(2)}KB`);
 
       return NextResponse.json({
         success: true,
@@ -90,7 +92,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const url = await saveLocally(imageBuffer, finalFileName);
+    const url = await saveLocally(compressedBuffer, finalFileName);
 
     return NextResponse.json({
       success: true,

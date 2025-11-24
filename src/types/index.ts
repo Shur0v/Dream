@@ -78,6 +78,7 @@ export interface Product {
   tags: string[];
   specifications?: Record<string, any>;
   sellerId: string;
+  slug?: string; // Optional slug for SEO-friendly URLs
   createdAt: string;
   updatedAt: string;
 }
