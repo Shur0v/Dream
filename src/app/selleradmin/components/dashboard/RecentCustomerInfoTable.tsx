@@ -173,11 +173,8 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
       }
     };
 
+    // Only fetch on page load or when dependencies change
     fetchOrders();
-    
-    // Refresh orders every 30 seconds
-    const interval = setInterval(fetchOrders, 30000);
-    return () => clearInterval(interval);
   }, [propData, currentPage, itemsPerPage]);
 
   // Handle click outside to close menu

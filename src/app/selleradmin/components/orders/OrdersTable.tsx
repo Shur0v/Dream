@@ -177,11 +177,8 @@ export default function OrdersTable() {
   };
 
   useEffect(() => {
+    // Only fetch on page load or when page/pagination changes
     fetchOrders();
-    
-    // Refresh orders every 10 seconds for real-time updates
-    const interval = setInterval(fetchOrders, 10000);
-    return () => clearInterval(interval);
   }, [currentPage, itemsPerPage]);
 
   const handleViewDetails = (order: Order) => {
