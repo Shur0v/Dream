@@ -183,7 +183,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
       <ShopInstagram />
 
       {/* For You Section */}
-      <ForYou />
+      <ForYou currentProduct={{ id: product.id, tags: product.tags }} />
 
       {/* Mobile Delivery Info */}
       <section className="lg:hidden w-full max-w-[1320px] mx-auto px-2">

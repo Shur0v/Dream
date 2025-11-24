@@ -22,7 +22,7 @@ export default function RelatedProduct({ currentProduct }: RelatedProductProps) 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch related products based on tags
+  // Fetch related products based on tags - Always ensure 4 products are shown
   useEffect(() => {
     const fetchRelatedProducts = async () => {
       try {
@@ -48,9 +48,30 @@ export default function RelatedProduct({ currentProduct }: RelatedProductProps) 
           }
         }
         
-        // If no related products found, fetch best selling products as fallback
+        // If we have related products but less than 4, fill with random products
+        if (relatedProducts.length > 0 && relatedProducts.length < 4) {
+          const allProductsResponse = await fetch(`/api/products?limit=100&inStock=true`);
+          const allProductsResult = await allProductsResponse.json();
+          
+          if (allProductsResult.success && allProductsResult.data) {
+            // Get random products excluding current product and already selected related products
+            const relatedProductIds = new Set(relatedProducts.map(p => p.id));
+            const randomProducts = allProductsResult.data
+              .filter((p: Product) => 
+                p.id !== currentProduct?.id &&
+                p.isActive &&
+                !relatedProductIds.has(p.id)
+              )
+              .sort(() => Math.random() - 0.5) // Shuffle randomly
+              .slice(0, 4 - relatedProducts.length);
+            
+            relatedProducts = [...relatedProducts, ...randomProducts].slice(0, 4);
+          }
+        }
+        
+        // If no related products found, try best selling products
         if (relatedProducts.length === 0) {
-          const bestSellingResponse = await fetch(`/api/best-selling-products?limit=4`);
+          const bestSellingResponse = await fetch(`/api/best-selling-products?limit=10`);
           const bestSellingResult = await bestSellingResponse.json();
           
           if (bestSellingResult.success && bestSellingResult.data) {
@@ -62,14 +83,42 @@ export default function RelatedProduct({ currentProduct }: RelatedProductProps) 
               })
               .slice(0, 4);
           }
-        } else {
-          // Limit to 4 products
-          relatedProducts = relatedProducts.slice(0, 4);
         }
         
-        setProducts(relatedProducts);
+        // Final fallback: Fetch random products from API
+        if (relatedProducts.length < 4) {
+          const randomResponse = await fetch(`/api/products?limit=50&inStock=true`);
+          const randomResult = await randomResponse.json();
+          
+          if (randomResult.success && randomResult.data) {
+            const relatedProductIds = new Set(relatedProducts.map(p => p.id));
+            const randomProducts = randomResult.data
+              .filter((p: Product) => 
+                p.id !== currentProduct?.id &&
+                p.isActive &&
+                !relatedProductIds.has(p.id)
+              )
+              .sort(() => Math.random() - 0.5) // Shuffle randomly
+              .slice(0, 4 - relatedProducts.length);
+            
+            relatedProducts = [...relatedProducts, ...randomProducts].slice(0, 4);
+          }
+        }
+        
+        // Ensure we always have exactly 4 products
+        setProducts(relatedProducts.slice(0, 4));
       } catch (error) {
         console.error('Error fetching related products:', error);
+        // Even on error, try to get some products
+        try {
+          const fallbackResponse = await fetch(`/api/products?limit=4&inStock=true`);
+          const fallbackResult = await fallbackResponse.json();
+          if (fallbackResult.success && fallbackResult.data) {
+            setProducts(fallbackResult.data.filter((p: Product) => p.isActive && p.id !== currentProduct?.id).slice(0, 4));
+          }
+        } catch (fallbackError) {
+          console.error('Fallback fetch also failed:', fallbackError);
+        }
       } finally {
         setLoading(false);
       }
@@ -116,10 +165,6 @@ export default function RelatedProduct({ currentProduct }: RelatedProductProps) 
           {loading ? (
             <div className="col-span-2 md:col-span-1 flex items-center justify-center py-12">
               <div className="text-neutral-500">Loading related products...</div>
-            </div>
-          ) : products.length === 0 ? (
-            <div className="col-span-2 md:col-span-1 flex items-center justify-center py-12">
-              <div className="text-neutral-500">No related products available</div>
             </div>
           ) : (
             products.map((product, index) => (

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Eye, X, Check, Trash2 } from 'lucide-react';
+import { Eye, X, Check, Trash2, RefreshCw } from 'lucide-react';
 import OrderDetailModal from './OrderDetailModal';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
 import Pagination from '../ui/Pagination';
@@ -128,57 +128,59 @@ export default function OrdersTable() {
   const itemsPerPage = 10;
 
   // Fetch orders from API
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        // Fetch orders from admin API endpoint with pagination
-        const response = await fetch(`/api/admin/orders?page=${currentPage}&limit=${itemsPerPage}&sortBy=createdAt&sortOrder=desc`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
+  const fetchOrders = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Fetch orders from admin API endpoint with pagination
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiUrl}/admin/orders?page=${currentPage}&limit=${itemsPerPage}&sortBy=createdAt&sortOrder=desc`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store', // Ensure fresh data
+      });
 
-        if (!response.ok) {
-          throw new Error('Failed to fetch orders');
-        }
-
-        const result = await response.json();
-        
-        if (result.success && result.data) {
-          // Transform API orders to table format
-          const transformedOrders = result.data.map((apiOrder: ApiOrder) =>
-            transformApiOrderToTableOrder(apiOrder)
-          );
-          setOrders(transformedOrders);
-          
-          // Update pagination info
-          if (result.pagination) {
-            setTotalItems(result.pagination.total);
-            setTotalPages(result.pagination.totalPages);
-          }
-        } else {
-          throw new Error(result.error || 'Failed to fetch orders');
-        }
-      } catch (err: any) {
-        console.error('Error fetching orders:', err);
-        setError(err.message || 'Failed to load orders');
-        // Fallback to empty array on error
-        setOrders([]);
-        setTotalItems(0);
-        setTotalPages(0);
-      } finally {
-        setIsLoading(false);
+      if (!response.ok) {
+        throw new Error('Failed to fetch orders');
       }
-    };
 
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        // Transform API orders to table format
+        const transformedOrders = result.data.map((apiOrder: ApiOrder) =>
+          transformApiOrderToTableOrder(apiOrder)
+        );
+        setOrders(transformedOrders);
+        
+        // Update pagination info
+        if (result.pagination) {
+          setTotalItems(result.pagination.total);
+          setTotalPages(result.pagination.totalPages);
+        }
+      } else {
+        throw new Error(result.error || 'Failed to fetch orders');
+      }
+    } catch (err: any) {
+      console.error('Error fetching orders:', err);
+      setError(err.message || 'Failed to load orders');
+      // Fallback to empty array on error
+      setOrders([]);
+      setTotalItems(0);
+      setTotalPages(0);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchOrders();
     
-    // Refresh orders every 30 seconds
-    const interval = setInterval(fetchOrders, 30000);
+    // Refresh orders every 10 seconds for real-time updates
+    const interval = setInterval(fetchOrders, 10000);
     return () => clearInterval(interval);
   }, [currentPage, itemsPerPage]);
 
@@ -195,28 +197,24 @@ export default function OrdersTable() {
   const handleRejectConfirm = async () => {
     if (orderToReject) {
       try {
-        // Update order status via API
+        // Update order status via admin API endpoint
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        const response = await fetch(`${apiUrl}/orders/${orderToReject.id}`, {
-          method: 'PUT',
+        const response = await fetch(`${apiUrl}/admin/orders/${orderToReject.id}/reject`, {
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            status: 'rejected',
-          }),
         });
 
-        if (response.ok) {
-          setOrders(prev => prev.map(order => 
-            order.id === orderToReject.id 
-              ? { ...order, status: 'rejected' as const }
-              : order
-          ));
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+          // Refresh orders immediately after update
+          await fetchOrders();
           setIsRejectModalOpen(false);
           setOrderToReject(null);
         } else {
-          throw new Error('Failed to reject order');
+          throw new Error(result.error || 'Failed to reject order');
         }
       } catch (err) {
         console.error('Error rejecting order:', err);
@@ -227,33 +225,28 @@ export default function OrdersTable() {
 
   const handleAcceptOrder = async (orderId: string) => {
     try {
-      // Update order status via API
+      // Update order status via admin API endpoint
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
       const order = orders.find(o => o.id === orderId);
       
       if (!order) return;
 
-      // Find the original API order ID
-      const response = await fetch(`${apiUrl}/orders/${orderId}`, {
-        method: 'PUT',
+      const response = await fetch(`${apiUrl}/admin/orders/${orderId}/approve`, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          status: 'approved',
-        }),
       });
 
-      if (response.ok) {
-        setOrders(prev => prev.map(o => 
-          o.id === orderId 
-            ? { ...o, status: 'accepted' as const }
-            : o
-        ));
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        // Refresh orders immediately after update
+        await fetchOrders();
         setIsDetailModalOpen(false);
         setSelectedOrder(null);
       } else {
-        throw new Error('Failed to update order');
+        throw new Error(result.error || 'Failed to update order');
       }
     } catch (err) {
       console.error('Error accepting order:', err);
@@ -331,6 +324,18 @@ export default function OrdersTable() {
   return (
     <>
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="flex justify-between items-center p-4 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900">Orders</h2>
+          <button
+            onClick={fetchOrders}
+            disabled={isLoading}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            title="Refresh orders"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">

@@ -1,20 +1,142 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { getForYouProducts } from '@/lib/productData';
+import { Product } from '@/types';
+
+interface ForYouProps {
+  currentProduct?: {
+    id: string;
+    tags?: string[];
+  };
+}
 
 /**
  * For You Component
- * Same UI as BestSelling but pulls from a different data set
+ * Dynamic component that shows:
+ * - On product details page: Related tagged products in reverse order
+ * - On other pages: 4 different tech products
  */
-export default function ForYou() {
+export default function ForYou({ currentProduct }: ForYouProps) {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Get "For You" products from unified dataset - Limit to 4 for responsive grid
-  const allProducts = getForYouProducts();
-  const products = allProducts.slice(0, 4);
+  // Fetch products based on context - Always ensure 4 products are shown
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        let fetchedProducts: Product[] = [];
+
+        if (currentProduct?.tags && currentProduct.tags.length > 0) {
+          // On product details page: Fetch related products and reverse the order
+          const response = await fetch(`/api/products?limit=100&inStock=true`);
+          const result = await response.json();
+
+          if (result.success && result.data) {
+            // Filter products with matching tags and exclude current product
+            const relatedProducts = result.data.filter((p: Product) =>
+              p.id !== currentProduct.id &&
+              p.isActive &&
+              p.tags &&
+              p.tags.length > 0 &&
+              p.tags.some(tag => currentProduct.tags!.includes(tag))
+            );
+
+            // Reverse the order (show from last)
+            fetchedProducts = relatedProducts.reverse();
+            
+            // If we have less than 4, fill with random products
+            if (fetchedProducts.length < 4) {
+              const relatedProductIds = new Set(fetchedProducts.map(p => p.id));
+              const randomProducts = result.data
+                .filter((p: Product) => 
+                  p.id !== currentProduct.id &&
+                  p.isActive &&
+                  !relatedProductIds.has(p.id)
+                )
+                .sort(() => Math.random() - 0.5) // Shuffle randomly
+                .slice(0, 4 - fetchedProducts.length);
+              
+              fetchedProducts = [...fetchedProducts, ...randomProducts].slice(0, 4);
+            } else {
+              fetchedProducts = fetchedProducts.slice(0, 4);
+            }
+          }
+        } else {
+          // On other pages: Fetch 4 different tech products
+          const response = await fetch(`/api/products?limit=50&inStock=true`);
+          const result = await response.json();
+
+          if (result.success && result.data) {
+            // Filter for tech/electronics products and get 4 different ones
+            const techProducts = result.data
+              .filter((p: Product) => 
+                p.isActive &&
+                (p.category?.toLowerCase().includes('electronic') ||
+                 p.category?.toLowerCase().includes('tech') ||
+                 p.tags?.some(tag => 
+                   tag.toLowerCase().includes('tech') ||
+                   tag.toLowerCase().includes('electronic') ||
+                   tag.toLowerCase().includes('gadget')
+                 ))
+              )
+              .sort(() => Math.random() - 0.5) // Shuffle randomly
+              .slice(0, 4);
+
+            // If we don't have enough tech products, just take any 4 active products
+            fetchedProducts = techProducts.length >= 4 
+              ? techProducts 
+              : result.data
+                  .filter((p: Product) => p.isActive)
+                  .sort(() => Math.random() - 0.5) // Shuffle randomly
+                  .slice(0, 4);
+          }
+        }
+        
+        // Final fallback: Ensure we always have 4 products
+        if (fetchedProducts.length < 4) {
+          const fallbackResponse = await fetch(`/api/products?limit=50&inStock=true`);
+          const fallbackResult = await fallbackResponse.json();
+          
+          if (fallbackResult.success && fallbackResult.data) {
+            const existingIds = new Set(fetchedProducts.map(p => p.id));
+            const additionalProducts = fallbackResult.data
+              .filter((p: Product) => 
+                p.isActive &&
+                !existingIds.has(p.id) &&
+                (!currentProduct || p.id !== currentProduct.id)
+              )
+              .sort(() => Math.random() - 0.5) // Shuffle randomly
+              .slice(0, 4 - fetchedProducts.length);
+            
+            fetchedProducts = [...fetchedProducts, ...additionalProducts].slice(0, 4);
+          }
+        }
+
+        // Ensure we always have exactly 4 products
+        setProducts(fetchedProducts.slice(0, 4));
+      } catch (error) {
+        console.error('Error fetching For You products:', error);
+        // Even on error, try to get some products
+        try {
+          const fallbackResponse = await fetch(`/api/products?limit=4&inStock=true`);
+          const fallbackResult = await fallbackResponse.json();
+          if (fallbackResult.success && fallbackResult.data) {
+            setProducts(fallbackResult.data.filter((p: Product) => p.isActive).slice(0, 4));
+          }
+        } catch (fallbackError) {
+          console.error('Fallback fetch also failed:', fallbackError);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [currentProduct]);
 
   return (
     <section className="father w-full py-6 sm:py-10 md:py-14 lg:py-20 bg-white flex flex-col justify-start items-center gap-2.5 sm:gap-5 md:gap-6 lg:gap-8" role="region" aria-labelledby="for-you-heading" data-layer="father">
@@ -51,8 +173,13 @@ export default function ForYou() {
         <div className="layer-5 self-stretch grid grid-cols-2 md:flex md:justify-center md:items-center md:h-[582px] gap-4 md:gap-6 my-6 md:my-2" data-layer="5">
           {/* layer-5 = products grid container */}
           
-          {products.map((product, index) => (
-             <Link key={product.id} href={`/client/product-details/${product.id}`} className="block h-full md:flex md:items-center">
+          {loading ? (
+            <div className="col-span-2 md:col-span-1 flex items-center justify-center py-12">
+              <div className="text-neutral-500">Loading products...</div>
+            </div>
+          ) : (
+            products.map((product, index) => (
+             <Link key={product.id} href={`/client/product-details/${(product as any).productId || product.id}`} className="block h-full md:flex md:items-center">
                <div
                  className="layer-6 w-full md:w-[312px] h-full md:h-auto p-3 md:p-4 bg-sky-50 rounded-xl border border-black/10 flex flex-col justify-start items-start group md:hover:shadow-md md:hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
                  style={{ transformOrigin: 'center', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
@@ -106,7 +233,7 @@ export default function ForYou() {
                 {/* layer-12 = product image container */}
                 
                 <Image
-                  src={product.image}
+                  src={product.images && product.images.length > 0 ? product.images[0] : '/placeholder-product.png'}
                   alt={`${product.name} product image`}
                   fill
                   className="object-cover transform md:group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
@@ -147,18 +274,20 @@ export default function ForYou() {
                         {/* layer-18 = current price */}
                         <div className="layer-19 justify-start text-black text-lg md:text-2xl font-semibold font-['Poppins'] leading-6 md:leading-9" data-layer="19">
                           {/* layer-19 = current price display */}
-                          {product.currency}{product.price}
+                          ${product.price.toFixed(2)}
                         </div>
                       </div>
                       
-                      <div className="layer-20 justify-start" data-layer="20">
-                        {/* layer-20 = original price */}
-                        <span className="text-red-500 text-xs md:text-base font-normal font-['Poppins'] leading-normal">(</span>
-                        <span className="text-red-500 text-xs md:text-base font-normal font-['Poppins'] line-through leading-normal">
-                          ${product.originalPrice}
-                        </span>
-                        <span className="text-red-500 text-xs md:text-base font-normal font-['Poppins'] leading-normal">)</span>
-                      </div>
+                      {product.originalPrice && product.originalPrice > product.price && (
+                        <div className="layer-20 justify-start" data-layer="20">
+                          {/* layer-20 = original price */}
+                          <span className="text-red-500 text-xs md:text-base font-normal font-['Poppins'] leading-normal">(</span>
+                          <span className="text-red-500 text-xs md:text-base font-normal font-['Poppins'] line-through leading-normal">
+                            ${product.originalPrice.toFixed(2)}
+                          </span>
+                          <span className="text-red-500 text-xs md:text-base font-normal font-['Poppins'] leading-normal">)</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -166,10 +295,10 @@ export default function ForYou() {
                   <div className="layer-21 flex flex-col md:flex-row md:inline-flex justify-start items-start md:items-center gap-1 md:gap-1.5" data-layer="21">
                     {/* layer-21 = rating and reviews container */}
                     
-                    <div className="layer-22 flex justify-start items-center gap-0.5 md:gap-0" role="img" aria-label={`${product.rating} out of 5 stars`} data-layer="22">
+                    <div className="layer-22 flex justify-start items-center gap-0.5 md:gap-0" role="img" aria-label="Product rating" data-layer="22">
                       {/* layer-22 = star rating */}
                       
-                      {[...Array(product.rating)].map((_, i) => (
+                      {[...Array(5)].map((_, i) => (
                         <svg
                           key={i}
                           width="16"
@@ -189,13 +318,13 @@ export default function ForYou() {
                     {/* Review count - hidden on mobile, shown on desktop next to stars */}
                     <div className="layer-23 hidden md:block text-center justify-start text-neutral-400 text-xs md:text-sm font-normal font-['Poppins'] leading-snug md:leading-relaxed whitespace-nowrap" data-layer="23">
                       {/* layer-23 = reviews count */}
-                      ( {product.reviews} Reviews )
+                      ( Reviews )
                     </div>
                     
                     {/* Review count box - shown on mobile below stars */}
                     <div className="layer-23-mobile md:hidden self-stretch px-2 py-1 bg-neutral-100 rounded-md text-center justify-start text-neutral-400 text-xs font-normal font-['Poppins'] leading-snug" data-layer="23-mobile">
                       {/* layer-23-mobile = reviews count box for mobile */}
-                      ( {product.reviews} Reviews )
+                      ( Reviews )
                     </div>
                   </div>
                 </div>
@@ -231,14 +360,16 @@ export default function ForYou() {
               </div>
                </div>
              </Link>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Pagination Dots - Hidden on mobile */}
-        <div className="layer-28 h-2 hidden md:flex justify-center items-center gap-2 mt-8" role="tablist" aria-label="Product pagination" data-layer="28">
-          {/* layer-28 = pagination dots container */}
-          
-          {[1, 2, 3, 4].map((item, index) => (
+        {products.length > 0 && (
+          <div className="layer-28 h-2 hidden md:flex justify-center items-center gap-2 mt-8" role="tablist" aria-label="Product pagination" data-layer="28">
+            {/* layer-28 = pagination dots container */}
+            
+            {products.slice(0, 4).map((item, index) => (
             <div
               key={index}
               className={`layer-29 h-2 rounded-[10px] transition-all duration-300 ease-in-out transform origin-center ${
@@ -255,8 +386,9 @@ export default function ForYou() {
               aria-label={`Go to product ${index + 1}`}
               data-layer="29"
             />
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

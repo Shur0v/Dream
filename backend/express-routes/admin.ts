@@ -8,6 +8,7 @@ import {
   getProducts,
   getUsers,
   saveOrder,
+  invalidateOrdersCache,
 } from '../express-lib/db';
 
 const router = Router();
@@ -68,9 +69,11 @@ router.get('/orders', async (req: Request, res: Response) => {
     const search = req.query.search as string;
 
     let orders = await getOrders();
+    console.log(`[GET /api/admin/orders] Fetched ${orders.length} orders from database`);
 
     if (status) {
       orders = orders.filter(order => order.status === status);
+      console.log(`[GET /api/admin/orders] Filtered by status '${status}': ${orders.length} orders`);
     }
 
     if (search) {
@@ -84,10 +87,38 @@ router.get('/orders', async (req: Request, res: Response) => {
       );
     }
 
+    // Sort by createdAt descending (newest first) by default
+    const sortBy = (req.query.sortBy as string) || 'createdAt';
+    const sortOrder = (req.query.sortOrder as string) || 'desc';
+    
+    orders.sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+      
+      if (sortBy === 'createdAt') {
+        aValue = new Date(a.createdAt).getTime();
+        bValue = new Date(b.createdAt).getTime();
+      } else if (sortBy === 'totalAmount') {
+        aValue = a.totalAmount || 0;
+        bValue = b.totalAmount || 0;
+      } else {
+        aValue = a.createdAt;
+        bValue = b.createdAt;
+      }
+      
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
     const total = orders.length;
     const totalPages = Math.ceil(total / limit);
     const startIndex = (page - 1) * limit;
     const paginatedOrders = orders.slice(startIndex, startIndex + limit);
+    
+    console.log(`[GET /api/admin/orders] Returning ${paginatedOrders.length} orders (page ${page}, total: ${total})`);
 
     res.json({
       success: true,
@@ -147,10 +178,16 @@ router.post('/orders/:id/approve', async (req: Request, res: Response) => {
     await mockApiDelay(600);
 
     const { id } = req.params;
+    console.log(`[POST /api/admin/orders/${id}/approve] Approving order`);
+    
+    // Invalidate cache first to ensure fresh data
+    invalidateOrdersCache();
+    
     const orders = await getOrders();
     const order = orders.find(o => o.id === id);
 
     if (!order) {
+      console.error(`[POST /api/admin/orders/${id}/approve] Order not found`);
       return res.status(404).json({
         success: false,
         error: 'Order not found',
@@ -160,7 +197,9 @@ router.post('/orders/:id/approve', async (req: Request, res: Response) => {
     order.status = 'approved';
     order.updatedAt = new Date().toISOString();
 
+    console.log(`[POST /api/admin/orders/${id}/approve] Saving approved order`);
     await saveOrder(order);
+    console.log(`[POST /api/admin/orders/${id}/approve] Order approved successfully`);
 
     res.json({
       success: true,
@@ -168,10 +207,10 @@ router.post('/orders/:id/approve', async (req: Request, res: Response) => {
       message: 'Order approved successfully',
     });
   } catch (error) {
-    console.error('Approve order error:', error);
+    console.error('[POST /api/admin/orders/:id/approve] Approve order error:', error);
     res.status(500).json({
       success: false,
-      error: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Internal server error',
     });
   }
 });
@@ -185,10 +224,16 @@ router.post('/orders/:id/reject', async (req: Request, res: Response) => {
     await mockApiDelay(600);
 
     const { id } = req.params;
+    console.log(`[POST /api/admin/orders/${id}/reject] Rejecting order`);
+    
+    // Invalidate cache first to ensure fresh data
+    invalidateOrdersCache();
+    
     const orders = await getOrders();
     const order = orders.find(o => o.id === id);
 
     if (!order) {
+      console.error(`[POST /api/admin/orders/${id}/reject] Order not found`);
       return res.status(404).json({
         success: false,
         error: 'Order not found',
@@ -198,7 +243,9 @@ router.post('/orders/:id/reject', async (req: Request, res: Response) => {
     order.status = 'rejected';
     order.updatedAt = new Date().toISOString();
 
+    console.log(`[POST /api/admin/orders/${id}/reject] Saving rejected order`);
     await saveOrder(order);
+    console.log(`[POST /api/admin/orders/${id}/reject] Order rejected successfully`);
 
     res.json({
       success: true,
@@ -206,10 +253,10 @@ router.post('/orders/:id/reject', async (req: Request, res: Response) => {
       message: 'Order rejected successfully',
     });
   } catch (error) {
-    console.error('Reject order error:', error);
+    console.error('[POST /api/admin/orders/:id/reject] Reject order error:', error);
     res.status(500).json({
       success: false,
-      error: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Internal server error',
     });
   }
 });

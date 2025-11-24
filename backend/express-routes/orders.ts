@@ -7,6 +7,7 @@ import {
   getOrders,
   getOrderById,
   saveOrder,
+  invalidateOrdersCache,
 } from '../express-lib/db';
 import { OrderStatus } from '../../src/types';
 
@@ -94,9 +95,19 @@ router.post('/', async (req: Request, res: Response) => {
       shippingAddress,
       billingAddress,
       paymentMethod,
+      notes,
     } = req.body;
 
+    console.log('[POST /api/orders] Received order data:', {
+      userId,
+      itemsCount: items?.length,
+      hasShippingAddress: !!shippingAddress,
+      paymentMethod,
+      hasNotes: !!notes,
+    });
+
     if (!userId || !items || !Array.isArray(items) || items.length === 0) {
+      console.error('[POST /api/orders] Validation failed: userId or items missing');
       return res.status(400).json({
         success: false,
         error: 'User ID and items are required',
@@ -125,22 +136,37 @@ router.post('/', async (req: Request, res: Response) => {
       billingAddress: billingAddress,
       paymentMethod: paymentMethod || 'Credit Card',
       paymentStatus: 'pending' as 'pending' | 'paid' | 'failed' | 'refunded',
+      notes: notes || undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
 
-    await saveOrder(newOrder);
+    console.log('[POST /api/orders] Saving order:', {
+      id: newOrder.id,
+      userId: newOrder.userId,
+      totalAmount: newOrder.totalAmount,
+      itemsCount: newOrder.items.length,
+    });
+
+    // Invalidate cache before saving to ensure fresh read
+    invalidateOrdersCache();
+
+    const savedOrder = await saveOrder(newOrder);
+    console.log('[POST /api/orders] Order saved successfully:', savedOrder.id);
+    
+    // Invalidate cache after saving to ensure next read is fresh
+    invalidateOrdersCache();
 
     res.status(201).json({
       success: true,
-      data: newOrder,
+      data: savedOrder,
       message: 'Order created successfully',
     });
   } catch (error) {
-    console.error('Create order error:', error);
+    console.error('[POST /api/orders] Create order error:', error);
     res.status(500).json({
       success: false,
-      error: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Internal server error',
     });
   }
 });

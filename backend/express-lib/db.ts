@@ -127,13 +127,19 @@ export async function deleteProduct(id: string): Promise<Product | null> {
 // Orders
 export async function getOrders(): Promise<Order[]> {
   const data = await readJsonFile<Order[]>(ORDERS_DB, ordersCache);
+  // Always update cache after reading
   ordersCache = { data, timestamp: Date.now() };
+  console.log(`[db] Retrieved ${data.length} orders from database`);
   return data;
 }
 
 export async function saveOrders(orders: Order[]): Promise<void> {
-  await writeJsonFile(ORDERS_DB, orders);
+  // Invalidate cache before writing
   ordersCache = null;
+  await writeJsonFile(ORDERS_DB, orders);
+  // Invalidate cache again after writing to ensure fresh reads
+  ordersCache = null;
+  console.log(`[db] Orders saved. Total orders: ${orders.length}`);
 }
 
 export async function getOrderById(id: string): Promise<Order | undefined> {
@@ -142,16 +148,26 @@ export async function getOrderById(id: string): Promise<Order | undefined> {
 }
 
 export async function saveOrder(order: Order): Promise<Order> {
+  // Invalidate cache first to ensure we get fresh data
+  ordersCache = null;
+  
   const orders = await getOrders();
   const index = orders.findIndex(o => o.id === order.id);
   
   if (index >= 0) {
     orders[index] = order;
+    console.log(`[db] Updating order: ${order.id}`);
   } else {
     orders.push(order);
+    console.log(`[db] Creating new order: ${order.id} - Total orders now: ${orders.length + 1}`);
   }
   
+  // Invalidate cache before saving
+  ordersCache = null;
   await saveOrders(orders);
+  // Invalidate cache after saving to ensure next read is fresh
+  ordersCache = null;
+  console.log(`[db] Order saved successfully. Total orders in database: ${orders.length}`);
   return order;
 }
 
