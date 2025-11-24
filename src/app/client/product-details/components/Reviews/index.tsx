@@ -1,94 +1,58 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Star, SlidersVertical, ChevronDown, MoreHorizontal, Check } from 'lucide-react';
-
-interface Review {
-  id: number;
-  author: string;
-  rating: number;
-  comment: string;
-  date: string;
-  verified: boolean;
-}
+import { ProductReview } from '@/types';
 
 interface ReviewsProps {
-  rating: number;
-  reviewsCount: number;
+  productId: string;
+  initialReviews: ProductReview[];
 }
 
-const Reviews: React.FC<ReviewsProps> = ({ rating, reviewsCount }) => {
+const Reviews: React.FC<ReviewsProps> = ({ productId, initialReviews }) => {
   const [activeTab, setActiveTab] = useState<'details' | 'reviews'>('reviews');
   const [visibleReviewsCount, setVisibleReviewsCount] = useState(4);
+  const [reviews, setReviews] = useState<ProductReview[]>(initialReviews);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const reviews: Review[] = [
-    {
-      id: 1,
-      author: 'Samantha D.',
-      rating: 5,
-      comment: 'I absolutely love this t-shirt! The design is unique and the fabric feels so comfortable. As a fellow designer, I appreciate the attention to detail. It\'s become my favorite go-to shirt.',
-      date: 'Posted on August 14, 2023',
-      verified: true
-    },
-    {
-      id: 2,
-      author: 'Alex M.',
-      rating: 5,
-      comment: 'The t-shirt exceeded my expectations! The colors are vibrant and the print quality is top-notch. Being a UI/UX designer myself, I\'m quite picky about aesthetics, and this t-shirt definitely gets a thumbs up from me.',
-      date: 'Posted on August 15, 2023',
-      verified: true
-    },
-    {
-      id: 3,
-      author: 'Sarah M.',
-      rating: 4,
-      comment: 'Great quality t-shirt! The fabric is soft and comfortable. The design is exactly as shown in the pictures. Would definitely recommend to others.',
-      date: 'Posted on August 12, 2023',
-      verified: true
-    },
-    {
-      id: 4,
-      author: 'John D.',
-      rating: 5,
-      comment: 'Excellent product! Fast shipping and the t-shirt exceeded my expectations. The fit is perfect and the material feels premium. Will order again for sure.',
-      date: 'Posted on August 10, 2023',
-      verified: false
-    },
-    {
-      id: 5,
-      author: 'Emma L.',
-      rating: 5,
-      comment: 'Perfect! Exactly what I was looking for. The design is beautiful and the fabric is very comfortable. The colors are vibrant and true to the photos.',
-      date: 'Posted on August 8, 2023',
-      verified: true
-    },
-    {
-      id: 6,
-      author: 'Mike R.',
-      rating: 4,
-      comment: 'Good t-shirt overall, but the sizing runs a bit small. Material quality is decent for the price. Would suggest ordering one size up.',
-      date: 'Posted on August 6, 2023',
-      verified: true
-    },
-    {
-      id: 7,
-      author: 'Lisa K.',
-      rating: 5,
-      comment: 'Amazing quality! The print is crisp and the fabric is so soft. I\'ve washed it multiple times and it still looks brand new. Highly recommend!',
-      date: 'Posted on August 4, 2023',
-      verified: true
-    },
-    {
-      id: 8,
-      author: 'David P.',
-      rating: 3,
-      comment: 'Decent t-shirt for the price. The design is nice but the fabric could be better quality. It\'s comfortable but not as durable as expected.',
-      date: 'Posted on August 2, 2023',
-      verified: false
-    }
-  ];
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`/api/reviews?productId=${productId}`, {
+          cache: 'no-store',
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Failed to load reviews');
+        }
+        if (active) {
+          setReviews(Array.isArray(result.data) ? result.data : []);
+        }
+      } catch (err) {
+        if (active) {
+          setError(err instanceof Error ? err.message : 'Unable to load reviews');
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
 
-  const displayedReviews = reviews.slice(0, visibleReviewsCount);
+    load();
+    return () => {
+      active = false;
+    };
+  }, [productId]);
+
+  const displayedReviews = useMemo(
+    () => reviews.slice(0, visibleReviewsCount),
+    [reviews, visibleReviewsCount]
+  );
   
   const handleSeeMore = () => {
     setVisibleReviewsCount(prev => Math.min(prev + 4, reviews.length));
@@ -97,6 +61,12 @@ const Reviews: React.FC<ReviewsProps> = ({ rating, reviewsCount }) => {
   const handleHideAll = () => {
     setVisibleReviewsCount(4);
   };
+
+  const averageRating = useMemo(() => {
+    if (!reviews.length) return 0;
+    const total = reviews.reduce((sum, review) => sum + review.rating, 0);
+    return Number((total / reviews.length).toFixed(1));
+  }, [reviews]);
 
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }).map((_, i) => (
@@ -133,7 +103,9 @@ const Reviews: React.FC<ReviewsProps> = ({ rating, reviewsCount }) => {
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-2">
                 <div className="text-black text-2xl font-normal font-['Poppins']">All Reviews</div>
-                <div className="text-black/60 text-base font-normal font-['Poppins']">(451)</div>
+                <div className="text-black/60 text-base font-normal font-['Poppins']">
+                  ({reviews.length})
+                </div>
               </div>
               <div className="flex flex-wrap items-center gap-2.5">
                 {/* Filter Button */}
@@ -153,45 +125,53 @@ const Reviews: React.FC<ReviewsProps> = ({ rating, reviewsCount }) => {
             </div>
 
             {/* Layer 4: Reviews Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {displayedReviews.map((review) => (
-                <div key={review.id} className="px-6 sm:px-8 py-6 sm:py-7 rounded-[20px] outline-1 outline-offset-[-1px] outline-black/10">
-                  {/* Layer 5: Review Card Content */}
-                  <div className="flex justify-between items-start gap-4 mb-4">
-                    <div className="flex-1">
-                      {/* Stars */}
-                      <div className="flex gap-1.5 mb-3.5">
-                        {renderStars(review.rating)}
+            {loading ? (
+              <div className="w-full p-6 text-center text-zinc-500">Loading reviews...</div>
+            ) : error ? (
+              <div className="w-full p-6 text-center text-red-500">{error}</div>
+            ) : reviews.length === 0 ? (
+              <div className="w-full p-6 text-center text-zinc-500">
+                No reviews yet. Be the first to share your thoughts!
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {displayedReviews.map((review) => (
+                  <div key={review.id} className="px-6 sm:px-8 py-6 sm:py-7 rounded-[20px] outline-1 outline-offset-[-1px] outline-black/10">
+                    <div className="flex justify-between items-start gap-4 mb-4">
+                      <div className="flex-1">
+                        <div className="flex gap-1.5 mb-3.5">
+                          {renderStars(review.rating)}
+                        </div>
+                        <div className="flex items-center gap-1 mb-3">
+                          <div className="text-black text-xl font-bold font-['Satoshi']">{review.author}</div>
+                          {review.verified && (
+                            <div className="w-6 h-6 bg-green-600 rounded-full flex justify-center items-center">
+                              <Check size={16} className="text-white" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-black/60 text-base font-normal font-['Poppins'] leading-snug mb-4">
+                          "{review.comment}"
+                        </div>
                       </div>
-                      {/* Author and Verified Badge */}
-                      <div className="flex items-center gap-1 mb-3">
-                        <div className="text-black text-xl font-bold font-['Satoshi']">{review.author}</div>
-                        {review.verified && (
-                          <div className="w-6 h-6 bg-green-600 rounded-full flex justify-center items-center">
-                            <Check size={16} className="text-white" />
-                          </div>
-                        )}
-                      </div>
-                      {/* Review Text */}
-                      <div className="text-black/60 text-base font-normal font-['Poppins'] leading-snug mb-4">
-                        "{review.comment}"
+                      <div className="flex items-start">
+                        <MoreHorizontal size={20} className="text-black/40" />
                       </div>
                     </div>
-                    {/* More Options */}
-                    <div className="flex items-start">
-                      <MoreHorizontal size={20} className="text-black/40" />
+                    <div className="text-black/60 text-base font-normal font-['Poppins'] leading-snug">
+                      {new Date(review.date).toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
                     </div>
                   </div>
-                  {/* Date */}
-                  <div className="text-black/60 text-base font-normal font-['Poppins'] leading-snug">
-                    {review.date}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
             {/* Layer 4: See More/Hide All Button */}
-            {visibleReviewsCount < reviews.length && (
+            {visibleReviewsCount < reviews.length && reviews.length > 0 && (
               <div className="flex justify-start mt-8">
                 <button
                   onClick={handleSeeMore}

@@ -177,6 +177,22 @@ const FestivalBannerSchema = z.object({
     updatedAt: TimestampSchema,
   });
 
+const ReviewSourceSchema = z.enum(['admin', 'user', 'imported']);
+
+const ProductReviewSchema = z.object({
+    id: z.string().min(1),
+    productId: z.string().min(1),
+    productName: z.string().optional(),
+    author: z.string().min(1),
+    rating: z.number().min(1).max(5).default(5),
+    comment: z.string().min(1),
+    date: TimestampSchema,
+    verified: z.boolean().default(false),
+    source: ReviewSourceSchema.default('admin'),
+    createdAt: TimestampSchema,
+    updatedAt: TimestampSchema,
+  });
+
   const MinimalProductSnapshotSchema = z.object({
     id: z.string(),
     name: z.string().default(''),
@@ -260,6 +276,7 @@ export const DatabaseSchema = z.object({
   heroBanners: z.array(HeroBannerSchema).default([]),
   promoBanners: z.array(PromoBannerSchema).default([]),
   festivalBanners: z.array(FestivalBannerSchema).default([]),
+  reviews: z.array(ProductReviewSchema).default([]),
 });
 
 export type DatabaseShape = z.infer<typeof DatabaseSchema>;

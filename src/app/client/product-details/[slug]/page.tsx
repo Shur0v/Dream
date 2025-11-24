@@ -5,6 +5,7 @@ import RelatedProduct from "../components/RelatedProduct";
 import ShopInstagram from "../components/ShopInstagram";
 import ForYou from "../../home/components/ForYou";
 import DeliveryInfo from "../components/toppart/DeliveryInfo";
+import { getReviewsByProduct } from '@backend/lib/db';
 
 export default async function ProductDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -128,6 +129,17 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
     }
   }
 
+  const productReviews = await getReviewsByProduct(product.id);
+  const reviewsCount = productReviews.length;
+  const averageRating = reviewsCount
+    ? Number(
+        (
+          productReviews.reduce((sum, review) => sum + review.rating, 0) /
+          reviewsCount
+        ).toFixed(1)
+      )
+    : 0;
+
   // Transform product data to match the expected format
   const productData = {
     id: product.id,
@@ -135,8 +147,8 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
     name: product.name,
     price: product.price,
     oldPrice: product.originalPrice,
-    rating: 4.5, // Default rating, can be enhanced later
-    reviewsCount: 0, // Default reviews count, can be enhanced later
+    rating: averageRating || 0,
+    reviewsCount: reviewsCount,
     images: product.images && product.images.length > 0 ? product.images : ['/placeholder-image.png'],
     description: product.description || "No description available.",
     category: product.category,
@@ -161,7 +173,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
 
       {/* Reviews Section */}
       <section className="w-full max-w-[1320px] mx-auto px-2">
-        <Reviews rating={productData.rating} reviewsCount={productData.reviewsCount} />
+        <Reviews productId={product.id} initialReviews={productReviews} />
       </section>
 
       {/* Related Product Section */}

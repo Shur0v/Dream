@@ -11,7 +11,21 @@
  * @version 1.0.0
  */
 
-import { Product, Order, Category, Color, User, FeaturedProduct, BestSellingProduct, HeroBanner, PromoBanner, PromoBannerVariant, FestivalBanner } from '@/types';
+import {
+  Product,
+  Order,
+  Category,
+  Color,
+  User,
+  FeaturedProduct,
+  BestSellingProduct,
+  HeroBanner,
+  PromoBanner,
+  PromoBannerVariant,
+  FestivalBanner,
+  ProductReview,
+  ReviewSource,
+} from '@/types';
 import { readJsonStore, writeJsonStore } from '../lib/jsonStore';
 import { DatabaseSchema, DatabaseShape } from '@backend/schemas/database';
 
@@ -910,3 +924,77 @@ export async function deleteFestivalBanner(id: string): Promise<FestivalBanner |
   return banner;
 }
 
+const clampRating = (value: number) => {
+  if (Number.isNaN(value)) return 5;
+  if (value < 1) return 1;
+  if (value > 5) return 5;
+  return Number(value);
+};
+
+const normalizeReview = (
+  review: ProductReview,
+  fallbackProductName?: string
+): ProductReview => {
+  const now = new Date().toISOString();
+  const trimmedComment = (review.comment || '').trim();
+  const trimmedAuthor = (review.author || 'Anonymous').trim() || 'Anonymous';
+  return {
+    id: review.id || `rev-${Date.now()}`,
+    productId: String(review.productId),
+    productName: review.productName || fallbackProductName,
+    author: trimmedAuthor,
+    rating: clampRating(review.rating ?? 5),
+    comment: trimmedComment,
+    date: review.date || now,
+    verified: Boolean(review.verified),
+    source: review.source || ('admin' as ReviewSource),
+    createdAt: review.createdAt || now,
+    updatedAt: now,
+  };
+};
+
+export async function getReviews(productId?: string): Promise<ProductReview[]> {
+  const db = await readDatabase();
+  const all = db.reviews;
+  if (productId) {
+    return all.filter(review => review.productId === productId);
+  }
+  return all;
+}
+
+export async function getReviewById(id: string): Promise<ProductReview | undefined> {
+  const db = await readDatabase();
+  return db.reviews.find(review => review.id === id);
+}
+
+export async function getReviewsByProduct(productId: string): Promise<ProductReview[]> {
+  return getReviews(productId);
+}
+
+export async function saveReview(review: ProductReview): Promise<ProductReview> {
+  const db = await readDatabase();
+  const product = db.products.find(p => p.id === String(review.productId));
+  const normalized = normalizeReview(review, product?.name);
+
+  const index = db.reviews.findIndex(r => r.id === normalized.id);
+  if (index >= 0) {
+    db.reviews[index] = normalized;
+  } else {
+    db.reviews.push(normalized);
+  }
+
+  await writeDatabase(db);
+  return normalized;
+}
+
+export async function deleteReview(id: string): Promise<ProductReview | null> {
+  const db = await readDatabase();
+  const index = db.reviews.findIndex(review => review.id === id);
+  if (index === -1) {
+    return null;
+  }
+
+  const [removed] = db.reviews.splice(index, 1);
+  await writeDatabase(db);
+  return removed;
+}

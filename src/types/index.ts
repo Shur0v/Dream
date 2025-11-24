@@ -196,6 +196,22 @@ export interface FestivalBanner {
   updatedAt: string;
 }
 
+export type ReviewSource = 'admin' | 'user' | 'imported';
+
+export interface ProductReview {
+  id: string;
+  productId: string;
+  productName?: string;
+  author: string;
+  rating: number;
+  comment: string;
+  date: string;
+  verified: boolean;
+  source: ReviewSource;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface OrderProductSnapshot extends Partial<Product> {
   id: string;
   name: string;

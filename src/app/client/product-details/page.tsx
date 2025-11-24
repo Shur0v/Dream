@@ -79,7 +79,7 @@ export default function ProductDetails() {
             
             {/* Product Reviews Section */}
             <section className="w-full max-w-[1320px] mx-auto px-2">
-              <Reviews rating={4.5} reviewsCount={100} />
+              <Reviews productId="demo-product" initialReviews={[]} />
             </section>
 
             {/* Shop Instagram - full-width blue background */}
