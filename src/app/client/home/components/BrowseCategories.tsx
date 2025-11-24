@@ -29,12 +29,15 @@ export default function BrowseCategories() {
     }
   };
 
-  // Fetch categories from API with limit 80
+  // Fetch categories from API with limit 80 - always fetch fresh
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`/api/categories?limit=80`);
+        // Clear cache and fetch fresh
+        const response = await fetch(`/api/categories?limit=80&forceRefresh=true`, {
+          cache: 'no-store',
+        });
         const result = await response.json();
         
         if (result.success && result.data) {

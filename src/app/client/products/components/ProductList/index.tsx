@@ -31,46 +31,58 @@ export default function ProductList() {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
 
-  // Fetch products from API with localStorage caching
+  // Fetch products from API - same endpoint as selleradmin
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
+        setError(null);
         
-        // Check localStorage cache first
-        const cacheKey = 'products_cache';
-        const cacheTimestampKey = 'products_cache_timestamp';
-        const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+        // Use same API endpoint as selleradmin AllProductsGrid
+        // Selleradmin uses: /api/products?limit=40
+        // We'll use a higher limit to get all products
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        console.log('[ProductList] Fetching products from:', `${apiUrl}/products?limit=500`);
         
-        const cachedData = localStorage.getItem(cacheKey);
-        const cachedTimestamp = localStorage.getItem(cacheTimestampKey);
-        
-        if (cachedData && cachedTimestamp) {
-          const age = Date.now() - parseInt(cachedTimestamp, 10);
-          if (age < CACHE_TTL) {
-            const parsed = JSON.parse(cachedData);
-            if (parsed.success && parsed.data) {
-              setProducts(parsed.data);
-              setLoading(false);
-              return;
-            }
-          }
+        // Try Express API first, fallback to Next.js API
+        let response;
+        try {
+          response = await fetch(`${apiUrl}/products?limit=500`, {
+            cache: 'no-store', // Always fetch fresh
+          });
+        } catch (error) {
+          console.log('[ProductList] Express API failed, trying Next.js API...');
+          response = await fetch('/api/products?limit=500', {
+            cache: 'no-store',
+          });
         }
         
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/products?limit=40`);
-        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
-        if (result.success && result.data) {
+        const result = await response.json();
+        console.log('[ProductList] API Response:', { 
+          success: result.success, 
+          dataLength: result.data?.length,
+          hasData: !!result.data,
+          isArray: Array.isArray(result.data)
+        });
+        
+        if (result.success && result.data && Array.isArray(result.data)) {
+          // Show all products from database (same as selleradmin)
+          // Backend already handles active/inactive filtering if needed
+          console.log(`[ProductList] Loaded ${result.data.length} products from API (same database as selleradmin)`);
           setProducts(result.data);
-          // Cache the response
-          localStorage.setItem(cacheKey, JSON.stringify(result));
-          localStorage.setItem(cacheTimestampKey, Date.now().toString());
         } else {
-          setError(result.error || 'Failed to load products');
+          console.error('[ProductList] Invalid API response:', result);
+          setError(result.error || 'Invalid response from server');
+          setProducts([]);
         }
       } catch (err) {
-        console.error('Error fetching products:', err);
-        setError('Failed to load products');
+        console.error('[ProductList] Error fetching products:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load products');
+        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -86,7 +98,12 @@ export default function ProductList() {
       try {
         setCategoriesLoading(true);
         setCategoriesError(null);
-        const fetchedCategories = await loadCategoriesFromApi();
+        // Clear cache and fetch fresh categories
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('categories_cache');
+          localStorage.removeItem('categories_cache_timestamp');
+        }
+        const fetchedCategories = await loadCategoriesFromApi({ bypassCache: true });
         if (active) {
           setCategories(fetchedCategories);
         }
@@ -201,18 +218,84 @@ export default function ProductList() {
   }, [categories]);
 
   const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
+    console.log('[ProductList] Filtering products:', {
+      totalProducts: products.length,
+      categoryFilter: filters.category,
+      priceRange: filters.priceRange,
+      rating: filters.rating,
+    });
+    
+    let filtered = products.filter((product) => {
+      // Category filter
       if (filters.category !== 'all') {
         const normalizedProductCategory = product.category
           ? product.category.toLowerCase().replace(/\s+/g, '-')
           : '';
-        if (normalizedProductCategory !== filters.category) {
+        const normalizedFilterCategory = filters.category.toLowerCase();
+        if (normalizedProductCategory !== normalizedFilterCategory) {
           return false;
         }
       }
+      
+      // Price range filter
+      if (filters.priceRange !== 'all') {
+        const price = product.price || 0;
+        switch (filters.priceRange) {
+          case 'under-50':
+            if (price >= 50) return false;
+            break;
+          case '50-100':
+            if (price < 50 || price > 100) return false;
+            break;
+          case '100-200':
+            if (price < 100 || price > 200) return false;
+            break;
+          case 'over-200':
+            if (price <= 200) return false;
+            break;
+        }
+      }
+      
+      // Rating filter (if product has rating)
+      if (filters.rating !== 'all') {
+        const rating = (product as any).rating || 0;
+        const minRating = parseFloat(filters.rating.replace('+', ''));
+        if (rating < minRating) return false;
+      }
+      
       return true;
     });
-  }, [products, filters.category]);
+    
+    // Sort products
+    switch (filters.sortBy) {
+      case 'price-low':
+        filtered.sort((a, b) => (a.price || 0) - (b.price || 0));
+        break;
+      case 'price-high':
+        filtered.sort((a, b) => (b.price || 0) - (a.price || 0));
+        break;
+      case 'rating':
+        filtered.sort((a, b) => ((b as any).rating || 0) - ((a as any).rating || 0));
+        break;
+      case 'newest':
+        filtered.sort((a, b) => {
+          const aDate = new Date(a.createdAt || 0).getTime();
+          const bDate = new Date(b.createdAt || 0).getTime();
+          return bDate - aDate;
+        });
+        break;
+      default: // popularity
+        // Keep original order or sort by createdAt desc
+        filtered.sort((a, b) => {
+          const aDate = new Date(a.createdAt || 0).getTime();
+          const bDate = new Date(b.createdAt || 0).getTime();
+          return bDate - aDate;
+        });
+    }
+    
+    console.log('[ProductList] Filtered products count:', filtered.length);
+    return filtered;
+  }, [products, filters.category, filters.priceRange, filters.rating, filters.sortBy]);
 
   const handleFilterChange = (filterType: string, value: string) => {
     setFilters(prev => ({ ...prev, [filterType]: value }));

@@ -9,6 +9,7 @@ import {
   getCategoryBySlug,
   saveCategory,
   deleteCategory,
+  invalidateCategoriesCache,
 } from '../express-lib/db';
 
 const router = Router();
@@ -24,12 +25,19 @@ router.get('/', async (req: Request, res: Response) => {
     await mockApiDelay(300);
 
     const includeInactive = req.query.includeInactive === 'true';
+    // Force fresh read by invalidating cache if explicitly requested
+    if (req.query.forceRefresh === 'true') {
+      invalidateCategoriesCache();
+    }
+    
     const allCategories = await getCategories();
     const filteredCategories = includeInactive
       ? allCategories
       : allCategories.filter(cat => cat.isActive);
 
     filteredCategories.sort((a, b) => a.name.localeCompare(b.name));
+
+    console.log(`[GET /api/categories] Returning ${filteredCategories.length} categories (includeInactive: ${includeInactive})`);
 
     res.json({
       success: true,
@@ -119,6 +127,9 @@ router.post('/', async (req: Request, res: Response) => {
     };
 
     await saveCategory(newCategory);
+    
+    // Invalidate cache after creating category
+    invalidateCategoriesCache();
 
     res.status(201).json({
       success: true,
@@ -177,6 +188,9 @@ router.put('/:id', async (req: Request, res: Response) => {
     }
 
     await saveCategory(updatedCategory);
+    
+    // Invalidate cache after updating category
+    invalidateCategoriesCache();
 
     res.json({
       success: true,
@@ -211,6 +225,9 @@ router.delete('/:id', async (req: Request, res: Response) => {
         error: 'Category not found',
       });
     }
+    
+    // Invalidate cache after deleting category
+    invalidateCategoriesCache();
 
     res.json({
       success: true,

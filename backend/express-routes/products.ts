@@ -39,14 +39,24 @@ router.get('/', async (req: Request, res: Response) => {
 
     let filteredProducts = await getProducts();
 
-    // Filter by search
+    // Filter by search (name, description, brand, category, tags)
     if (search) {
       const searchLower = search.toLowerCase();
-      filteredProducts = filteredProducts.filter(product =>
-        product.name.toLowerCase().includes(searchLower) ||
-        product.description.toLowerCase().includes(searchLower) ||
-        (product.brand && product.brand.toLowerCase().includes(searchLower))
-      );
+      filteredProducts = filteredProducts.filter(product => {
+        // Search in product name
+        if (product.name && product.name.toLowerCase().includes(searchLower)) return true;
+        // Search in description
+        if (product.description && product.description.toLowerCase().includes(searchLower)) return true;
+        // Search in brand
+        if (product.brand && product.brand.toLowerCase().includes(searchLower)) return true;
+        // Search in category
+        if (product.category && product.category.toLowerCase().includes(searchLower)) return true;
+        // Search in tags
+        if (product.tags && Array.isArray(product.tags)) {
+          if (product.tags.some(tag => tag && tag.toLowerCase().includes(searchLower))) return true;
+        }
+        return false;
+      });
     }
 
     // Filter by category

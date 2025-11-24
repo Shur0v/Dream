@@ -56,8 +56,13 @@ export default function FilteringSystem() {
 
   // Memoize products transformation
   const displayProducts = useMemo(() => {
+    // Show all products from database (same as selleradmin)
+    // Only filter out explicitly inactive products
     return rawProducts
-      .filter((p: Product) => p.isActive !== false) // Only active products
+      .filter((p: Product) => {
+        // Show product if isActive is true or undefined (not explicitly false)
+        return p.isActive !== false;
+      })
       .map((p: Product) => {
         // Get first valid image from images array
         let productImage = '/placeholder-image.png';
@@ -184,46 +189,41 @@ export default function FilteringSystem() {
     }
   };
 
-  // Preload categories API on component mount (before main fetch)
+  // Preload categories API on component mount - same API as MainHeader
   useEffect(() => {
-    // Preload categories immediately when component mounts
+    // Clear old cache and fetch fresh categories from API (same as MainHeader)
     const preloadCategories = async () => {
       const categoriesCacheKey = 'categories_cache';
       const categoriesCacheTimestampKey = 'categories_cache_timestamp';
-      const cachedCategories = localStorage.getItem(categoriesCacheKey);
-      const cachedCategoriesTimestamp = localStorage.getItem(categoriesCacheTimestampKey);
-      const CATEGORIES_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+      const categoriesCacheHashKey = 'categories_cache_hash';
       
-      // Only preload if cache is missing or expired
-      if (!cachedCategories || !cachedCategoriesTimestamp || 
-          (Date.now() - parseInt(cachedCategoriesTimestamp, 10)) >= CATEGORIES_CACHE_TTL) {
-        try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-          const response = await fetch(`${apiUrl}/categories`).catch(() => fetch('/api/categories'));
-          
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success && result.data && Array.isArray(result.data)) {
-              console.log(`[FilteringSystem] Preloaded ${result.data.length} categories`);
-              setRawCategories(result.data);
-              safeSetItem(categoriesCacheKey, JSON.stringify(result));
-              safeSetItem(categoriesCacheTimestampKey, Date.now().toString());
-            }
+      // Clear old cache completely
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(categoriesCacheKey);
+        localStorage.removeItem(categoriesCacheTimestampKey);
+        localStorage.removeItem(categoriesCacheHashKey);
+      }
+      
+      try {
+        setCategoriesLoading(true);
+        // Use same API endpoint as MainHeader: /api/categories?limit=80&forceRefresh=true
+        const response = await fetch(`/api/categories?limit=80&forceRefresh=true`, {
+          cache: 'no-store', // Always fetch fresh
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data && Array.isArray(result.data)) {
+            // Filter only active categories (same as MainHeader)
+            const activeCategories = result.data.filter((cat: any) => cat.isActive);
+            console.log(`[FilteringSystem] Loaded ${activeCategories.length} active categories from API (same as MainHeader)`);
+            setRawCategories(activeCategories);
           }
-        } catch (error) {
-          console.error('[FilteringSystem] Error preloading categories:', error);
         }
-      } else {
-        // Use cached categories immediately
-        try {
-          const parsed = JSON.parse(cachedCategories);
-          if (parsed.success && parsed.data && Array.isArray(parsed.data) && parsed.data.length > 0) {
-            console.log(`[FilteringSystem] Using preloaded cached categories (${parsed.data.length} items)`);
-            setRawCategories(parsed.data);
-          }
-        } catch (error) {
-          console.error('[FilteringSystem] Error parsing preloaded categories:', error);
-        }
+      } catch (error) {
+        console.error('[FilteringSystem] Error preloading categories:', error);
+      } finally {
+        setCategoriesLoading(false);
       }
     };
 
@@ -257,9 +257,16 @@ export default function FilteringSystem() {
         const categoriesCacheTimestampKey = 'categories_cache_timestamp';
         const categoriesCacheHashKey = 'categories_cache_hash';
         
-        // Very long cache TTL - only invalidate if data actually changed
-        const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours (data persists until changed)
-        const CATEGORIES_CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+        // Clear old categories cache on first load
+        if (!isBackNavigation) {
+          localStorage.removeItem(categoriesCacheKey);
+          localStorage.removeItem(categoriesCacheTimestampKey);
+          localStorage.removeItem(categoriesCacheHashKey);
+        }
+        
+        // Shorter cache TTL to ensure fresh data
+        const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+        const CATEGORIES_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
         const API_TIMEOUT = 5000; // 5 seconds timeout
         
         // Helper function to fetch with timeout
@@ -285,9 +292,16 @@ export default function FilteringSystem() {
         const cachedCategoriesTimestamp = localStorage.getItem(categoriesCacheTimestampKey);
         const cachedCategoriesHash = localStorage.getItem(categoriesCacheHashKey);
         
-        // Set cached products immediately if valid
+        // Clear old products cache on first load to ensure fresh data
+        if (!isBackNavigation) {
+          localStorage.removeItem(productsCacheKey);
+          localStorage.removeItem(productsCacheTimestampKey);
+          localStorage.removeItem(productsCacheHashKey);
+        }
+        
+        // Set cached products immediately if valid (only for back navigation)
         let hasValidProductsCache = false;
-        if (cachedProducts && cachedProductsTimestamp) {
+        if (isBackNavigation && cachedProducts && cachedProductsTimestamp) {
           const age = Date.now() - parseInt(cachedProductsTimestamp, 10);
           if (age < CACHE_TTL) {
             try {
@@ -311,8 +325,10 @@ export default function FilteringSystem() {
             try {
               const parsed = JSON.parse(cachedCategories);
               if (parsed.success && parsed.data && Array.isArray(parsed.data) && parsed.data.length > 0) {
-                console.log(`[FilteringSystem] Using cached categories (${parsed.data.length} items)`);
-                setRawCategories(parsed.data);
+                // Filter only active categories (same as MainHeader)
+                const activeCategories = parsed.data.filter((cat: any) => cat.isActive);
+                console.log(`[FilteringSystem] Using cached categories (${activeCategories.length} active items)`);
+                setRawCategories(activeCategories);
                 hasValidCategoriesCache = true;
               }
             } catch (error) {
@@ -355,25 +371,22 @@ export default function FilteringSystem() {
             !cachedCategoriesTimestamp || 
             (Date.now() - parseInt(cachedCategoriesTimestamp, 10)) >= CATEGORIES_CACHE_TTL);
         
-        // Fetch categories FIRST (priority) - always fetch if needed (unless back nav with cache)
+        // Fetch categories FIRST (priority) - use same API as MainHeader
         if (shouldFetchCategories) {
           setCategoriesLoading(true);
-          // Fetch categories FIRST before products (higher priority)
+          // Fetch categories FIRST before products (higher priority) - same API as MainHeader
           fetchPromises.unshift(
             (async () => {
               try {
-                let categoriesResponse;
-                try {
-                  categoriesResponse = await fetchWithTimeout(`${apiUrl}/categories`, API_TIMEOUT);
-                } catch (error) {
-                  console.log('Express API failed, trying Next.js API...');
-                  categoriesResponse = await fetchWithTimeout('/api/categories', API_TIMEOUT);
-                }
+                // Use same API endpoint as MainHeader: /api/categories?limit=80&forceRefresh=true
+                const categoriesResponse = await fetchWithTimeout(`/api/categories?limit=80&forceRefresh=true`, API_TIMEOUT);
                 
                 if (categoriesResponse.ok) {
                   const categoriesResult = await categoriesResponse.json();
                   if (categoriesResult.success && categoriesResult.data && Array.isArray(categoriesResult.data)) {
-                    const newHash = generateDataHash(categoriesResult.data);
+                    // Filter only active categories (same as MainHeader)
+                    const activeCategories = categoriesResult.data.filter((cat: any) => cat.isActive);
+                    const newHash = generateDataHash(activeCategories);
                     
                     // Check if data actually changed
                     if (cachedCategoriesHash === newHash) {
@@ -381,10 +394,10 @@ export default function FilteringSystem() {
                       // Data unchanged, just update timestamp
                       safeSetItem(categoriesCacheTimestampKey, Date.now().toString());
                     } else {
-                      console.log(`[FilteringSystem] Categories data changed, loaded ${categoriesResult.data.length} items from API`);
-                      // Data changed, update everything
-                      setRawCategories(categoriesResult.data);
-                      safeSetItem(categoriesCacheKey, JSON.stringify(categoriesResult));
+                      console.log(`[FilteringSystem] Categories data changed, loaded ${activeCategories.length} active categories from API (same as MainHeader)`);
+                      // Data changed, update everything with active categories only
+                      setRawCategories(activeCategories);
+                      safeSetItem(categoriesCacheKey, JSON.stringify({ success: true, data: activeCategories }));
                       safeSetItem(categoriesCacheTimestampKey, Date.now().toString());
                       safeSetItem(categoriesCacheHashKey, newHash);
                     }
@@ -409,26 +422,31 @@ export default function FilteringSystem() {
           console.log('[FilteringSystem] Categories cache valid, skipping API call');
         }
         
-        // Check if products need to be fetched
-        // IMPORTANT: If back navigation and cache is missing/invalid, MUST fetch to show data
+        // Always fetch products if cache is missing/invalid (same API as selleradmin)
         const shouldFetchProducts = !hasValidProductsCache || 
             !cachedProducts || 
             !cachedProductsTimestamp || 
             (Date.now() - parseInt(cachedProductsTimestamp, 10)) >= CACHE_TTL;
         
-        // Fetch products only if needed
+        // Fetch products - use same API as selleradmin (limit=500 to get all products)
         if (shouldFetchProducts) {
           fetchPromises.push(
             (async () => {
               try {
-                const productsResponse = await fetchWithTimeout(`${apiUrl}/products?limit=20`, API_TIMEOUT).catch(() => {
-                  return fetchWithTimeout('/api/products?limit=20', API_TIMEOUT);
+                // Use same API endpoint as selleradmin: /api/products?limit=500
+                const productsResponse = await fetchWithTimeout(`${apiUrl}/products?limit=500`, API_TIMEOUT).catch(() => {
+                  return fetchWithTimeout('/api/products?limit=500', API_TIMEOUT);
                 });
                 
                 if (productsResponse.ok) {
                   const productsResult = await productsResponse.json();
+                  console.log('[FilteringSystem] Products API Response:', {
+                    success: productsResult.success,
+                    dataLength: productsResult.data?.length,
+                    isArray: Array.isArray(productsResult.data)
+                  });
                   
-                  if (productsResult.success && productsResult.data) {
+                  if (productsResult.success && productsResult.data && Array.isArray(productsResult.data)) {
                     const newHash = generateDataHash(productsResult.data);
                     
                     // Check if data actually changed
@@ -437,23 +455,31 @@ export default function FilteringSystem() {
                       // Data unchanged, just update timestamp
                       safeSetItem(productsCacheTimestampKey, Date.now().toString());
                     } else {
-                      console.log(`[FilteringSystem] Products data changed, loaded ${productsResult.data.length} items from API`);
+                      console.log(`[FilteringSystem] Products data changed, loaded ${productsResult.data.length} items from API (same as selleradmin)`);
                       // Data changed, update everything
                       setRawProducts(productsResult.data);
                       safeSetItem(productsCacheKey, JSON.stringify(productsResult));
                       safeSetItem(productsCacheTimestampKey, Date.now().toString());
                       safeSetItem(productsCacheHashKey, newHash);
                     }
+                  } else {
+                    console.error('[FilteringSystem] Invalid products API response:', productsResult);
                   }
+                } else {
+                  console.error('[FilteringSystem] Products API response not OK:', productsResponse.status);
                 }
               } catch (error) {
                 console.error('[FilteringSystem] Error fetching products:', error);
-                // Use cached data if available
+                // Don't use cached data if it's empty or invalid
                 if (cachedProducts) {
-                  const parsed = JSON.parse(cachedProducts);
-                  if (parsed.success && parsed.data) {
-                    console.log('[FilteringSystem] Using cached products due to API error');
-                    setRawProducts(parsed.data);
+                  try {
+                    const parsed = JSON.parse(cachedProducts);
+                    if (parsed.success && parsed.data && Array.isArray(parsed.data) && parsed.data.length > 0) {
+                      console.log('[FilteringSystem] Using cached products due to API error');
+                      setRawProducts(parsed.data);
+                    }
+                  } catch (parseError) {
+                    console.error('[FilteringSystem] Error parsing cached products:', parseError);
                   }
                 }
               }
@@ -489,11 +515,8 @@ export default function FilteringSystem() {
       if (!cachedTimestamp || (Date.now() - parseInt(cachedTimestamp, 10)) > 60000) {
         console.log('[FilteringSystem] Window focused, checking for category updates...');
         
-        // Fetch fresh categories to check if data changed
+        // Fetch fresh categories to check if data changed - use same API as MainHeader
         try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-          let categoriesResponse;
-          
           // Helper for timeout
           const fetchWithTimeout = async (url: string, timeout: number) => {
             const controller = new AbortController();
@@ -508,22 +531,21 @@ export default function FilteringSystem() {
             }
           };
           
-          try {
-            categoriesResponse = await fetchWithTimeout(`${apiUrl}/categories`, 3000);
-          } catch (error) {
-            categoriesResponse = await fetchWithTimeout('/api/categories', 3000);
-          }
+          // Use same API endpoint as MainHeader: /api/categories?limit=80&forceRefresh=true
+          const categoriesResponse = await fetchWithTimeout(`/api/categories?limit=80&forceRefresh=true`, 3000);
           
           if (categoriesResponse.ok) {
             const categoriesResult = await categoriesResponse.json();
             if (categoriesResult.success && categoriesResult.data && Array.isArray(categoriesResult.data)) {
-              const newHash = generateDataHash(categoriesResult.data);
+              // Filter only active categories (same as MainHeader)
+              const activeCategories = categoriesResult.data.filter((cat: any) => cat.isActive);
+              const newHash = generateDataHash(activeCategories);
               
               // Only update if data actually changed
               if (cachedHash !== newHash) {
-                console.log(`[FilteringSystem] Categories changed on focus, updated ${categoriesResult.data.length} items`);
-                setRawCategories(categoriesResult.data);
-                safeSetItem(categoriesCacheKey, JSON.stringify(categoriesResult));
+                console.log(`[FilteringSystem] Categories changed on focus, updated ${activeCategories.length} active items (same as MainHeader)`);
+                setRawCategories(activeCategories);
+                safeSetItem(categoriesCacheKey, JSON.stringify({ success: true, data: activeCategories }));
                 safeSetItem(categoriesCacheTimestampKey, Date.now().toString());
                 safeSetItem(categoriesCacheHashKey, newHash);
               } else {

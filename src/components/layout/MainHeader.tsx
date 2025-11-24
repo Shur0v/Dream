@@ -15,12 +15,14 @@
  * @version 1.0.0
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { ShoppingCart, Search, Menu, X } from 'lucide-react';
 import { CartDropdown } from '../cart/CartDropdown';
 import { WishlistDropdown } from '../wishlist/WishlistDropdown';
+import { Category, Product } from '@/types';
 
 /**
  * Props interface for MainHeader component
@@ -76,6 +78,7 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
   onOpenLoginModal,
   onOpenRegisterModal,
 }) => {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
@@ -84,8 +87,13 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
   const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'bn'>('en');
   const [hoveredCategory, setHoveredCategory] = useState('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [searchSuggestions, setSearchSuggestions] = useState<Product[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const languageDropdownRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
   
   // Close language dropdown when clicking outside
   useEffect(() => {
@@ -118,29 +126,6 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
       document.body.style.overflow = 'unset';
     };
   }, [isMobileMenuOpen]);
-  
-  const categories = [
-    'Electronics',
-    'Fashion',
-    'Home & Garden',
-    'Sports',
-    'Books',
-    'Health & Beauty',
-    'Toys & Games',
-    'Automotive',
-    'Food & Beverages',
-    'Office Supplies'
-  ];
-  
-  const getRandomCategory = () => {
-    const randomIndex = Math.floor(Math.random() * categories.length);
-    return categories[randomIndex];
-  };
-  
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSearch?.(searchQuery);
-  };
 
   const handleCartClick = () => {
     setIsCartOpen(true);
@@ -174,6 +159,110 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
   const handleRemoveWishlistItem = (itemId: number) => {
     // Handle remove wishlist item logic here
     console.log(`Removing wishlist item ${itemId}`);
+  };
+
+  // Fetch categories from API - same as BrowseCategories component
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        // Clear all category caches
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('categories_cache');
+          localStorage.removeItem('categories_cache_timestamp');
+          localStorage.removeItem('categories_cache_hash');
+        }
+        // Use same API endpoint as BrowseCategories
+        const response = await fetch(`/api/categories?limit=80&forceRefresh=true`, {
+          cache: 'no-store',
+        });
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          // Filter only active categories (same as BrowseCategories)
+          const activeCategories = result.data.filter((cat: Category) => cat.isActive);
+          setCategories(activeCategories);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  // Search suggestions based on query
+  useEffect(() => {
+    const fetchSearchSuggestions = async () => {
+      if (!searchQuery.trim() || searchQuery.length < 2) {
+        setSearchSuggestions([]);
+        setShowSuggestions(false);
+        return;
+      }
+
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        const response = await fetch(
+          `${apiUrl}/products?search=${encodeURIComponent(searchQuery)}&limit=5&sortBy=createdAt&sortOrder=desc`
+        );
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setSearchSuggestions(result.data);
+            setShowSuggestions(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching search suggestions:', error);
+      }
+    };
+
+    const debounceTimer = setTimeout(fetchSearchSuggestions, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery]);
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // Navigate to products page with search query
+      router.push(`/client/products?search=${encodeURIComponent(searchQuery)}`);
+      setShowSuggestions(false);
+      onSearch?.(searchQuery);
+    }
+  };
+
+  const handleCategoryClick = (category: Category) => {
+    setIsCategoriesOpen(false);
+    if (category.slug) {
+      router.push(`/client/categories?category=${category.slug}`);
+    } else {
+      router.push(`/client/categories?category=${category.name.toLowerCase().replace(/\s+/g, '-')}`);
+    }
+  };
+
+  const handleSuggestionClick = (product: Product) => {
+    setSearchQuery('');
+    setShowSuggestions(false);
+    if (product.slug) {
+      router.push(`/client/product-details/${product.slug}`);
+    } else {
+      router.push(`/client/product-details/${product.id}`);
+    }
   };
 
   const navigationLinks = [
@@ -271,25 +360,26 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
                       </div>
                     </button>
                     
-                    {/* Categories Dropdown Menu */}
+                    {/* Categories Dropdown Menu - Same data source as BrowseCategories */}
                     {isCategoriesOpen && (
                       <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
                         <div className="py-2">
-                          {Array.from({ length: 8 }, (_, index) => {
-                            const randomCategory = getRandomCategory();
-                            return (
+                          {categoriesLoading ? (
+                            <div className="px-4 py-2 text-sm text-gray-500">Loading categories...</div>
+                          ) : categories.length === 0 ? (
+                            <div className="px-4 py-2 text-sm text-gray-500">No categories available</div>
+                          ) : (
+                            categories.map((category) => (
                               <button
-                                key={index}
-                                onClick={() => {
-                                  console.log(`Selected category: ${randomCategory}`);
-                                  setIsCategoriesOpen(false);
-                                }}
+                                key={category.id}
+                                onClick={() => handleCategoryClick(category)}
                                 className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                               >
-                                {randomCategory}
+                                {/* Show only category name, no images */}
+                                {category.name}
                               </button>
-                            );
-                          })}
+                            ))
+                          )}
                         </div>
                       </div>
                     )}
@@ -298,15 +388,67 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
                   <div className="layer-10 hidden sm:block w-px h-4 bg-zinc-400" data-layer="10"></div>
                   {/* layer-10 = separator line */}
                   
-                  <input
-                    type="text"
-                    placeholder="Search by product name…"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="layer-11 flex-1 py-1.5 text-zinc-500 text-sm sm:text-base font-normal leading-7 bg-transparent border-none outline-none focus:ring-0 placeholder:text-zinc-400"
-                    aria-label="Search products"
-                    data-layer="11"
-                  />
+                  <div ref={searchRef} className="flex-1 relative">
+                    <input
+                      type="text"
+                      placeholder="Search by product name, category, or tag…"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onFocus={() => searchQuery.length >= 2 && setShowSuggestions(true)}
+                      className="layer-11 w-full py-1.5 text-zinc-500 text-sm sm:text-base font-normal leading-7 bg-transparent border-none outline-none focus:ring-0 placeholder:text-zinc-400"
+                      aria-label="Search products"
+                      data-layer="11"
+                    />
+                    
+                    {/* Search Suggestions Dropdown */}
+                    {showSuggestions && searchSuggestions.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+                        <div className="py-2">
+                          <div className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                            Suggested Products
+                          </div>
+                          {searchSuggestions.map((product) => {
+                            const productImage = product.images && product.images.length > 0 
+                              ? product.images[0] 
+                              : '/placeholder-image.png';
+                            return (
+                              <button
+                                key={product.id}
+                                onClick={() => handleSuggestionClick(product)}
+                                className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center gap-3"
+                              >
+                                <div className="w-12 h-12 rounded overflow-hidden flex-shrink-0">
+                                  <Image
+                                    src={productImage}
+                                    alt={product.name}
+                                    width={48}
+                                    height={48}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-sm font-medium text-gray-900 truncate">
+                                    {product.name}
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    {product.category && <span>{product.category}</span>}
+                                    {product.tags && product.tags.length > 0 && (
+                                      <span className="ml-2">
+                                        Tags: {product.tags.slice(0, 2).join(', ')}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-sm font-semibold text-fuchsia-600 mt-1">
+                                    ৳{product.price}
+                                  </div>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 <button

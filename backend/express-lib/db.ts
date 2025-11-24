@@ -179,8 +179,12 @@ export async function getCategories(): Promise<Category[]> {
 }
 
 export async function saveCategories(categories: Category[]): Promise<void> {
-  await writeJsonFile(CATEGORIES_DB, categories);
+  // Invalidate cache before writing
   categoriesCache = null;
+  await writeJsonFile(CATEGORIES_DB, categories);
+  // Invalidate cache after writing to ensure fresh reads
+  categoriesCache = null;
+  console.log(`[db] Categories saved. Total categories: ${categories.length}`);
 }
 
 export async function getCategoryById(id: string): Promise<Category | undefined> {
@@ -195,6 +199,9 @@ export async function getCategoryBySlug(slug: string): Promise<Category | undefi
 
 export async function saveCategory(category: Category): Promise<Category> {
   try {
+    // Invalidate cache first to ensure we get fresh data
+    categoriesCache = null;
+    
     const categories = await getCategories();
     const index = categories.findIndex(c => c.id === category.id);
     
@@ -206,7 +213,7 @@ export async function saveCategory(category: Category): Promise<Category> {
       console.log(`[db] Creating new category: ${category.id}`);
     }
     
-    await saveCategories(categories);
+    await saveCategories(categories); // This will invalidate the cache
     console.log(`[db] Total categories in database: ${categories.length}`);
     return category;
   } catch (error) {
