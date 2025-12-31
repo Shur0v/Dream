@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Minus, Plus, Heart, ShoppingCart, Star } from 'lucide-react';
 import { CheckoutModal } from '@/components/cart/CheckoutModal';
 import { apiService } from '@/services/api';
+import { stateFirstPaymentService } from '@/services/payment';
 
 interface ProductInfoProps {
   product: {
@@ -28,6 +30,7 @@ interface ProductInfoProps {
 }
 
 const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], className }) => {
+  const router = useRouter();
   const [quantity, setQuantity] = useState(2);
   const [selectedColor, setSelectedColor] = useState<string | null>(
     product.colors && product.colors.length > 0 ? product.colors[0] : null
@@ -41,7 +44,24 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
   };
 
   const handleBuyNow = () => {
-    setIsCheckoutOpen(true);
+    // Calculate total price
+    const totalPrice = product.price * quantity;
+    
+    // Store product data for payment
+    const orderId = `product-${product.id}-${Date.now()}`;
+    sessionStorage.setItem(`order_${orderId}`, JSON.stringify({
+      productId: product.id,
+      productName: product.name,
+      price: product.price,
+      quantity: quantity,
+      color: selectedColor,
+      size: selectedSize,
+      images: images,
+      totalPrice: totalPrice,
+    }));
+
+    // Redirect to payment checkout page
+    router.push(`/client/payment/checkout?orderId=${orderId}&type=product&price=${totalPrice}&productId=${product.id}&quantity=${quantity}&productName=${encodeURIComponent(product.name)}`);
   };
 
   const handleCheckoutSubmit = async (formData: {
@@ -92,37 +112,66 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
         country: 'Bangladesh',
       };
       
-      // Create order data
-      const orderData = {
-        userId: tempUserId,
-        items: [orderItem],
-        shippingAddress: shippingAddress,
-        paymentMethod: 'Cash on Delivery',
-        // Store customer info in notes for now (can be enhanced later)
-        notes: JSON.stringify({
-          customerName: formData.name,
-          phoneNumber: formData.phoneNumber,
-          email: formData.email,
+      // Create order ID for payment
+      const orderId = `order-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Prepare payment data for State First
+      const paymentData = {
+        amount: totalAmount,
+        currency: 'BDT',
+        orderId: orderId,
+        customerName: formData.name,
+        customerPhone: formData.phoneNumber,
+        customerEmail: formData.email,
+        customerAddress: {
           district: formData.district,
           upazila: formData.upazila,
           thana: formData.thana,
           postOffice: formData.postOffice,
-        }),
+        },
+        items: [{
+          productId: product.id,
+          productName: product.name,
+          quantity: quantity,
+          price: product.price,
+        }],
+        returnUrl: `${window.location.origin}/client/payment/success?orderId=${orderId}`,
+        cancelUrl: `${window.location.origin}/client/payment/cancel?orderId=${orderId}`,
       };
+
+      // Store order data in sessionStorage
+      sessionStorage.setItem(`order_${orderId}`, JSON.stringify({
+        orderData: {
+          userId: tempUserId,
+          items: [orderItem],
+          shippingAddress: shippingAddress,
+          paymentMethod: 'State First Payment',
+          notes: JSON.stringify({
+            customerName: formData.name,
+            phoneNumber: formData.phoneNumber,
+            email: formData.email,
+            district: formData.district,
+            upazila: formData.upazila,
+            thana: formData.thana,
+            postOffice: formData.postOffice,
+          }),
+        },
+        paymentData: paymentData,
+      }));
+
+      // Create payment session with State First
+      const paymentResponse = await stateFirstPaymentService.createPaymentSession(paymentData);
       
-      // Submit order via API
-      const response = await apiService.createOrder(orderData);
-      
-      if (response.success) {
-        console.log('Order created successfully:', response.data);
-        alert('Order placed successfully! Your order ID is: ' + response.data.id);
-        setIsCheckoutOpen(false);
+      if (paymentResponse.success && paymentResponse.paymentUrl) {
+        // Redirect to State First payment page
+        window.location.href = paymentResponse.paymentUrl;
       } else {
-        throw new Error(response.error || 'Failed to create order');
+        throw new Error(paymentResponse.error || 'Failed to create payment session');
       }
     } catch (error: any) {
-      console.error('Error creating order:', error);
-      alert('Failed to place order. Please try again. Error: ' + (error.message || 'Unknown error'));
+      console.error('Error processing payment:', error);
+      alert('Failed to process payment. Please try again. Error: ' + (error.message || 'Unknown error'));
+      setIsCheckoutOpen(false);
     } finally {
       setIsSubmitting(false);
     }

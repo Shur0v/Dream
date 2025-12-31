@@ -64,25 +64,25 @@ export default function Footer({ onOpenLoginModal, onOpenRegisterModal }: Footer
       name: "Facebook", 
       icon: Facebook, 
       className: "rounded-[39px]",
-      href: "https://facebook.com"
+      href: "https://facebook.com/dreamshoplimited/"
     },
     { 
       name: "Instagram", 
       icon: Instagram, 
       className: "rounded-[38px]",
-      href: "https://instagram.com"
+      href: "https://instagram.com/dreamshoplimited/"
     },
     { 
       name: "Twitter", 
       icon: Twitter, 
       className: "rounded-[38px]",
-      href: "https://twitter.com"
+      href: "https://x.com/dreamshopbdltd/"
     },
     { 
       name: "LinkedIn", 
       icon: Linkedin, 
       className: "rounded-[50px]",
-      href: "https://linkedin.com"
+      href: "https://www.linkedin.com/company/dreamshoplimited/"
     }
   ];
 
@@ -114,7 +114,7 @@ export default function Footer({ onOpenLoginModal, onOpenRegisterModal }: Footer
     { 
       icon: "whatsapp", 
       text: "01576-609601",
-      href: "https://wa.me/01576609601"
+      href: "https://wa.me/8801576609601"
     },
     { 
       icon: "support", 
@@ -190,6 +190,19 @@ export default function Footer({ onOpenLoginModal, onOpenRegisterModal }: Footer
                       </a>
                     );
                   })}
+                  {/* YouTube Link */}
+                  <a
+                    href="https://youtube.com/@dreamshoplimited/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="layer-9 p-2 sm:p-2.5 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 rounded-[38px] inline-flex flex-col justify-start items-start gap-2.5 overflow-hidden hover:from-fuchsia-600 hover:to-fuchsia-600 transition-colors"
+                    aria-label="Visit our YouTube channel"
+                    data-layer="9"
+                  >
+                    <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                  </a>
                 </div>
               </div>
               
@@ -294,6 +307,8 @@ export default function Footer({ onOpenLoginModal, onOpenRegisterModal }: Footer
                     <a
                       key={index}
                       href={contact.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className={`layer-21 ${contact.icon === 'location' ? 'self-stretch' : ''} inline-flex justify-start items-start sm:items-center gap-2 hover:text-white transition-colors cursor-pointer`}
                       aria-label={`Contact us via ${contact.icon}`}
                       data-layer="21"

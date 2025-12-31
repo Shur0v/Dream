@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { PromoBanner } from '@/types';
+import { stateFirstPaymentService } from '@/services/payment';
 
 const getInitialCountdown = (banner?: PromoBanner) => ({
   days: banner?.initialTime?.days ?? 0,
@@ -15,11 +17,13 @@ const getInitialCountdown = (banner?: PromoBanner) => ({
  * Displays promotional banners with slider functionality and countdown timers
  */
 export default function DiscountPromo() {
+  const router = useRouter();
   const [banners, setBanners] = useState<PromoBanner[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [timeLefts, setTimeLefts] = useState<Array<PromoBanner['initialTime']>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [processingPayment, setProcessingPayment] = useState<string | null>(null);
 
   // Auto-slide only on mobile (hidden on lg screens)
   useEffect(() => {
@@ -116,6 +120,69 @@ export default function DiscountPromo() {
 
   const formatTime = (value: number) => {
     return value.toString().padStart(2, '0');
+  };
+
+  /**
+   * Handle Buy Now button click for banner
+   * Calculates price and redirects to payment
+   */
+  const handleBannerBuyNow = async (banner: PromoBanner) => {
+    try {
+      setProcessingPayment(banner.id);
+      
+      // Extract price from banner (assuming priceText format like "$99.99" or "৳99.99")
+      const priceText = banner.priceText || '$0.00';
+      const priceMatch = priceText.match(/[\d.]+/);
+      const price = priceMatch ? parseFloat(priceMatch[0]) : 0;
+
+      if (price <= 0) {
+        alert('Invalid product price. Please contact support.');
+        return;
+      }
+
+      // Create order ID
+      const orderId = `banner-${banner.id}-${Date.now()}`;
+
+      // Prepare payment data
+      const paymentData = {
+        amount: price,
+        currency: 'BDT',
+        orderId: orderId,
+        customerName: '',
+        customerPhone: '',
+        customerEmail: '',
+        customerAddress: {
+          district: '',
+          upazila: '',
+          thana: '',
+          postOffice: '',
+        },
+        items: [{
+          productId: banner.id,
+          productName: banner.title || 'Promotional Product',
+          quantity: 1,
+          price: price,
+        }],
+        returnUrl: `${window.location.origin}/client/payment/success?orderId=${orderId}`,
+        cancelUrl: `${window.location.origin}/client/payment/cancel?orderId=${orderId}`,
+      };
+
+      // Store order data in sessionStorage for later use
+      sessionStorage.setItem(`order_${orderId}`, JSON.stringify({
+        bannerId: banner.id,
+        bannerTitle: banner.title,
+        price: price,
+        quantity: 1,
+      }));
+
+      // Redirect to payment page with order data
+      router.push(`/client/payment/checkout?orderId=${orderId}&type=banner&price=${price}&productName=${encodeURIComponent(banner.title || 'Promotional Product')}`);
+    } catch (error: any) {
+      console.error('Error processing banner payment:', error);
+      alert('Failed to process payment. Please try again.');
+    } finally {
+      setProcessingPayment(null);
+    }
   };
 
   // Render banner card component
@@ -289,13 +356,20 @@ export default function DiscountPromo() {
               </div>
             </div>
             
-            <div className="layer-33 h-8 sm:h-9 md:h-11 px-4 sm:px-6 md:px-8 py-1.5 sm:py-2 md:py-3 bg-fuchsia-500 hover:bg-fuchsia-600 rounded-xl inline-flex justify-center items-center cursor-pointer transition-colors duration-300" role="button" aria-label={`Buy now for ${banner.title}`} data-layer="33">
+            <button
+              onClick={() => handleBannerBuyNow(banner)}
+              disabled={processingPayment === banner.id}
+              className="layer-33 h-8 sm:h-9 md:h-11 px-4 sm:px-6 md:px-8 py-1.5 sm:py-2 md:py-3 bg-fuchsia-500 hover:bg-fuchsia-600 rounded-xl inline-flex justify-center items-center cursor-pointer transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed" 
+              role="button" 
+              aria-label={`Buy now for ${banner.title}`} 
+              data-layer="33"
+            >
               {/* layer-33 = buy now button */}
               <div className="layer-34 justify-start text-white text-xs sm:text-sm md:text-base font-semibold font-['Poppins'] leading-none" data-layer="34">
                 {/* layer-34 = button text */}
-                Buy Now
+                {processingPayment === banner.id ? 'Processing...' : 'Buy Now'}
               </div>
-            </div>
+            </button>
           </div>
         </div>
       </div>
