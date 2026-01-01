@@ -1,7 +1,7 @@
 # Global Modal State Management Solution
 
 ## Problem
-The sign in/signup modal was not working globally across different routes. When users clicked the sign in button from different pages, the modal wouldn't appear because each page had its own local modal state that wasn't shared.
+The sign in/signup modal was not wowork   !!!   rking globally across different routes. When users clicked the sign in button from different pages, the modal wouldn't appear because each page had its own local modal state that wasn't shared.
 
 ## Root Cause
 The issue was that each `MainLayout` component instance managed its own local modal state using `useState`. When navigating between routes (e.g., from `/client` to `/client/categories`), each page created a new `MainLayout` instance with fresh modal state, causing the modal to not persist across route changes.
