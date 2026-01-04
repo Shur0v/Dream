@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import CachedImage from '@/components/ui/CachedImage';
 import { PromoBanner } from '@/types';
 import { stateFirstPaymentService } from '@/services/payment';
 
@@ -31,15 +32,33 @@ export default function DiscountPromo() {
     let active = true;
     const loadBanners = async () => {
       try {
-        setLoading(true);
-        const response = await fetch('/api/promo-banners?variant=card&limit=2', {
-          cache: 'force-cache',
-          next: { revalidate: 60 },
-        });
+        // Check cache first for instant loading
+        const { getCachedResponse } = await import('@/lib/indexeddb/apiCache');
+        const cacheKey = '/api/promo-banners?variant=card&limit=2';
+        const cachedData = await getCachedResponse(cacheKey);
+        
+        if (cachedData && active) {
+          // Show cached data instantly (no loading state)
+          const data: PromoBanner[] = Array.isArray(cachedData.data) ? cachedData.data : [];
+          const limited = data.slice(0, 2);
+          setBanners(limited);
+          setTimeLefts(limited.map(banner => getInitialCountdown(banner)));
+          setCurrentSlide(0);
+          setError(null);
+          setLoading(false);
+        } else if (active) {
+          setLoading(true);
+        }
+
+        // Fetch from network (update cache in background)
+        const { fetchWithCache } = await import('@/lib/indexeddb/apiCache');
+        const response = await fetchWithCache(cacheKey, {}, 60 * 60 * 1000);
         const result = await response.json();
-        if (!response.ok || !result.success) {
+        
+        if (!result.success) {
           throw new Error(result.error || 'Failed to load discount promo banners');
         }
+        
         const data: PromoBanner[] = Array.isArray(result.data) ? result.data : [];
         const limited = data.slice(0, 2);
         if (active) {
@@ -206,7 +225,7 @@ export default function DiscountPromo() {
         {/* Background Image */}
         <div className="layer-4 absolute inset-0 z-0 rounded-xl overflow-hidden" data-layer="4">
           {/* layer-4 = background image container */}
-          <Image
+          <CachedImage
             src={banner.backgroundImage || banner.image || '/placeholder-image.png'}
             alt={`${banner.title || 'promo banner'} promotional product`}
             fill

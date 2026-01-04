@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import CachedImage from '@/components/ui/CachedImage';
 import Link from 'next/link';
 import { BestSellingProduct } from '@/types';
 
@@ -14,15 +15,31 @@ export default function BestSelling() {
   const [products, setProducts] = useState<BestSellingProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch best selling products from API
+  // Fetch best selling products from API with caching
   useEffect(() => {
+    let active = true;
+    
     const fetchBestSellingProducts = async () => {
       try {
-        setLoading(true);
-        const response = await fetch(`/api/best-selling-products?limit=4`);
+        // Check cache first for instant loading
+        const { getCachedResponse } = await import('@/lib/indexeddb/apiCache');
+        const cachedData = await getCachedResponse(`/api/best-selling-products?limit=4`);
+        
+        if (cachedData && active) {
+          // Show cached data instantly (no loading state)
+          const activeProducts = (cachedData.data || []).filter((p: BestSellingProduct) => p.isActive);
+          setProducts(activeProducts.slice(0, 4));
+          setLoading(false);
+        } else if (active) {
+          setLoading(true);
+        }
+
+        // Fetch from network (update cache in background)
+        const { fetchWithCache } = await import('@/lib/indexeddb/apiCache');
+        const response = await fetchWithCache(`/api/best-selling-products?limit=4`, {}, 60 * 60 * 1000);
         const result = await response.json();
         
-        if (result.success && result.data) {
+        if (active && result.success && result.data) {
           // Only show active best selling products
           const activeProducts = result.data.filter((p: BestSellingProduct) => p.isActive);
           setProducts(activeProducts.slice(0, 4));
@@ -30,11 +47,17 @@ export default function BestSelling() {
       } catch (error) {
         console.error('Error fetching best selling products:', error);
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     };
 
     fetchBestSellingProducts();
+    
+    return () => {
+      active = false;
+    };
   }, []);
 
   return (
@@ -135,7 +158,7 @@ export default function BestSelling() {
               <div className="layer-12 self-stretch h-48 md:h-72 relative mb-4 overflow-hidden rounded-lg" data-layer="12">
                 {/* layer-12 = product image container */}
                 
-                <Image
+                <CachedImage
                   src={product.images && product.images.length > 0 ? product.images[0] : '/placeholder-product.png'}
                   alt={`${product.name} product image`}
                   fill

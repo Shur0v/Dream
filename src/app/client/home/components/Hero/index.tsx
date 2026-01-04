@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useCachedImageUrl } from '@/hooks/useCachedImageUrl';
 import { HeroBanner } from '@/types';
 
 /**
@@ -13,6 +14,52 @@ import { HeroBanner } from '@/types';
  * - Responsive design for mobile and desktop
  * - Smooth transitions and hover effects
  */
+// Component for cached slider image
+function CachedSliderImage({ 
+  src, 
+  alt, 
+  isActive 
+}: { 
+  src: string; 
+  alt: string; 
+  isActive: boolean;
+}) {
+  const cachedSrc = useCachedImageUrl(src);
+  return (
+    <div
+      className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+        isActive ? 'opacity-100' : 'opacity-0'
+      }`}
+    >
+      <img 
+        className="w-full h-full object-cover rounded-xl" 
+        src={cachedSrc}
+        alt={alt}
+      />
+    </div>
+  );
+}
+
+// Component for cached right banner
+function CachedBannerImage({ 
+  src, 
+  alt, 
+  className 
+}: { 
+  src: string; 
+  alt: string; 
+  className: string;
+}) {
+  const cachedSrc = useCachedImageUrl(src);
+  return (
+    <img 
+      className={className}
+      src={cachedSrc}
+      alt={alt}
+    />
+  );
+}
+
 export default function Hero() {
   // Slider state
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -20,15 +67,32 @@ export default function Hero() {
   const [rightBanners, setRightBanners] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch hero banner from API
+  // Fetch hero banner from API with caching
   useEffect(() => {
+    let active = true;
+    
     const fetchHeroBanner = async () => {
       try {
-        setLoading(true);
-        const response = await fetch(`/api/hero-banners`);
+        // Check cache first for instant loading
+        const { getCachedResponse } = await import('@/lib/indexeddb/apiCache');
+        const cachedData = await getCachedResponse(`/api/hero-banners`);
+        
+        if (cachedData && active) {
+          // Show cached data instantly (no loading state)
+          const banner: HeroBanner = cachedData.data || cachedData;
+          setSliderImages(banner.sliderImages || []);
+          setRightBanners(banner.rightBanners || []);
+          setLoading(false);
+        } else if (active) {
+          setLoading(true);
+        }
+
+        // Fetch from network (update cache in background)
+        const { fetchWithCache } = await import('@/lib/indexeddb/apiCache');
+        const response = await fetchWithCache(`/api/hero-banners`, {}, 60 * 60 * 1000);
         const result = await response.json();
         
-        if (result.success && result.data) {
+        if (active && result.success && result.data) {
           const banner: HeroBanner = result.data;
           setSliderImages(banner.sliderImages || []);
           setRightBanners(banner.rightBanners || []);
@@ -36,11 +100,17 @@ export default function Hero() {
       } catch (error) {
         console.error('Error fetching hero banner:', error);
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     };
 
     fetchHeroBanner();
+    
+    return () => {
+      active = false;
+    };
   }, []);
 
   /**
@@ -101,18 +171,12 @@ export default function Hero() {
               {/* Slider Images */}
               <div className="relative w-full h-full">
                 {sliderImages.map((image, index) => (
-                  <div
+                  <CachedSliderImage
                     key={index}
-                    className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-                      index === currentSlide ? 'opacity-100' : 'opacity-0'
-                    }`}
-                  >
-                    <img 
-                      className="w-full h-full object-cover rounded-xl" 
-                      src={image}
-                      alt={`Banner ${index + 1}`}
-                    />
-                  </div>
+                    src={image}
+                    alt={`Banner ${index + 1}`}
+                    isActive={index === currentSlide}
+                  />
                 ))}
               </div>
 
@@ -163,27 +227,27 @@ export default function Hero() {
             <div className="hidden md:flex w-full md:w-[492px] md:flex-shrink-0 flex-col justify-start items-start gap-6">
               {/* Top Image - Full Width Header (rightBanners[0]) */}
               {rightBanners[0] && rightBanners[0].trim() !== '' && (
-                <img 
-                  className="w-full h-[229px] rounded-xl object-cover cursor-pointer hover:opacity-90 transition-opacity" 
-                  src={rightBanners[0]} 
+                <CachedBannerImage
+                  src={rightBanners[0]}
                   alt="Header Banner"
+                  className="w-full h-[229px] rounded-xl object-cover cursor-pointer hover:opacity-90 transition-opacity"
                 />
               )}
               {/* Bottom Images - Two side by side (rightBanners[1] and rightBanners[2]) */}
               {((rightBanners[1] && rightBanners[1].trim() !== '') || (rightBanners[2] && rightBanners[2].trim() !== '')) && (
                 <div className="w-full flex justify-start items-center gap-6">
                   {rightBanners[1] && rightBanners[1].trim() !== '' && (
-                    <img 
-                      className="w-[234px] h-[260px] rounded-xl object-cover flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity bg-cover bg-center" 
-                      src={rightBanners[1]} 
+                    <CachedBannerImage
+                      src={rightBanners[1]}
                       alt="Banner 1"
+                      className="w-[234px] h-[260px] rounded-xl object-cover flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity bg-cover bg-center"
                     />
                   )}
                   {rightBanners[2] && rightBanners[2].trim() !== '' && (
-                    <img 
-                      className="w-[234px] h-[260px] rounded-xl object-cover flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity bg-cover bg-center" 
-                      src={rightBanners[2]} 
+                    <CachedBannerImage
+                      src={rightBanners[2]}
                       alt="Banner 2"
+                      className="w-[234px] h-[260px] rounded-xl object-cover flex-shrink-0 cursor-pointer hover:opacity-90 transition-opacity bg-cover bg-center"
                     />
                   )}
                 </div>

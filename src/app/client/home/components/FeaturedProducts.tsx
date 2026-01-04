@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
+import CachedImage from '@/components/ui/CachedImage';
 import Link from 'next/link';
 import { FeaturedProduct } from '@/types';
 
@@ -25,15 +26,31 @@ export default function FeaturedProducts() {
     Kids: ['Clothing', 'Toys', 'Books', 'Shoes', 'Accessories', 'Games']
   };
 
-  // Fetch featured products from API
+  // Fetch featured products from API with caching
   useEffect(() => {
+    let active = true;
+    
     const fetchFeaturedProducts = async () => {
       try {
-        setLoading(true);
-        const response = await fetch(`/api/featured-products?limit=4`);
+        // Check cache first for instant loading
+        const { getCachedResponse } = await import('@/lib/indexeddb/apiCache');
+        const cachedData = await getCachedResponse(`/api/featured-products?limit=4`);
+        
+        if (cachedData && active) {
+          // Show cached data instantly (no loading state)
+          const activeProducts = (cachedData.data || []).filter((p: FeaturedProduct) => p.isActive);
+          setProducts(activeProducts.slice(0, 4));
+          setLoading(false);
+        } else if (active) {
+          setLoading(true);
+        }
+
+        // Fetch from network (update cache in background)
+        const { fetchWithCache } = await import('@/lib/indexeddb/apiCache');
+        const response = await fetchWithCache(`/api/featured-products?limit=4`, {}, 60 * 60 * 1000);
         const result = await response.json();
         
-        if (result.success && result.data) {
+        if (active && result.success && result.data) {
           // Only show active featured products
           const activeProducts = result.data.filter((p: FeaturedProduct) => p.isActive);
           setProducts(activeProducts.slice(0, 4));
@@ -41,11 +58,17 @@ export default function FeaturedProducts() {
       } catch (error) {
         console.error('Error fetching featured products:', error);
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     };
 
     fetchFeaturedProducts();
+    
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Close dropdown when clicking outside
@@ -234,7 +257,7 @@ export default function FeaturedProducts() {
                <div className="layer-20 self-stretch h-48 md:h-72 relative mb-4 overflow-hidden rounded-lg" data-layer="20">
                  {/* layer-20 = product image container */}
                  
-                 <Image
+                 <CachedImage
                    src={product.images && product.images.length > 0 ? product.images[0] : '/placeholder-product.png'}
                    alt={`${product.name} product image`}
                    fill

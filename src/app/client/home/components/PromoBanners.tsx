@@ -25,12 +25,32 @@ export default function PromoBanners() {
     let active = true;
     const loadBanners = async () => {
       try {
-        setLoading(true);
-        const response = await fetch('/api/promo-banners?variant=slider');
+        // Check cache first for instant loading
+        const { getCachedResponse } = await import('@/lib/indexeddb/apiCache');
+        const cacheKey = '/api/promo-banners?variant=slider';
+        const cachedData = await getCachedResponse(cacheKey);
+        
+        if (cachedData && active) {
+          // Show cached data instantly (no loading state)
+          const data: PromoBanner[] = Array.isArray(cachedData.data) ? cachedData.data : [];
+          setBanners(data);
+          setTimeLefts(data.map((banner) => getInitialCountdown(banner)));
+          setCurrentSlide(0);
+          setError(null);
+          setLoading(false);
+        } else if (active) {
+          setLoading(true);
+        }
+
+        // Fetch from network (update cache in background)
+        const { fetchWithCache } = await import('@/lib/indexeddb/apiCache');
+        const response = await fetchWithCache(cacheKey, {}, 60 * 60 * 1000);
         const result = await response.json();
-        if (!response.ok || !result.success) {
+        
+        if (!result.success) {
           throw new Error(result.error || 'Failed to load promo banners');
         }
+        
         const data: PromoBanner[] = Array.isArray(result.data) ? result.data : [];
         if (active) {
           setBanners(data);

@@ -31,64 +31,60 @@ export default function ProductList() {
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
 
-  // Fetch products from API - same endpoint as selleradmin
+  // Fetch products from API with caching
   useEffect(() => {
+    let active = true;
+    
     const fetchProducts = async () => {
       try {
-        setLoading(true);
         setError(null);
+        const cacheKey = '/api/products?limit=500';
         
-        // Use same API endpoint as selleradmin AllProductsGrid
-        // Selleradmin uses: /api/products?limit=40
-        // We'll use a higher limit to get all products
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        console.log('[ProductList] Fetching products from:', `${apiUrl}/products?limit=500`);
+        // Check cache first for instant loading
+        const { getCachedResponse } = await import('@/lib/indexeddb/apiCache');
+        const cachedData = await getCachedResponse(cacheKey);
         
-        // Try Express API first, fallback to Next.js API
-        let response;
-        try {
-          response = await fetch(`${apiUrl}/products?limit=500`, {
-            cache: 'no-store', // Always fetch fresh
-          });
-        } catch (error) {
-          console.log('[ProductList] Express API failed, trying Next.js API...');
-          response = await fetch('/api/products?limit=500', {
-            cache: 'no-store',
-          });
+        if (cachedData && active) {
+          // Show cached data instantly (no loading state)
+          if (cachedData.success && cachedData.data && Array.isArray(cachedData.data)) {
+            setProducts(cachedData.data);
+            setLoading(false);
+          }
+        } else if (active) {
+          setLoading(true);
         }
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
+
+        // Fetch from network (update cache in background)
+        const { fetchWithCache } = await import('@/lib/indexeddb/apiCache');
+        const response = await fetchWithCache(cacheKey, {}, 60 * 60 * 1000);
         const result = await response.json();
-        console.log('[ProductList] API Response:', { 
-          success: result.success, 
-          dataLength: result.data?.length,
-          hasData: !!result.data,
-          isArray: Array.isArray(result.data)
-        });
         
-        if (result.success && result.data && Array.isArray(result.data)) {
-          // Show all products from database (same as selleradmin)
-          // Backend already handles active/inactive filtering if needed
-          console.log(`[ProductList] Loaded ${result.data.length} products from API (same database as selleradmin)`);
-          setProducts(result.data);
-        } else {
-          console.error('[ProductList] Invalid API response:', result);
-          setError(result.error || 'Invalid response from server');
-          setProducts([]);
+        if (active) {
+          if (result.success && result.data && Array.isArray(result.data)) {
+            setProducts(result.data);
+          } else {
+            setError(result.error || 'Invalid response from server');
+            setProducts([]);
+          }
         }
       } catch (err) {
-        console.error('[ProductList] Error fetching products:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load products');
-        setProducts([]);
+        if (active) {
+          console.error('[ProductList] Error fetching products:', err);
+          setError(err instanceof Error ? err.message : 'Failed to load products');
+          setProducts([]);
+        }
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     };
 
     fetchProducts();
+    
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {

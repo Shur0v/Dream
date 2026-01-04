@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
+import CachedImage from '@/components/ui/CachedImage';
 import Link from 'next/link';
 import { Product } from '@/types';
 
@@ -25,17 +26,57 @@ export default function ForYou({ currentProduct }: ForYouProps) {
 
   // Fetch products based on context - Always ensure 4 products are shown
   useEffect(() => {
+    let active = true;
+    
     const fetchProducts = async () => {
       try {
-        setLoading(true);
         let fetchedProducts: Product[] = [];
+        const { getCachedResponse, fetchWithCache } = await import('@/lib/indexeddb/apiCache');
 
         if (currentProduct?.tags && currentProduct.tags.length > 0) {
           // On product details page: Fetch related products and reverse the order
-          const response = await fetch(`/api/products?limit=100&inStock=true`);
+          const cacheKey = '/api/products?limit=100&inStock=true';
+          
+          // Check cache first
+          const cachedData = await getCachedResponse(cacheKey);
+          if (cachedData && active) {
+            const result = cachedData;
+            if (result.success && result.data) {
+              const relatedProducts = result.data.filter((p: Product) =>
+                p.id !== currentProduct.id &&
+                p.isActive &&
+                p.tags &&
+                p.tags.length > 0 &&
+                p.tags.some(tag => currentProduct.tags!.includes(tag))
+              );
+              fetchedProducts = relatedProducts.reverse();
+              
+              if (fetchedProducts.length < 4) {
+                const relatedProductIds = new Set(fetchedProducts.map(p => p.id));
+                const randomProducts = result.data
+                  .filter((p: Product) => 
+                    p.id !== currentProduct.id &&
+                    p.isActive &&
+                    !relatedProductIds.has(p.id)
+                  )
+                  .sort(() => Math.random() - 0.5)
+                  .slice(0, 4 - fetchedProducts.length);
+                fetchedProducts = [...fetchedProducts, ...randomProducts].slice(0, 4);
+              } else {
+                fetchedProducts = fetchedProducts.slice(0, 4);
+              }
+              setProducts(fetchedProducts);
+              setLoading(false);
+            }
+          } else if (active) {
+            setLoading(true);
+          }
+
+          // Fetch from network (update cache in background)
+          const response = await fetchWithCache(cacheKey, {}, 60 * 60 * 1000);
           const result = await response.json();
 
-          if (result.success && result.data) {
+          if (active && result.success && result.data) {
             // Filter products with matching tags and exclude current product
             const relatedProducts = result.data.filter((p: Product) =>
               p.id !== currentProduct.id &&
@@ -64,13 +105,50 @@ export default function ForYou({ currentProduct }: ForYouProps) {
             } else {
               fetchedProducts = fetchedProducts.slice(0, 4);
             }
+            
+            setProducts(fetchedProducts.slice(0, 4));
           }
         } else {
           // On other pages: Fetch 4 different tech products
-          const response = await fetch(`/api/products?limit=50&inStock=true`);
+          const cacheKey = '/api/products?limit=50&inStock=true';
+          
+          // Check cache first
+          const cachedData = await getCachedResponse(cacheKey);
+          if (cachedData && active) {
+            const result = cachedData;
+            if (result.success && result.data) {
+              const techProducts = result.data
+                .filter((p: Product) => 
+                  p.isActive &&
+                  (p.category?.toLowerCase().includes('electronic') ||
+                   p.category?.toLowerCase().includes('tech') ||
+                   p.tags?.some(tag => 
+                     tag.toLowerCase().includes('tech') ||
+                     tag.toLowerCase().includes('electronic') ||
+                     tag.toLowerCase().includes('gadget')
+                   ))
+                )
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 4);
+
+              fetchedProducts = techProducts.length >= 4 
+                ? techProducts 
+                : result.data
+                    .filter((p: Product) => p.isActive)
+                    .sort(() => Math.random() - 0.5)
+                    .slice(0, 4);
+              setProducts(fetchedProducts.slice(0, 4));
+              setLoading(false);
+            }
+          } else if (active) {
+            setLoading(true);
+          }
+
+          // Fetch from network (update cache in background)
+          const response = await fetchWithCache(cacheKey, {}, 60 * 60 * 1000);
           const result = await response.json();
 
-          if (result.success && result.data) {
+          if (active && result.success && result.data) {
             // Filter for tech/electronics products and get 4 different ones
             const techProducts = result.data
               .filter((p: Product) => 
@@ -93,46 +171,85 @@ export default function ForYou({ currentProduct }: ForYouProps) {
                   .filter((p: Product) => p.isActive)
                   .sort(() => Math.random() - 0.5) // Shuffle randomly
                   .slice(0, 4);
+            
+            setProducts(fetchedProducts.slice(0, 4));
           }
         }
         
         // Final fallback: Ensure we always have 4 products
-        if (fetchedProducts.length < 4) {
-          const fallbackResponse = await fetch(`/api/products?limit=50&inStock=true`);
-          const fallbackResult = await fallbackResponse.json();
+        if (active && fetchedProducts.length < 4) {
+          const fallbackCacheKey = '/api/products?limit=50&inStock=true';
+          const fallbackCached = await getCachedResponse(fallbackCacheKey);
           
-          if (fallbackResult.success && fallbackResult.data) {
+          if (fallbackCached && fallbackCached.success && fallbackCached.data) {
             const existingIds = new Set(fetchedProducts.map(p => p.id));
-            const additionalProducts = fallbackResult.data
+            const additionalProducts = fallbackCached.data
               .filter((p: Product) => 
                 p.isActive &&
                 !existingIds.has(p.id) &&
                 (!currentProduct || p.id !== currentProduct.id)
               )
-              .sort(() => Math.random() - 0.5) // Shuffle randomly
+              .sort(() => Math.random() - 0.5)
               .slice(0, 4 - fetchedProducts.length);
             
             fetchedProducts = [...fetchedProducts, ...additionalProducts].slice(0, 4);
+          } else {
+            const fallbackResponse = await fetchWithCache(fallbackCacheKey, {}, 60 * 60 * 1000);
+            const fallbackResult = await fallbackResponse.json();
+            
+            if (active && fallbackResult.success && fallbackResult.data) {
+              const existingIds = new Set(fetchedProducts.map(p => p.id));
+              const additionalProducts = fallbackResult.data
+                .filter((p: Product) => 
+                  p.isActive &&
+                  !existingIds.has(p.id) &&
+                  (!currentProduct || p.id !== currentProduct.id)
+                )
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 4 - fetchedProducts.length);
+              
+              fetchedProducts = [...fetchedProducts, ...additionalProducts].slice(0, 4);
+            }
           }
         }
 
         // Ensure we always have exactly 4 products
-        setProducts(fetchedProducts.slice(0, 4));
+        if (active) {
+          setProducts(fetchedProducts.slice(0, 4));
+        }
       } catch (error) {
         console.error('Error fetching For You products:', error);
-        // Even on error, try to get some products
-        try {
-          const fallbackResponse = await fetch(`/api/products?limit=4&inStock=true`);
-          const fallbackResult = await fallbackResponse.json();
-          if (fallbackResult.success && fallbackResult.data) {
-            setProducts(fallbackResult.data.filter((p: Product) => p.isActive).slice(0, 4));
+        // Even on error, try to get some products from cache
+        if (active) {
+          try {
+            const { getCachedResponse, fetchWithCache } = await import('@/lib/indexeddb/apiCache');
+            const fallbackCacheKey = '/api/products?limit=4&inStock=true';
+            const fallbackCached = await getCachedResponse(fallbackCacheKey);
+            
+            if (fallbackCached && fallbackCached.success && fallbackCached.data) {
+              setProducts(fallbackCached.data.filter((p: Product) => p.isActive).slice(0, 4));
+            } else {
+              const fallbackResponse = await fetchWithCache(fallbackCacheKey, {}, 60 * 60 * 1000);
+              const fallbackResult = await fallbackResponse.json();
+              if (fallbackResult.success && fallbackResult.data) {
+                setProducts(fallbackResult.data.filter((p: Product) => p.isActive).slice(0, 4));
+              }
+            }
+          } catch (fallbackError) {
+            console.error('Fallback fetch also failed:', fallbackError);
           }
-        } catch (fallbackError) {
-          console.error('Fallback fetch also failed:', fallbackError);
         }
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
+    };
+
+    fetchProducts();
+    
+    return () => {
+      active = false;
     };
 
     fetchProducts();
@@ -232,7 +349,7 @@ export default function ForYou({ currentProduct }: ForYouProps) {
               <div className="layer-12 self-stretch h-48 md:h-72 relative mb-4 overflow-hidden rounded-lg" data-layer="12">
                 {/* layer-12 = product image container */}
                 
-                <Image
+                <CachedImage
                   src={product.images && product.images.length > 0 ? product.images[0] : '/placeholder-product.png'}
                   alt={`${product.name} product image`}
                   fill

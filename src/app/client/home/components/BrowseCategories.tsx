@@ -2,7 +2,32 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useCachedImageUrl } from '@/hooks/useCachedImageUrl';
 import { Category } from '@/types';
+
+// Component for cached category image
+function CachedCategoryImage({ 
+  src, 
+  alt, 
+  onError 
+}: { 
+  src: string; 
+  alt: string; 
+  onError: () => void;
+}) {
+  const cachedSrc = useCachedImageUrl(src);
+  return (
+    <img 
+      className="w-full h-full object-cover select-none pointer-events-none" 
+      src={cachedSrc}
+      alt={alt}
+      loading="lazy"
+      draggable="false"
+      onDragStart={(e) => e.preventDefault()}
+      onError={onError}
+    />
+  );
+}
 
 /**
  * Browse Categories Component
@@ -29,18 +54,33 @@ export default function BrowseCategories() {
     }
   };
 
-  // Fetch categories from API with limit 80 - always fetch fresh
+  // Fetch categories from API with caching for instant loading
   useEffect(() => {
+    let active = true;
+    
     const fetchCategories = async () => {
       try {
-        setLoading(true);
-        // Clear cache and fetch fresh
-        const response = await fetch(`/api/categories?limit=80&forceRefresh=true`, {
-          cache: 'no-store',
-        });
+        // Check cache first for instant loading
+        const { getCachedResponse } = await import('@/lib/indexeddb/apiCache');
+        const cacheKey = '/api/categories?limit=80';
+        const cachedData = await getCachedResponse(cacheKey);
+        
+        if (cachedData && active) {
+          // Show cached data instantly (no loading state)
+          const activeCategories = (cachedData.data || []).filter((cat: Category) => cat.isActive);
+          setCategories(activeCategories);
+          setLoading(false);
+        } else if (active) {
+          setLoading(true);
+        }
+
+        // Fetch from network (update cache in background)
+        // Note: We use the cache key without forceRefresh for caching
+        const { fetchWithCache } = await import('@/lib/indexeddb/apiCache');
+        const response = await fetchWithCache(cacheKey, {}, 60 * 60 * 1000); // 1 hour cache
         const result = await response.json();
         
-        if (result.success && result.data) {
+        if (active && result.success && result.data) {
           // API already filters active categories, but we ensure only active ones
           const activeCategories = result.data.filter((cat: Category) => cat.isActive);
           setCategories(activeCategories);
@@ -48,11 +88,17 @@ export default function BrowseCategories() {
       } catch (error) {
         console.error('Error fetching categories:', error);
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     };
 
     fetchCategories();
+    
+    return () => {
+      active = false;
+    };
   }, []);
 
   // Calculate how many times to loop categories to fill 8000rem
@@ -223,13 +269,9 @@ export default function BrowseCategories() {
                       <div className="layer-6 w-full h-20 md:h-40 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" data-layer="6">
                         {/* layer-6 = category image container */}
                         {category.image && !imageErrors.has(`${category.id}-${index}`) ? (
-                          <img 
-                            className="w-full h-full object-cover select-none pointer-events-none" 
-                            src={category.image} 
+                          <CachedCategoryImage
+                            src={category.image}
                             alt={`${category.name} category`}
-                            loading="lazy"
-                            draggable="false"
-                            onDragStart={(e) => e.preventDefault()}
                             onError={() => {
                               // If image fails to load, mark it as error to show name instead
                               setImageErrors(prev => new Set([...prev, `${category.id}-${index}`]));

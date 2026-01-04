@@ -4,10 +4,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { FestivalBanner } from '@/types';
 
 const fetchFestivalBanners = async (): Promise<FestivalBanner[]> => {
-  const response = await fetch('/api/festival-banners');
+  // Use cached fetch for instant loading
+  const { fetchWithCache } = await import('@/lib/indexeddb/apiCache');
+  const response = await fetchWithCache('/api/festival-banners', {}, 60 * 60 * 1000);
   const result = await response.json();
 
-  if (!response.ok || !result.success) {
+  if (!result.success) {
     throw new Error(result?.error || 'Failed to load festival banners');
   }
 
@@ -24,7 +26,22 @@ export default function FestivalBannerSection() {
     let mounted = true;
     const load = async () => {
       try {
-        setLoading(true);
+        // Check cache first for instant loading
+        const { getCachedResponse } = await import('@/lib/indexeddb/apiCache');
+        const cachedData = await getCachedResponse('/api/festival-banners');
+        
+        if (cachedData && mounted) {
+          // Show cached data instantly (no loading state)
+          const data: FestivalBanner[] = Array.isArray(cachedData.data) ? cachedData.data : [];
+          setBanners(data);
+          setCurrentSlide(0);
+          setError(null);
+          setLoading(false);
+        } else if (mounted) {
+          setLoading(true);
+        }
+
+        // Fetch from network (update cache in background)
         const data = await fetchFestivalBanners();
         if (mounted) {
           setBanners(data);
