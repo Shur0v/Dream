@@ -7,10 +7,12 @@ import { ProductReview } from '@/types';
 interface ReviewsProps {
   productId: string;
   productName?: string;
+  productDescription?: string;
+  productSpecifications?: Record<string, any>;
   initialReviews: ProductReview[];
 }
 
-const Reviews: React.FC<ReviewsProps> = ({ productId, productName, initialReviews }) => {
+const Reviews: React.FC<ReviewsProps> = ({ productId, productName, productDescription, productSpecifications, initialReviews }) => {
   const [activeTab, setActiveTab] = useState<'details' | 'reviews'>('reviews');
   const [visibleReviewsCount, setVisibleReviewsCount] = useState(4);
   const [reviews, setReviews] = useState<ProductReview[]>(initialReviews);
@@ -92,13 +94,34 @@ const Reviews: React.FC<ReviewsProps> = ({ productId, productName, initialReview
         return (
           <div className="w-full max-w-[1320px] mx-auto">
             {/* Layer 4: Product Details Content */}
-            <div className="w-full">
+            <div className="w-full space-y-6">
               <h3 className="text-2xl font-semibold text-gray-800 font-['Poppins'] mb-4">
                 Product Details
               </h3>
-              <p className="text-gray-600 font-['Poppins']">
-                This is where the product details and description will be displayed.
-              </p>
+              
+              {/* Product Specifications */}
+              {productSpecifications && Object.keys(productSpecifications).length > 0 ? (
+                <div className="mb-6">
+                  <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
+                    <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {Object.entries(productSpecifications).map(([key, value]) => (
+                        <div key={key} className="border-b border-gray-200 pb-3 last:border-0">
+                          <dt className="text-sm font-semibold text-gray-700 font-['Poppins'] mb-1">
+                            {key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim()}
+                          </dt>
+                          <dd className="text-gray-600 font-['Poppins']">
+                            {typeof value === 'object' && value !== null ? JSON.stringify(value, null, 2) : String(value || 'N/A')}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-500 font-['Poppins'] italic">
+                  No specifications available for this product.
+                </p>
+              )}
             </div>
           </div>
         );

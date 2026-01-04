@@ -173,7 +173,13 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
 
       {/* Reviews Section */}
       <section className="w-full max-w-[1320px] mx-auto px-2">
-        <Reviews productId={product.id} productName={product.name} initialReviews={productReviews} />
+        <Reviews 
+          productId={product.id} 
+          productName={product.name}
+          productDescription={product.description}
+          productSpecifications={product.specifications}
+          initialReviews={productReviews} 
+        />
       </section>
 
       {/* Related Product Section */}
