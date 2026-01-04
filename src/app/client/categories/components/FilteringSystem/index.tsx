@@ -1205,34 +1205,21 @@ export default function FilteringSystem() {
                       {/* Product Image */}
                       <div className="self-stretch h-72 relative mb-4 overflow-hidden rounded-lg">
                         {/* Product Image Container */}
-                        {(() => {
-                          const imageUrl = getValidImageUrl(product.image);
-                          return imageUrl.startsWith('data:') ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={imageUrl}
-                              alt={`${product.name} product image`}
-                              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
-                              draggable={false}
-                              onDragStart={(e) => e.preventDefault()}
-                              style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
-                            />
-                          ) : (
-                            <Image
-                              src={imageUrl}
-                              alt={`${product.name} product image`}
-                              fill
-                              className="object-cover transform group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
-                              draggable={false}
-                              onDragStart={(e) => e.preventDefault()}
-                              style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
-                              loading="lazy"
-                              onError={(e) => {
-                                e.currentTarget.src = '/placeholder-image.png';
-                              }}
-                            />
-                          );
-                        })()}
+                        <Image
+                          src={getValidImageUrl(product.image)}
+                          alt={`${product.name} product image`}
+                          fill
+                          className="object-cover transform group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
+                          draggable={false}
+                          onDragStart={(e) => e.preventDefault()}
+                          style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
+                          loading="lazy"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          quality={85}
+                          onError={(e) => {
+                            e.currentTarget.src = '/placeholder-image.png';
+                          }}
+                        />
                       </div>
 
                       {/* Product Info */}
@@ -1439,30 +1426,19 @@ export default function FilteringSystem() {
                   </div>
                   {/* Product Image */}
                   <div className="self-stretch h-40 relative mb-3 overflow-hidden rounded-lg">
-                    {(() => {
-                      const imageUrl = getValidImageUrl(product.image);
-                      return imageUrl.startsWith('data:') ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={imageUrl}
-                          alt={`${product.name} product image`}
-                          className="w-full h-full object-cover select-none pointer-events-none"
-                          draggable={false}
-                        />
-                      ) : (
-                        <Image
-                          src={imageUrl}
-                          alt={`${product.name} product image`}
-                          fill
-                          className="object-cover select-none pointer-events-none"
-                          draggable={false}
-                          loading="lazy"
-                          onError={(e) => {
-                            e.currentTarget.src = '/placeholder-image.png';
-                          }}
-                        />
-                      );
-                    })()}
+                    <Image
+                      src={getValidImageUrl(product.image)}
+                      alt={`${product.name} product image`}
+                      fill
+                      className="object-cover select-none pointer-events-none"
+                      draggable={false}
+                      loading="lazy"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      quality={85}
+                      onError={(e) => {
+                        e.currentTarget.src = '/placeholder-image.png';
+                      }}
+                    />
                   </div>
                   {/* Info */}
                   <div className="self-stretch flex flex-col justify-start items-start gap-2">

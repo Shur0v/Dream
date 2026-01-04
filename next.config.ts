@@ -18,6 +18,9 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', '@reduxjs/toolkit'],
   },
   
+  // Server-side only packages (exclude from client bundle)
+  serverExternalPackages: ['mongoose'],
+  
   // Image optimization
   images: {
     remotePatterns: [
@@ -31,6 +34,24 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'images.pexels.com',
         port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.ibb.co',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '5000',
         pathname: '/**',
       },
     ],

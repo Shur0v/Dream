@@ -1,14 +1,14 @@
 /**
- * @fileoverview Database helper functions for JSON file operations
- * Provides read/write operations for the JSON database file
+ * @fileoverview Database helper functions for MongoDB operations
+ * Provides read/write operations using MongoDB
  * 
  * @description This file handles all database operations:
- * - Reading from database.json
- * - Writing to database.json
+ * - Reading from MongoDB
+ * - Writing to MongoDB
  * - Type-safe operations
  * 
  * @author Your Name
- * @version 1.0.0
+ * @version 2.0.0
  */
 
 import {
@@ -26,10 +26,21 @@ import {
   ProductReview,
   ReviewSource,
 } from '@/types';
-import { readJsonStore, writeJsonStore } from '../lib/jsonStore';
-import { DatabaseSchema, DatabaseShape } from '@backend/schemas/database';
-
-type Database = ReturnType<typeof DatabaseSchema.parse>;
+import { ensureConnection } from '../config/database';
+import mongoose from 'mongoose';
+import {
+  ProductModel,
+  CategoryModel,
+  ColorModel,
+  UserModel,
+  OrderModel,
+  FeaturedProductModel,
+  BestSellingProductModel,
+  HeroBannerModel,
+  PromoBannerModel,
+  FestivalBannerModel,
+  ProductReviewModel,
+} from '../models';
 
 // In-memory cache for products (with TTL)
 let productsCache: { data: Product[]; timestamp: number } | null = null;
@@ -40,29 +51,12 @@ let colorsCache: { data: Color[]; timestamp: number } | null = null;
 const COLORS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
 
 /**
- * Read database from JSON file
- * @returns Promise<Database> - The entire database object
+ * Helper to convert MongoDB document to type with id
  */
-export async function readDatabase(): Promise<Database> {
-  const raw = await readJsonStore<DatabaseShape>('database', { fileName: 'database' });
-  return DatabaseSchema.parse(raw ?? {});
-}
-
-/**
- * Write database to JSON file
- * @param data - The database object to write
- * @returns Promise<void>
- */
-export async function writeDatabase(data: Database): Promise<void> {
-  try {
-    await writeJsonStore('database', data, { fileName: 'database' });
-    console.log('Database written successfully');
-  } catch (error) {
-    console.error('Error writing database:', error);
-    throw new Error(
-      `Failed to write to database: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
-  }
+function toType<T extends { id?: string }>(doc: any): T {
+  if (!doc) return doc;
+  const { _id, ...rest } = doc;
+  return { ...rest, id: _id?.toString() || doc.id } as T;
 }
 
 /**
@@ -70,23 +64,30 @@ export async function writeDatabase(data: Database): Promise<void> {
  * @returns Promise<Product[]>
  */
 export async function getProducts(): Promise<Product[]> {
+  const startTime = Date.now();
+  await ensureConnection();
+  
   // Check cache validity
   const now = Date.now();
   if (productsCache && (now - productsCache.timestamp) < CACHE_TTL) {
+    console.log(`[MongoDB] getProducts: Using cache (${Date.now() - startTime}ms)`);
     return productsCache.data;
   }
   
-  // Fetch from database
-  const db = await readDatabase();
-  const products = db.products;
+  // Fetch from MongoDB
+  console.log('[MongoDB] getProducts: Fetching from MongoDB...');
+  const products = await ProductModel.find({ isActive: true }).lean().limit(1000);
+  const typedProducts = products.map(toType<Product>);
+  const fetchTime = Date.now() - startTime;
+  console.log(`[MongoDB] getProducts: Fetched ${typedProducts.length} products in ${fetchTime}ms`);
   
   // Update cache
   productsCache = {
-    data: products,
+    data: typedProducts,
     timestamp: now,
   };
   
-  return products;
+  return typedProducts;
 }
 
 /**
@@ -102,8 +103,9 @@ export function invalidateProductsCache(): void {
  * @returns Promise<Product | undefined>
  */
 export async function getProductById(id: string): Promise<Product | undefined> {
-  const db = await readDatabase();
-  return db.products.find(p => p.id === id);
+  await ensureConnection();
+  const product = await ProductModel.findById(id).lean();
+  return product ? toType<Product>(product) : undefined;
 }
 
 /**
@@ -113,21 +115,30 @@ export async function getProductById(id: string): Promise<Product | undefined> {
  */
 export async function saveProduct(product: Product): Promise<Product> {
   try {
-    const db = await readDatabase();
-    const index = db.products.findIndex(p => p.id === product.id);
+    await ensureConnection();
     
-    if (index >= 0) {
-      db.products[index] = product;
-      console.log(`Product updated: ${product.id}`);
+    const { id, ...productData } = product;
+    const updateData = {
+      ...productData,
+      updatedAt: new Date().toISOString(),
+    };
+    
+    let saved;
+    if (id && mongoose.Types.ObjectId.isValid(id)) {
+      // Update existing document
+      saved = await ProductModel.findByIdAndUpdate(
+        id,
+        updateData,
+        { new: true, setDefaultsOnInsert: true }
+      ).lean();
     } else {
-      db.products.push(product);
-      console.log(`Product created: ${product.id}`);
+      // Create new document
+      saved = await ProductModel.create(updateData);
+      saved = saved.toObject();
     }
     
-    await writeDatabase(db);
-    invalidateProductsCache(); // Invalidate cache after write
-    console.log(`Total products in database: ${db.products.length}`);
-    return product;
+    invalidateProductsCache();
+    return toType<Product>(saved);
   } catch (error) {
     console.error('Error in saveProduct:', error);
     throw error;
@@ -135,23 +146,83 @@ export async function saveProduct(product: Product): Promise<Product> {
 }
 
 /**
- * Delete product (soft delete)
- * @param id - Product ID
+ * Delete product (hard delete - permanently removes from database)
+ * @param id - Product ID (can be MongoDB ObjectId or string)
  * @returns Promise<Product | null>
  */
 export async function deleteProduct(id: string): Promise<Product | null> {
-  const db = await readDatabase();
-  const product = db.products.find(p => p.id === id);
-  
-  if (product) {
-    product.isActive = false;
-    product.updatedAt = new Date().toISOString();
-    await writeDatabase(db);
-    invalidateProductsCache(); // Invalidate cache after write
-    return product;
+  try {
+    await ensureConnection();
+    
+    // Validate ID format
+    if (!id) {
+      throw new Error('Product ID is required');
+    }
+    
+    let product = null;
+    let productIdToDelete = null;
+    
+    // Try to find by MongoDB ObjectId first
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      product = await ProductModel.findById(id).lean();
+      if (product) {
+        productIdToDelete = id;
+      }
+    }
+    
+    // If not found by ObjectId, try to find by the id field (string)
+    if (!product) {
+      product = await ProductModel.findOne({ id: id }).lean();
+      if (product && product._id) {
+        productIdToDelete = product._id.toString();
+      }
+    }
+    
+    // If still not found, try to find by _id converted to string
+    if (!product) {
+      // Get all products and find by matching id string
+      const allProducts = await ProductModel.find({}).lean();
+      const found = allProducts.find(p => p._id?.toString() === id);
+      if (found) {
+        product = found;
+        productIdToDelete = found._id.toString();
+      }
+    }
+    
+    if (!product || !productIdToDelete) {
+      console.warn(`Product not found with ID: ${id}`);
+      return null;
+    }
+    
+    // Convert to Product type before deletion
+    const productToReturn = toType<Product>(product);
+    const productIdForCleanup = productToReturn.id || productIdToDelete;
+    
+    // Hard delete - actually remove from database using ObjectId
+    await ProductModel.findByIdAndDelete(productIdToDelete);
+    
+    // Also remove from featured products if exists (don't throw error if not found)
+    try {
+      await FeaturedProductModel.findOneAndDelete({ productId: productIdForCleanup });
+    } catch (err) {
+      console.warn('Error removing from featured products (non-critical):', err);
+    }
+    
+    // Also remove from best selling products if exists (don't throw error if not found)
+    try {
+      await BestSellingProductModel.findOneAndDelete({ productId: productIdForCleanup });
+    } catch (err) {
+      console.warn('Error removing from best selling products (non-critical):', err);
+    }
+    
+    // Invalidate cache
+    invalidateProductsCache();
+    
+    return productToReturn;
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    throw error;
   }
-  
-  return null;
 }
 
 /**
@@ -161,29 +232,26 @@ export async function deleteProduct(id: string): Promise<Product | null> {
  * @returns Promise<Product | null>
  */
 export async function removeProductImage(id: string, imageIndex: number): Promise<Product | null> {
-  const db = await readDatabase();
-  const productIndex = db.products.findIndex(p => p.id === id);
-
-  if (productIndex === -1) {
+  await ensureConnection();
+  const product = await ProductModel.findById(id).lean();
+  
+  if (!product) {
     return null;
   }
 
-  const product = db.products[productIndex];
-
   if (!Array.isArray(product.images) || imageIndex < 0 || imageIndex >= product.images.length) {
-    return { ...product };
+    return toType<Product>(product);
   }
 
-  const updatedProduct: Product = {
-    ...product,
-    images: product.images.filter((_, idx) => idx !== imageIndex),
-    updatedAt: new Date().toISOString(),
-  };
-
-  db.products[productIndex] = updatedProduct;
-  await writeDatabase(db);
-
-  return updatedProduct;
+  const updatedImages = product.images.filter((_: any, idx: number) => idx !== imageIndex);
+  const updated = await ProductModel.findByIdAndUpdate(
+    id,
+    { images: updatedImages, updatedAt: new Date().toISOString() },
+    { new: true }
+  ).lean();
+  
+  invalidateProductsCache();
+  return updated ? toType<Product>(updated) : null;
 }
 
 /**
@@ -191,8 +259,9 @@ export async function removeProductImage(id: string, imageIndex: number): Promis
  * @returns Promise<Order[]>
  */
 export async function getOrders(): Promise<Order[]> {
-  const db = await readDatabase();
-  return db.orders;
+  await ensureConnection();
+  const orders = await OrderModel.find({}).lean();
+  return orders.map(toType<Order>);
 }
 
 /**
@@ -201,8 +270,9 @@ export async function getOrders(): Promise<Order[]> {
  * @returns Promise<Order | undefined>
  */
 export async function getOrderById(id: string): Promise<Order | undefined> {
-  const db = await readDatabase();
-  return db.orders.find(o => o.id === id);
+  await ensureConnection();
+  const order = await OrderModel.findById(id).lean();
+  return order ? toType<Order>(order) : undefined;
 }
 
 /**
@@ -211,17 +281,27 @@ export async function getOrderById(id: string): Promise<Order | undefined> {
  * @returns Promise<Order>
  */
 export async function saveOrder(order: Order): Promise<Order> {
-  const db = await readDatabase();
-  const index = db.orders.findIndex(o => o.id === order.id);
+  await ensureConnection();
   
-  if (index >= 0) {
-    db.orders[index] = order;
+  const { id, ...orderData } = order;
+  const updateData = {
+    ...orderData,
+    updatedAt: new Date().toISOString(),
+  };
+  
+  let saved;
+  if (id && mongoose.Types.ObjectId.isValid(id)) {
+    saved = await OrderModel.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, setDefaultsOnInsert: true }
+    ).lean();
   } else {
-    db.orders.push(order);
+    saved = await OrderModel.create(updateData);
+    saved = saved.toObject();
   }
   
-  await writeDatabase(db);
-  return order;
+  return toType<Order>(saved);
 }
 
 /**
@@ -229,8 +309,13 @@ export async function saveOrder(order: Order): Promise<Order> {
  * @returns Promise<Category[]>
  */
 export async function getCategories(): Promise<Category[]> {
-  const db = await readDatabase();
-  return db.categories;
+  const startTime = Date.now();
+  await ensureConnection();
+  console.log('[MongoDB] getCategories: Fetching from MongoDB...');
+  const categories = await CategoryModel.find({ isActive: true }).lean();
+  const typedCategories = categories.map(toType<Category>);
+  console.log(`[MongoDB] getCategories: Fetched ${typedCategories.length} categories in ${Date.now() - startTime}ms`);
+  return typedCategories;
 }
 
 /**
@@ -239,8 +324,9 @@ export async function getCategories(): Promise<Category[]> {
  * @returns Promise<Category | undefined>
  */
 export async function getCategoryById(id: string): Promise<Category | undefined> {
-  const db = await readDatabase();
-  return db.categories.find(c => c.id === id);
+  await ensureConnection();
+  const category = await CategoryModel.findById(id).lean();
+  return category ? toType<Category>(category) : undefined;
 }
 
 /**
@@ -249,8 +335,9 @@ export async function getCategoryById(id: string): Promise<Category | undefined>
  * @returns Promise<Category | undefined>
  */
 export async function getCategoryBySlug(slug: string): Promise<Category | undefined> {
-  const db = await readDatabase();
-  return db.categories.find(c => c.slug === slug);
+  await ensureConnection();
+  const category = await CategoryModel.findOne({ slug, isActive: true }).lean();
+  return category ? toType<Category>(category) : undefined;
 }
 
 /**
@@ -296,23 +383,28 @@ export async function deleteCategory(id: string): Promise<Category | null> {
  * @returns Promise<Color[]>
  */
 export async function getColors(): Promise<Color[]> {
+  const startTime = Date.now();
   // Check cache validity
   const now = Date.now();
   if (colorsCache && (now - colorsCache.timestamp) < COLORS_CACHE_TTL) {
+    console.log(`[MongoDB] getColors: Using cache (${Date.now() - startTime}ms)`);
     return colorsCache.data;
   }
   
-  // Fetch from database
-  const db = await readDatabase();
-  const colors = db.colors;
+  // Fetch from MongoDB
+  await ensureConnection();
+  console.log('[MongoDB] getColors: Fetching from MongoDB...');
+  const colors = await ColorModel.find({ isActive: true }).lean();
+  const typedColors = colors.map(toType<Color>);
+  console.log(`[MongoDB] getColors: Fetched ${typedColors.length} colors in ${Date.now() - startTime}ms`);
   
   // Update cache
   colorsCache = {
-    data: colors,
+    data: typedColors,
     timestamp: now,
   };
   
-  return colors;
+  return typedColors;
 }
 
 /**
@@ -328,8 +420,9 @@ export function invalidateColorsCache(): void {
  * @returns Promise<Color | undefined>
  */
 export async function getColorById(id: string): Promise<Color | undefined> {
-  const db = await readDatabase();
-  return db.colors.find(c => c.id === id);
+  await ensureConnection();
+  const color = await ColorModel.findById(id).lean();
+  return color ? toType<Color>(color) : undefined;
 }
 
 /**
@@ -338,18 +431,28 @@ export async function getColorById(id: string): Promise<Color | undefined> {
  * @returns Promise<Color>
  */
 export async function saveColor(color: Color): Promise<Color> {
-  const db = await readDatabase();
-  const index = db.colors.findIndex(c => c.id === color.id);
+  await ensureConnection();
   
-  if (index >= 0) {
-    db.colors[index] = color;
+  const { id, ...colorData } = color;
+  const updateData = {
+    ...colorData,
+    updatedAt: new Date().toISOString(),
+  };
+  
+  let saved;
+  if (id && mongoose.Types.ObjectId.isValid(id)) {
+    saved = await ColorModel.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, setDefaultsOnInsert: true }
+    ).lean();
   } else {
-    db.colors.push(color);
+    saved = await ColorModel.create(updateData);
+    saved = saved.toObject();
   }
   
-  await writeDatabase(db);
-  invalidateColorsCache(); // Invalidate cache after write
-  return color;
+  invalidateColorsCache();
+  return toType<Color>(saved);
 }
 
 /**
@@ -358,15 +461,16 @@ export async function saveColor(color: Color): Promise<Color> {
  * @returns Promise<Color | null>
  */
 export async function deleteColor(id: string): Promise<Color | null> {
-  const db = await readDatabase();
-  const color = db.colors.find(c => c.id === id);
+  await ensureConnection();
+  const color = await ColorModel.findByIdAndUpdate(
+    id,
+    { isActive: false, updatedAt: new Date().toISOString() },
+    { new: true }
+  ).lean();
   
   if (color) {
-    color.isActive = false;
-    color.updatedAt = new Date().toISOString();
-    await writeDatabase(db);
-    invalidateColorsCache(); // Invalidate cache after write
-    return color;
+    invalidateColorsCache();
+    return toType<Color>(color);
   }
   
   return null;
@@ -396,8 +500,13 @@ export async function getUserById(id: string): Promise<User | undefined> {
  * @returns Promise<FeaturedProduct[]>
  */
 export async function getFeaturedProducts(): Promise<FeaturedProduct[]> {
-  const db = await readDatabase();
-  return db.featuredProducts.filter(fp => fp.isActive);
+  const startTime = Date.now();
+  await ensureConnection();
+  console.log('[MongoDB] getFeaturedProducts: Fetching from MongoDB...');
+  const featuredProducts = await FeaturedProductModel.find({ isActive: true }).lean();
+  const typed = featuredProducts.map(toType<FeaturedProduct>);
+  console.log(`[MongoDB] getFeaturedProducts: Fetched ${typed.length} products in ${Date.now() - startTime}ms`);
+  return typed;
 }
 
 /**
@@ -406,8 +515,9 @@ export async function getFeaturedProducts(): Promise<FeaturedProduct[]> {
  * @returns Promise<FeaturedProduct | undefined>
  */
 export async function getFeaturedProductById(id: string): Promise<FeaturedProduct | undefined> {
-  const db = await readDatabase();
-  return db.featuredProducts.find(fp => fp.id === id);
+  await ensureConnection();
+  const featuredProduct = await FeaturedProductModel.findById(id).lean();
+  return featuredProduct ? toType<FeaturedProduct>(featuredProduct) : undefined;
 }
 
 /**
@@ -416,8 +526,9 @@ export async function getFeaturedProductById(id: string): Promise<FeaturedProduc
  * @returns Promise<FeaturedProduct | undefined>
  */
 export async function getFeaturedProductByProductId(productId: string): Promise<FeaturedProduct | undefined> {
-  const db = await readDatabase();
-  return db.featuredProducts.find(fp => fp.productId === productId && fp.isActive);
+  await ensureConnection();
+  const featuredProduct = await FeaturedProductModel.findOne({ productId, isActive: true }).lean();
+  return featuredProduct ? toType<FeaturedProduct>(featuredProduct) : undefined;
 }
 
 /**
@@ -530,8 +641,13 @@ export async function updateFeaturedProduct(productId: string): Promise<Featured
  * @returns Promise<BestSellingProduct[]>
  */
 export async function getBestSellingProducts(): Promise<BestSellingProduct[]> {
-  const db = await readDatabase();
-  return db.bestSellingProducts.filter(bs => bs.isActive);
+  const startTime = Date.now();
+  await ensureConnection();
+  console.log('[MongoDB] getBestSellingProducts: Fetching from MongoDB...');
+  const bestSellingProducts = await BestSellingProductModel.find({ isActive: true }).lean();
+  const typed = bestSellingProducts.map(toType<BestSellingProduct>);
+  console.log(`[MongoDB] getBestSellingProducts: Fetched ${typed.length} products in ${Date.now() - startTime}ms`);
+  return typed;
 }
 
 /**
@@ -540,8 +656,9 @@ export async function getBestSellingProducts(): Promise<BestSellingProduct[]> {
  * @returns Promise<BestSellingProduct | undefined>
  */
 export async function getBestSellingProductById(id: string): Promise<BestSellingProduct | undefined> {
-  const db = await readDatabase();
-  return db.bestSellingProducts.find(bs => bs.id === id);
+  await ensureConnection();
+  const bestSellingProduct = await BestSellingProductModel.findById(id).lean();
+  return bestSellingProduct ? toType<BestSellingProduct>(bestSellingProduct) : undefined;
 }
 
 /**
@@ -550,8 +667,9 @@ export async function getBestSellingProductById(id: string): Promise<BestSelling
  * @returns Promise<BestSellingProduct | undefined>
  */
 export async function getBestSellingProductByProductId(productId: string): Promise<BestSellingProduct | undefined> {
-  const db = await readDatabase();
-  return db.bestSellingProducts.find(bs => bs.productId === productId && bs.isActive);
+  await ensureConnection();
+  const bestSellingProduct = await BestSellingProductModel.findOne({ productId, isActive: true }).lean();
+  return bestSellingProduct ? toType<BestSellingProduct>(bestSellingProduct) : undefined;
 }
 
 /**
@@ -664,9 +782,13 @@ export async function updateBestSellingProduct(productId: string): Promise<BestS
  * @returns Promise<HeroBanner | null>
  */
 export async function getHeroBanner(): Promise<HeroBanner | null> {
-  const db = await readDatabase();
-  const activeBanner = db.heroBanners.find(hb => hb.isActive);
-  return activeBanner || null;
+  const startTime = Date.now();
+  await ensureConnection();
+  console.log('[MongoDB] getHeroBanner: Fetching from MongoDB...');
+  const heroBanner = await HeroBannerModel.findOne({ isActive: true }).lean();
+  const result = heroBanner ? toType<HeroBanner>(heroBanner) : null;
+  console.log(`[MongoDB] getHeroBanner: Fetched in ${Date.now() - startTime}ms`);
+  return result;
 }
 
 /**
@@ -675,8 +797,9 @@ export async function getHeroBanner(): Promise<HeroBanner | null> {
  * @returns Promise<HeroBanner | undefined>
  */
 export async function getHeroBannerById(id: string): Promise<HeroBanner | undefined> {
-  const db = await readDatabase();
-  return db.heroBanners.find(hb => hb.id === id);
+  await ensureConnection();
+  const heroBanner = await HeroBannerModel.findById(id).lean();
+  return heroBanner ? toType<HeroBanner>(heroBanner) : undefined;
 }
 
 /**
@@ -742,8 +865,9 @@ export async function deleteHeroBanner(id: string): Promise<HeroBanner | null> {
  * @returns Promise<HeroBanner[]>
  */
 export async function getAllHeroBanners(): Promise<HeroBanner[]> {
-  const db = await readDatabase();
-  return db.heroBanners;
+  await ensureConnection();
+  const banners = await HeroBannerModel.find({}).lean();
+  return banners.map(toType<HeroBanner>);
 }
 
 const defaultPromoCountdown = (): PromoBanner['initialTime'] => ({
@@ -767,29 +891,33 @@ const sortPromoBanners = (a: PromoBanner, b: PromoBanner) => {
 };
 
 export async function getPromoBanners(options: PromoBannerQueryOptions = {}): Promise<PromoBanner[]> {
+  const startTime = Date.now();
   const { includeInactive = false, variant, limit } = options;
-  const db = await readDatabase();
+  await ensureConnection();
+  console.log('[MongoDB] getPromoBanners: Fetching from MongoDB...');
 
-  let banners = db.promoBanners;
+  let query: any = {};
   if (!includeInactive) {
-    banners = banners.filter(banner => banner.isActive);
+    query.isActive = true;
   }
   if (variant) {
-    banners = banners.filter(banner => banner.variant === variant);
+    query.variant = variant;
   }
+
+  let banners = await PromoBannerModel.find(query).lean();
+  banners = banners.map(toType<PromoBanner>);
 
   const sorted = [...banners].sort(sortPromoBanners);
 
-  if (limit && limit > 0) {
-    return sorted.slice(0, limit);
-  }
-
-  return sorted;
+  const result = limit && limit > 0 ? sorted.slice(0, limit) : sorted;
+  console.log(`[MongoDB] getPromoBanners: Fetched ${result.length} banners in ${Date.now() - startTime}ms`);
+  return result;
 }
 
 export async function getPromoBannerById(id: string): Promise<PromoBanner | undefined> {
-  const db = await readDatabase();
-  return db.promoBanners.find(banner => banner.id === id);
+  await ensureConnection();
+  const promoBanner = await PromoBannerModel.findById(id).lean();
+  return promoBanner ? toType<PromoBanner>(promoBanner) : undefined;
 }
 
 export async function savePromoBanner(promoBanner: PromoBanner): Promise<PromoBanner> {
@@ -859,25 +987,29 @@ const normalizeCoupons = (coupons?: FestivalBanner['coupons']): FestivalBanner['
 };
 
 export async function getFestivalBanners(options: FestivalBannerQueryOptions = {}): Promise<FestivalBanner[]> {
+  const startTime = Date.now();
   const { includeInactive = false, limit } = options;
-  const db = await readDatabase();
+  await ensureConnection();
+  console.log('[MongoDB] getFestivalBanners: Fetching from MongoDB...');
 
-  let banners = db.festivalBanners;
+  let query: any = {};
   if (!includeInactive) {
-    banners = banners.filter(banner => banner.isActive);
+    query.isActive = true;
   }
+
+  let banners = await FestivalBannerModel.find(query).lean();
+  banners = banners.map(toType<FestivalBanner>);
 
   const sorted = [...banners].sort(sortFestivalBanners);
-  if (limit && limit > 0) {
-    return sorted.slice(0, limit);
-  }
-
-  return sorted;
+  const result = limit && limit > 0 ? sorted.slice(0, limit) : sorted;
+  console.log(`[MongoDB] getFestivalBanners: Fetched ${result.length} banners in ${Date.now() - startTime}ms`);
+  return result;
 }
 
 export async function getFestivalBannerById(id: string): Promise<FestivalBanner | undefined> {
-  const db = await readDatabase();
-  return db.festivalBanners.find(banner => banner.id === id);
+  await ensureConnection();
+  const banner = await FestivalBannerModel.findById(id).lean();
+  return banner ? toType<FestivalBanner>(banner) : undefined;
 }
 
 export async function saveFestivalBanner(banner: FestivalBanner): Promise<FestivalBanner> {
@@ -954,17 +1086,25 @@ const normalizeReview = (
 };
 
 export async function getReviews(productId?: string): Promise<ProductReview[]> {
-  const db = await readDatabase();
-  const all = db.reviews;
+  const startTime = Date.now();
+  await ensureConnection();
+  console.log('[MongoDB] getReviews: Fetching from MongoDB...');
+  
+  let query: any = {};
   if (productId) {
-    return all.filter(review => review.productId === productId);
+    query.productId = productId;
   }
-  return all;
+  
+  const reviews = await ProductReviewModel.find(query).lean();
+  const typed = reviews.map(toType<ProductReview>);
+  console.log(`[MongoDB] getReviews: Fetched ${typed.length} reviews in ${Date.now() - startTime}ms`);
+  return typed;
 }
 
 export async function getReviewById(id: string): Promise<ProductReview | undefined> {
-  const db = await readDatabase();
-  return db.reviews.find(review => review.id === id);
+  await ensureConnection();
+  const review = await ProductReviewModel.findById(id).lean();
+  return review ? toType<ProductReview>(review) : undefined;
 }
 
 export async function getReviewsByProduct(productId: string): Promise<ProductReview[]> {

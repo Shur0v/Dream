@@ -10,5 +10,9 @@
  * @version 1.0.0
  */
 
+// Mark as server-side only
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export { GET, POST } from '@backend/routes/categories';
 

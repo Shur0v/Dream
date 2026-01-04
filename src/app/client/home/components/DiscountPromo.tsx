@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { PromoBanner } from '@/types';
 import { stateFirstPaymentService } from '@/services/payment';
 
@@ -31,7 +32,10 @@ export default function DiscountPromo() {
     const loadBanners = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/promo-banners?variant=card&limit=2');
+        const response = await fetch('/api/promo-banners?variant=card&limit=2', {
+          cache: 'force-cache',
+          next: { revalidate: 60 },
+        });
         const result = await response.json();
         if (!response.ok || !result.success) {
           throw new Error(result.error || 'Failed to load discount promo banners');
@@ -202,11 +206,17 @@ export default function DiscountPromo() {
         {/* Background Image */}
         <div className="layer-4 absolute inset-0 z-0 rounded-xl overflow-hidden" data-layer="4">
           {/* layer-4 = background image container */}
-          <img 
-            src={banner.backgroundImage || banner.image || '/placeholder-image.png'} 
-            alt={`${banner.title || 'promo banner'} promotional product`} 
-            className="w-full h-full object-cover"
+          <Image
+            src={banner.backgroundImage || banner.image || '/placeholder-image.png'}
+            alt={`${banner.title || 'promo banner'} promotional product`}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            quality={85}
             loading="lazy"
+            onError={(e) => {
+              e.currentTarget.src = '/placeholder-image.png';
+            }}
           />
         </div>
         

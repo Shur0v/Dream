@@ -1,0 +1,57 @@
+/**
+ * Product MongoDB Model
+ */
+
+import mongoose, { Schema, Document } from 'mongoose';
+import { Product } from '@/types';
+
+export interface ProductDocument extends Omit<Product, 'id'>, Document {
+  _id: mongoose.Types.ObjectId;
+}
+
+const ProductSchema = new Schema<ProductDocument>(
+  {
+    name: { type: String, required: true, index: true },
+    description: { type: String, required: true },
+    price: { type: Number, required: true, min: 0 },
+    originalPrice: { type: Number, min: 0 },
+    discount: { type: Number, min: 0, max: 100 },
+    images: [{ type: String }],
+    category: { type: String, required: true, index: true },
+    categoryId: { type: String, index: true },
+    subcategory: { type: String },
+    brand: { type: String, required: true },
+    sku: { type: String, required: true, unique: true, index: true },
+    stock: { type: Number, required: true, min: 0, default: 0 },
+    colors: [{ type: String }],
+    size: [{ type: String }],
+    isActive: { type: Boolean, default: true, index: true },
+    tags: [{ type: String }],
+    specifications: { type: Schema.Types.Mixed, default: {} },
+    sellerId: { type: String, required: true },
+    slug: { type: String, index: true },
+  },
+  {
+    timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },
+    toJSON: {
+      transform: function (doc: any, ret: any) {
+        ret.id = ret._id?.toString() || ret.id;
+        delete ret._id;
+        delete ret.__v;
+        return ret;
+      },
+    },
+  }
+);
+
+// Indexes for performance
+ProductSchema.index({ categoryId: 1, isActive: 1 });
+ProductSchema.index({ slug: 1 });
+ProductSchema.index({ brand: 1 });
+ProductSchema.index({ createdAt: -1 });
+
+// Check if model already exists to prevent overwrite error in Next.js hot reload
+const ProductModel = mongoose.models.Product || mongoose.model<ProductDocument>('Product', ProductSchema);
+
+export default ProductModel;
+

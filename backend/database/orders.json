@@ -372,7 +372,7 @@
         "size": "M"
       }
     ],
-    "status": "pending",
+    "status": "rejected",
     "totalAmount": 468,
     "shippingAddress": {
       "street": "Proident sunt plac, Est quasi maiores qu",
@@ -385,6 +385,6 @@
     "paymentStatus": "pending",
     "notes": "{\"customerName\":\"Madonna Holloway\",\"phoneNumber\":\"+1 (223) 729-4556\",\"email\":\"sigybajy@mailinator.com\",\"district\":\"Repellendus Incidid\",\"upazila\":\"Est quasi maiores qu\",\"thana\":\"Proident sunt plac\",\"postOffice\":\"Est omnis autem non \"}",
     "createdAt": "2025-11-24T20:32:30.467Z",
-    "updatedAt": "2025-11-24T20:32:30.467Z"
+    "updatedAt": "2026-01-03T20:12:00.612Z"
   }
 ]

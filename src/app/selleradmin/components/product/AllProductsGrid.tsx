@@ -346,26 +346,19 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
             >
               {/* Product Image */}
               <div className="w-full aspect-square relative bg-neutral-50">
-                {product.image && product.image.startsWith('data:') ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <Image
-                    src={product.image || '/placeholder-image.png'}
-                    alt={product.name}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                    onError={(e) => {
-                      // Fallback to placeholder if image fails to load
-                      e.currentTarget.src = '/placeholder-image.png';
-                    }}
-                  />
-                )}
+                <Image
+                  src={product.image || '/placeholder-image.png'}
+                  alt={product.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                  quality={85}
+                  loading="lazy"
+                  onError={(e) => {
+                    // Fallback to placeholder if image fails to load
+                    e.currentTarget.src = '/placeholder-image.png';
+                  }}
+                />
               </div>
 
               {/* Product Info */}

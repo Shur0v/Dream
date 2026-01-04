@@ -15,7 +15,7 @@ const isVariant = (value: unknown): value is PromoBannerVariant =>
 
 export async function GET(request: NextRequest) {
   try {
-    await mockApiDelay(300);
+    // Removed mockApiDelay for faster loading
 
     const { searchParams } = new URL(request.url);
     const includeInactive = searchParams.get('includeInactive') === 'true';
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    await mockApiDelay(300);
+    // Removed mockApiDelay for faster loading
 
     const body = await request.json();
     const {

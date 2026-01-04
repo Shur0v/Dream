@@ -44,24 +44,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
   };
 
   const handleBuyNow = () => {
-    // Calculate total price
-    const totalPrice = product.price * quantity;
-    
-    // Store product data for payment
-    const orderId = `product-${product.id}-${Date.now()}`;
-    sessionStorage.setItem(`order_${orderId}`, JSON.stringify({
-      productId: product.id,
-      productName: product.name,
-      price: product.price,
-      quantity: quantity,
-      color: selectedColor,
-      size: selectedSize,
-      images: images,
-      totalPrice: totalPrice,
-    }));
-
-    // Redirect to payment checkout page
-    router.push(`/client/payment/checkout?orderId=${orderId}&type=product&price=${totalPrice}&productId=${product.id}&quantity=${quantity}&productName=${encodeURIComponent(product.name)}`);
+    // Open checkout modal instead of redirecting
+    setIsCheckoutOpen(true);
   };
 
   const handleCheckoutSubmit = async (formData: {
