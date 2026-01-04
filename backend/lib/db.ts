@@ -1085,19 +1085,44 @@ const normalizeReview = (
   };
 };
 
-export async function getReviews(productId?: string): Promise<ProductReview[]> {
+export async function getReviews(productId?: string, productName?: string): Promise<ProductReview[]> {
   const startTime = Date.now();
   await ensureConnection();
-  console.log('[MongoDB] getReviews: Fetching from MongoDB...');
   
   let query: any = {};
   if (productId) {
+    // Support both ObjectId and string productId matching
+    // Try exact match first
     query.productId = productId;
+    console.log(`[MongoDB] getReviews: Searching for productId="${productId}"`);
+    
+    // If productName is also provided, use OR query to find by either productId or productName
+    if (productName) {
+      query = {
+        $or: [
+          { productId: productId },
+          { productName: productName }
+        ]
+      };
+      console.log(`[MongoDB] getReviews: Also searching for productName="${productName}"`);
+    }
+  } else {
+    console.log('[MongoDB] getReviews: Fetching all reviews...');
   }
   
   const reviews = await ProductReviewModel.find(query).lean();
   const typed = reviews.map(toType<ProductReview>);
+  
   console.log(`[MongoDB] getReviews: Fetched ${typed.length} reviews in ${Date.now() - startTime}ms`);
+  if (productId && typed.length === 0) {
+    console.warn(`[MongoDB] getReviews: No reviews found for productId="${productId}". Checking all reviews...`);
+    // Debug: Show all reviews to see what productIds exist
+    const allReviews = await ProductReviewModel.find({}).lean().limit(10);
+    console.log(`[MongoDB] getReviews: Sample productIds in database:`, 
+      allReviews.map((r: any) => ({ id: r._id?.toString(), productId: r.productId, productName: r.productName }))
+    );
+  }
+  
   return typed;
 }
 
@@ -1107,34 +1132,76 @@ export async function getReviewById(id: string): Promise<ProductReview | undefin
   return review ? toType<ProductReview>(review) : undefined;
 }
 
-export async function getReviewsByProduct(productId: string): Promise<ProductReview[]> {
-  return getReviews(productId);
+export async function getReviewsByProduct(productId: string, productName?: string): Promise<ProductReview[]> {
+  return getReviews(productId, productName);
 }
 
 export async function saveReview(review: ProductReview): Promise<ProductReview> {
-  const db = await readDatabase();
-  const product = db.products.find(p => p.id === String(review.productId));
-  const normalized = normalizeReview(review, product?.name);
-
-  const index = db.reviews.findIndex(r => r.id === normalized.id);
-  if (index >= 0) {
-    db.reviews[index] = normalized;
-  } else {
-    db.reviews.push(normalized);
+  await ensureConnection();
+  
+  // Get product name from MongoDB if productId is provided
+  let productName: string | undefined;
+  if (review.productId) {
+    try {
+      const product = await ProductModel.findById(review.productId).lean();
+      if (product) {
+        productName = product.name;
+      }
+    } catch (error) {
+      console.warn('Could not fetch product name for review:', error);
+    }
   }
-
-  await writeDatabase(db);
-  return normalized;
+  
+  const normalized = normalizeReview(review, productName);
+  
+  // Check if review exists (only if id is a valid MongoDB ObjectId)
+  let existingReview = null;
+  if (normalized.id && mongoose.Types.ObjectId.isValid(normalized.id)) {
+    existingReview = await ProductReviewModel.findById(normalized.id).lean();
+  }
+  
+  let saved;
+  if (existingReview) {
+    // Update existing review
+    const { id, createdAt, ...updateData } = normalized;
+    // Preserve original createdAt when updating
+    updateData.updatedAt = new Date().toISOString();
+    saved = await ProductReviewModel.findByIdAndUpdate(
+      existingReview._id,
+      updateData,
+      { new: true }
+    ).lean();
+  } else {
+    // Create new review - MongoDB will generate _id
+    const { id, ...createData } = normalized;
+    // Ensure timestamps are set
+    if (!createData.createdAt) {
+      createData.createdAt = new Date().toISOString();
+    }
+    if (!createData.updatedAt) {
+      createData.updatedAt = new Date().toISOString();
+    }
+    saved = await ProductReviewModel.create(createData);
+    saved = saved.toObject();
+  }
+  
+  return toType<ProductReview>(saved);
 }
 
 export async function deleteReview(id: string): Promise<ProductReview | null> {
-  const db = await readDatabase();
-  const index = db.reviews.findIndex(review => review.id === id);
-  if (index === -1) {
+  await ensureConnection();
+  
+  // Validate MongoDB ObjectId
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    console.warn(`Invalid review ID format: ${id}`);
     return null;
   }
-
-  const [removed] = db.reviews.splice(index, 1);
-  await writeDatabase(db);
-  return removed;
+  
+  const deleted = await ProductReviewModel.findByIdAndDelete(id).lean();
+  
+  if (!deleted) {
+    return null;
+  }
+  
+  return toType<ProductReview>(deleted);
 }

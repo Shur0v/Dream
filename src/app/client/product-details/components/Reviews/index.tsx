@@ -6,10 +6,11 @@ import { ProductReview } from '@/types';
 
 interface ReviewsProps {
   productId: string;
+  productName?: string;
   initialReviews: ProductReview[];
 }
 
-const Reviews: React.FC<ReviewsProps> = ({ productId, initialReviews }) => {
+const Reviews: React.FC<ReviewsProps> = ({ productId, productName, initialReviews }) => {
   const [activeTab, setActiveTab] = useState<'details' | 'reviews'>('reviews');
   const [visibleReviewsCount, setVisibleReviewsCount] = useState(4);
   const [reviews, setReviews] = useState<ProductReview[]>(initialReviews);
@@ -22,7 +23,12 @@ const Reviews: React.FC<ReviewsProps> = ({ productId, initialReviews }) => {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`/api/reviews?productId=${productId}`, {
+        // Build query string with both productId and productName
+        const params = new URLSearchParams({ productId });
+        if (productName) {
+          params.append('productName', productName);
+        }
+        const response = await fetch(`/api/reviews?${params.toString()}`, {
           cache: 'no-store',
         });
         const result = await response.json();
@@ -47,7 +53,7 @@ const Reviews: React.FC<ReviewsProps> = ({ productId, initialReviews }) => {
     return () => {
       active = false;
     };
-  }, [productId]);
+  }, [productId, productName]);
 
   const displayedReviews = useMemo(
     () => reviews.slice(0, visibleReviewsCount),

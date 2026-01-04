@@ -129,7 +129,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
     }
   }
 
-  const productReviews = await getReviewsByProduct(product.id);
+  const productReviews = await getReviewsByProduct(product.id, product.name);
   const reviewsCount = productReviews.length;
   const averageRating = reviewsCount
     ? Number(
@@ -173,7 +173,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
 
       {/* Reviews Section */}
       <section className="w-full max-w-[1320px] mx-auto px-2">
-        <Reviews productId={product.id} initialReviews={productReviews} />
+        <Reviews productId={product.id} productName={product.name} initialReviews={productReviews} />
       </section>
 
       {/* Related Product Section */}

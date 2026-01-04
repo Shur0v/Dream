@@ -16,8 +16,9 @@ export async function GET(request: NextRequest) {
     await mockApiDelay(200);
     const { searchParams } = new URL(request.url);
     const productId = searchParams.get('productId') || undefined;
+    const productName = searchParams.get('productName') || undefined;
 
-    const reviews = await getReviews(productId || undefined);
+    const reviews = await getReviews(productId || undefined, productName || undefined);
 
     return NextResponse.json({
       success: true,
