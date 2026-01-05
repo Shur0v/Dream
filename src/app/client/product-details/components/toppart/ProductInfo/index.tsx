@@ -4,8 +4,6 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Minus, Plus, Heart, ShoppingCart, Star } from 'lucide-react';
 import { CheckoutModal } from '@/components/cart/CheckoutModal';
-import { apiService } from '@/services/api';
-import { stateFirstPaymentService } from '@/services/payment';
 
 interface ProductInfoProps {
   product: {
@@ -96,66 +94,60 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
         country: 'Bangladesh',
       };
       
-      // Create order ID for payment
-      const orderId = `order-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
-      // Prepare payment data for State First
-      const paymentData = {
-        amount: totalAmount,
-        currency: 'BDT',
-        orderId: orderId,
-        customerName: formData.name,
-        customerPhone: formData.phoneNumber,
-        customerEmail: formData.email,
-        customerAddress: {
+      // Prepare order data
+      const orderData = {
+        userId: tempUserId,
+        items: [orderItem],
+        shippingAddress: shippingAddress,
+        billingAddress: shippingAddress, // Use same address for billing
+        paymentMethod: 'Cash on Delivery', // No payment system, direct order
+        notes: JSON.stringify({
+          customerName: formData.name,
+          phoneNumber: formData.phoneNumber,
+          email: formData.email,
           district: formData.district,
           upazila: formData.upazila,
           thana: formData.thana,
           postOffice: formData.postOffice,
-        },
-        items: [{
-          productId: product.id,
-          productName: product.name,
-          quantity: quantity,
-          price: product.price,
-        }],
-        returnUrl: `${window.location.origin}/client/payment/success?orderId=${orderId}`,
-        cancelUrl: `${window.location.origin}/client/payment/cancel?orderId=${orderId}`,
+        }),
       };
 
-      // Store order data in sessionStorage
-      sessionStorage.setItem(`order_${orderId}`, JSON.stringify({
-        orderData: {
-          userId: tempUserId,
-          items: [orderItem],
-          shippingAddress: shippingAddress,
-          paymentMethod: 'State First Payment',
-          notes: JSON.stringify({
-            customerName: formData.name,
-            phoneNumber: formData.phoneNumber,
-            email: formData.email,
-            district: formData.district,
-            upazila: formData.upazila,
-            thana: formData.thana,
-            postOffice: formData.postOffice,
-          }),
+      // Create order directly via Express backend API (same as products)
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiUrl}/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        paymentData: paymentData,
-      }));
+        body: JSON.stringify(orderData),
+      });
 
-      // Create payment session with State First
-      const paymentResponse = await stateFirstPaymentService.createPaymentSession(paymentData);
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || 'Failed to create order' };
+        }
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
       
-      if (paymentResponse.success && paymentResponse.paymentUrl) {
-        // Redirect to State First payment page
-        window.location.href = paymentResponse.paymentUrl;
+      if (result.success && result.data) {
+        // Order created successfully
+        alert(`Order placed successfully! Order ID: ${result.data.id}\n\nYour order will be processed and you will be contacted soon.`);
+        setIsCheckoutOpen(false);
+        
+        // Optionally redirect to order confirmation page or home
+        // router.push(`/client/orders/${result.data.id}`);
       } else {
-        throw new Error(paymentResponse.error || 'Failed to create payment session');
+        throw new Error(result.error || 'Failed to create order');
       }
     } catch (error: any) {
-      console.error('Error processing payment:', error);
-      alert('Failed to process payment. Please try again. Error: ' + (error.message || 'Unknown error'));
-      setIsCheckoutOpen(false);
+      console.error('Error creating order:', error);
+      alert('Failed to create order. Please try again. Error: ' + (error.message || 'Unknown error'));
     } finally {
       setIsSubmitting(false);
     }

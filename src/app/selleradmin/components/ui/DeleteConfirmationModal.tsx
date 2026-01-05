@@ -61,7 +61,7 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
         <button
           onClick={handleClose}
           disabled={isLoading}
-          className="absolute top-4 right-4 z-10 w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="absolute top-4 right-4 z-10 w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           aria-label="Close modal"
         >
           <X className="w-5 h-5 text-gray-600" />
@@ -106,14 +106,14 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
             <button
               onClick={handleClose}
               disabled={isLoading}
-              className="flex-1 h-12 px-6 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium font-['Poppins'] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 h-12 px-6 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium font-['Poppins'] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={handleConfirm}
               disabled={isLoading}
-              className="flex-1 h-12 px-6 py-3 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium font-['Poppins'] transition-colors duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 h-12 px-6 py-3 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium font-['Poppins'] transition-colors duration-200 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
             >
               {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
               {confirmButtonText}

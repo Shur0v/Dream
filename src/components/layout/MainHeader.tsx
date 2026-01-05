@@ -24,6 +24,14 @@ import { CartDropdown } from '../cart/CartDropdown';
 import { WishlistDropdown } from '../wishlist/WishlistDropdown';
 import { Category, Product } from '@/types';
 
+// User data interface
+interface UserData {
+  username: string;
+  mobile: string;
+  email: string;
+  loginTime: string;
+}
+
 /**
  * Props interface for MainHeader component
  */
@@ -78,6 +86,38 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
   onOpenLoginModal,
   onOpenRegisterModal,
 }) => {
+  // Get user data from localStorage
+  const [userData, setUserData] = useState<UserData | null>(null);
+
+  useEffect(() => {
+    // Function to load user data
+    const loadUserData = () => {
+      const storedUserData = localStorage.getItem('userData');
+      if (storedUserData) {
+        try {
+          setUserData(JSON.parse(storedUserData));
+        } catch (e) {
+          console.error('Error parsing user data:', e);
+        }
+      } else {
+        setUserData(null);
+      }
+    };
+
+    // Load initially
+    loadUserData();
+
+    // Listen for storage changes (when user logs in from another tab)
+    window.addEventListener('storage', loadUserData);
+
+    // Also check periodically (for same-tab updates)
+    const interval = setInterval(loadUserData, 500);
+
+    return () => {
+      window.removeEventListener('storage', loadUserData);
+      clearInterval(interval);
+    };
+  }, []);
   const router = useRouter();
   const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState('');
@@ -639,20 +679,36 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
                 </div>
               </div>
 
-              {/* Sign In Button */}
-              <button
-                onClick={() => onOpenLoginModal?.('client')}
-                className="layer-27 h-[52px] px-6 sm:px-8 py-4 bg-fuchsia-500 rounded-[10px] flex justify-center items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer"
-                aria-label="Sign in to your account"
-                data-layer="27"
-              >
-                {/* layer-27 = sign in button */}
-                
-                <div className="layer-28 justify-start text-white text-sm sm:text-base font-semibold leading-4 whitespace-nowrap" data-layer="28">
-                  {/* layer-28 = sign in button text */}
-                  Sign in
-                </div>
-              </button>
+              {/* Sign In Button / Username Display */}
+              {userData ? (
+                <button
+                  disabled
+                  className="layer-27 h-[52px] px-6 sm:px-8 py-4 bg-fuchsia-500 rounded-[10px] flex justify-center items-center gap-2 opacity-90 cursor-not-allowed"
+                  aria-label="Signed in as user"
+                  data-layer="27"
+                >
+                  {/* layer-27 = sign in button */}
+                  
+                  <div className="layer-28 justify-start text-white text-sm sm:text-base font-semibold leading-4 whitespace-nowrap" data-layer="28">
+                    {/* layer-28 = sign in button text */}
+                    {userData.username}
+                  </div>
+                </button>
+              ) : (
+                <button
+                  onClick={() => onOpenLoginModal?.('client')}
+                  className="layer-27 h-[52px] px-6 sm:px-8 py-4 bg-fuchsia-500 rounded-[10px] flex justify-center items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer"
+                  aria-label="Sign in to your account"
+                  data-layer="27"
+                >
+                  {/* layer-27 = sign in button */}
+                  
+                  <div className="layer-28 justify-start text-white text-sm sm:text-base font-semibold leading-4 whitespace-nowrap" data-layer="28">
+                    {/* layer-28 = sign in button text */}
+                    Sign in
+                  </div>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -777,15 +833,24 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
               </div>
 
               {/* Sign In Button in Mobile Menu */}
-              <button
-                onClick={() => {
-                  onOpenLoginModal?.('client');
-                  setIsMobileMenuOpen(false);
-                }}
-                className="w-full mt-4 px-4 py-3 bg-fuchsia-500 text-white rounded-lg font-semibold hover:opacity-90 transition-opacity"
-              >
-                Sign in
-              </button>
+              {userData ? (
+                <button
+                  disabled
+                  className="w-full mt-4 px-4 py-3 bg-fuchsia-500 text-white rounded-lg font-semibold opacity-90 cursor-not-allowed"
+                >
+                  {userData.username}
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    onOpenLoginModal?.('client');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full mt-4 px-4 py-3 bg-fuchsia-500 text-white rounded-lg font-semibold hover:opacity-90 transition-opacity cursor-pointer"
+                >
+                  Sign in
+                </button>
+              )}
             </div>
           </div>
         </div>

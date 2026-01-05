@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Plus, FolderPlus, TrendingUp, Star, LogOut, Palette, Image as ImageIcon, Megaphone, Tag, Sparkles, MessageSquare, Package, ShoppingCart, Menu, ChevronLeft } from 'lucide-react';
+import { LayoutDashboard, Plus, FolderPlus, TrendingUp, Star, LogOut, Palette, Image as ImageIcon, Megaphone, Tag, Sparkles, MessageSquare, Package, ShoppingCart, Menu, ChevronLeft, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -94,6 +94,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isCollapsed = false
       href: '/selleradmin/featured',
       icon: <Star className="w-6 h-6" />
     },
+    { 
+      label: 'Users', 
+      href: '/selleradmin/users',
+      icon: <Users className="w-6 h-6" />
+    },
   ];
 
   const isActive = (href: string) => {
@@ -119,7 +124,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isCollapsed = false
           isCollapsed ? 'flex flex-col items-center gap-3' : 'flex items-center justify-between'
         )}>
           {!isCollapsed && (
-            <Link href="/selleradmin" className="flex-shrink-0">
+            <Link href="/selleradmin" className="flex-shrink-0 cursor-pointer">
               <Image
                 src="/common/logo.svg"
                 alt="DreamShop logo"
@@ -131,7 +136,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isCollapsed = false
             </Link>
           )}
           {isCollapsed && (
-            <Link href="/selleradmin" className="flex-shrink-0">
+            <Link href="/selleradmin" className="flex-shrink-0 cursor-pointer">
               <Image
                 src="/common/logo.svg"
                 alt="DreamShop logo"
@@ -146,7 +151,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isCollapsed = false
           <button
             onClick={onToggleCollapse}
             className={cn(
-              'p-2 rounded-lg hover:bg-fuchsia-500/10 transition-colors flex-shrink-0',
+              'p-2 rounded-lg hover:bg-fuchsia-500/10 transition-colors flex-shrink-0 cursor-pointer',
               isCollapsed ? 'w-full flex justify-center' : ''
             )}
             aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
@@ -169,7 +174,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isCollapsed = false
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'p-2.5 flex items-center gap-2.5 transition-colors flex-shrink-0 rounded-lg',
+                    'p-2.5 flex items-center gap-2.5 transition-colors flex-shrink-0 rounded-lg cursor-pointer',
                     isCollapsed ? 'justify-center w-12' : 'justify-center w-full',
                     active
                       ? 'bg-fuchsia-500'

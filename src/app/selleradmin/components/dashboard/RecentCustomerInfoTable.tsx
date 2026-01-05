@@ -126,11 +126,14 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
         setError(null);
         
         // Fetch orders from admin API endpoint with pagination (same as OrdersTable)
-        const response = await fetch(`/api/admin/orders?page=${currentPage}&limit=${itemsPerPage}&sortBy=createdAt&sortOrder=desc`, {
+        // Use Express backend API (same as orders page)
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        const response = await fetch(`${apiUrl}/admin/orders?page=${currentPage}&limit=${itemsPerPage}&sortBy=createdAt&sortOrder=desc`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
+          cache: 'no-store',
         });
 
         if (!response.ok) {

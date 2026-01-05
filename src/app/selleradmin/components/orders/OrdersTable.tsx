@@ -120,6 +120,8 @@ export default function OrdersTable() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [isAccepting, setIsAccepting] = useState<string | null>(null);
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -133,7 +135,7 @@ export default function OrdersTable() {
       setIsLoading(true);
       setError(null);
       
-      // Fetch orders from admin API endpoint with pagination
+      // Fetch orders from admin API endpoint with pagination (Express backend)
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
       const response = await fetch(`${apiUrl}/admin/orders?page=${currentPage}&limit=${itemsPerPage}&sortBy=createdAt&sortOrder=desc`, {
         method: 'GET',
@@ -194,6 +196,7 @@ export default function OrdersTable() {
   const handleRejectConfirm = async () => {
     if (orderToReject) {
       try {
+        setIsRejecting(true);
         // Update order status via admin API endpoint
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
         const response = await fetch(`${apiUrl}/admin/orders/${orderToReject.id}/reject`, {
@@ -216,12 +219,15 @@ export default function OrdersTable() {
       } catch (err) {
         console.error('Error rejecting order:', err);
         alert('Failed to reject order. Please try again.');
+      } finally {
+        setIsRejecting(false);
       }
     }
   };
 
   const handleAcceptOrder = async (orderId: string) => {
     try {
+      setIsAccepting(orderId);
       // Update order status via admin API endpoint
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
       const order = orders.find(o => o.id === orderId);
@@ -248,6 +254,8 @@ export default function OrdersTable() {
     } catch (err) {
       console.error('Error accepting order:', err);
       alert('Failed to accept order. Please try again.');
+    } finally {
+      setIsAccepting(null);
     }
   };
 
@@ -326,7 +334,7 @@ export default function OrdersTable() {
           <button
             onClick={fetchOrders}
             disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer transition-colors"
             title="Refresh orders"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
@@ -429,7 +437,7 @@ export default function OrdersTable() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleViewDetails(order)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
                         title="View Details"
                       >
                         <Eye className="w-5 h-5" />
@@ -437,7 +445,7 @@ export default function OrdersTable() {
                       {order.status === 'pending' && (
                         <button
                           onClick={() => handleRejectClick(order)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                           title="Reject Order"
                         >
                           <X className="w-5 h-5" />
@@ -446,7 +454,7 @@ export default function OrdersTable() {
                       {order.status === 'rejected' && (
                         <button
                           onClick={() => handleDeleteClick(order)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                           title="Delete Order"
                         >
                           <Trash2 className="w-5 h-5" />
@@ -475,11 +483,14 @@ export default function OrdersTable() {
         <OrderDetailModal
           isOpen={isDetailModalOpen}
           onClose={() => {
-            setIsDetailModalOpen(false);
-            setSelectedOrder(null);
+            if (!isAccepting) {
+              setIsDetailModalOpen(false);
+              setSelectedOrder(null);
+            }
           }}
           order={selectedOrder}
           onAcceptOrder={handleAcceptOrder}
+          isAccepting={isAccepting === selectedOrder.id}
         />
       )}
 
@@ -488,13 +499,16 @@ export default function OrdersTable() {
         <DeleteConfirmationModal
           isOpen={isRejectModalOpen}
           onClose={() => {
-            setIsRejectModalOpen(false);
-            setOrderToReject(null);
+            if (!isRejecting) {
+              setIsRejectModalOpen(false);
+              setOrderToReject(null);
+            }
           }}
           onConfirm={handleRejectConfirm}
           title="Reject Order"
           message={`Are you sure you want to reject order ${orderToReject.orderId}? This action cannot be undone.`}
           confirmButtonText="Reject"
+          isLoading={isRejecting}
         />
       )}
 

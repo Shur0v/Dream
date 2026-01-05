@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { X, Check } from 'lucide-react';
+import { X, Check, Loader2 } from 'lucide-react';
 import { Order } from './OrdersTable';
 
 interface OrderDetailModalProps {
@@ -10,6 +10,7 @@ interface OrderDetailModalProps {
   onClose: () => void;
   order: Order;
   onAcceptOrder: (orderId: string) => void;
+  isAccepting?: boolean;
 }
 
 /**
@@ -20,12 +21,15 @@ export default function OrderDetailModal({
   isOpen,
   onClose,
   order,
-  onAcceptOrder
+  onAcceptOrder,
+  isAccepting = false
 }: OrderDetailModalProps) {
   if (!isOpen) return null;
 
   const handleAccept = () => {
-    onAcceptOrder(order.id);
+    if (!isAccepting) {
+      onAcceptOrder(order.id);
+    }
   };
 
   return (
@@ -50,7 +54,8 @@ export default function OrderDetailModal({
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              disabled={isAccepting}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Close modal"
             >
               <X className="w-6 h-6 text-gray-600" />
@@ -162,15 +167,21 @@ export default function OrderDetailModal({
               <div className="flex items-center justify-end gap-4 pt-4 border-t border-gray-200">
                 <button
                   onClick={onClose}
-                  className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                  disabled={isAccepting}
+                  className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Close
                 </button>
                 <button
                   onClick={handleAccept}
-                  className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
+                  disabled={isAccepting}
+                  className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  <Check className="w-5 h-5" />
+                  {isAccepting ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <Check className="w-5 h-5" />
+                  )}
                   Accept Order
                 </button>
               </div>
@@ -180,7 +191,7 @@ export default function OrderDetailModal({
               <div className="flex items-center justify-end pt-4 border-t border-gray-200">
                 <button
                   onClick={onClose}
-                  className="px-6 py-3 bg-fuchsia-500 text-white rounded-lg font-medium hover:bg-fuchsia-600 transition-colors"
+                  className="px-6 py-3 bg-fuchsia-500 text-white rounded-lg font-medium hover:bg-fuchsia-600 transition-colors cursor-pointer"
                 >
                   Close
                 </button>
