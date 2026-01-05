@@ -1,19 +1,42 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { adminLogin, isAdminAuthenticated } from '@/lib/adminAuth';
 
 export default function SellerAdminLoginPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
-    email: '',
+    id: '',
     password: '',
     rememberMe: false,
   });
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAdminAuthenticated()) {
+      router.push('/selleradmin');
+    }
+  }, [router]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    window.location.href = '/selleradmin';
+    setError(null);
+    setIsLoading(true);
+
+    // Validate credentials
+    if (adminLogin(formData.id, formData.password)) {
+      // Success - redirect to dashboard
+      router.push('/selleradmin');
+    } else {
+      // Failed - show error
+      setError('Invalid ID or password. Please try again.');
+      setIsLoading(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -22,6 +45,8 @@ export default function SellerAdminLoginPage() {
       ...formData,
       [name]: type === 'checkbox' ? checked : value,
     });
+    // Clear error when user starts typing
+    if (error) setError(null);
   };
 
   return (
@@ -52,14 +77,14 @@ export default function SellerAdminLoginPage() {
             <div className="self-stretch flex flex-col justify-start items-start gap-6">
               <div className="self-stretch flex flex-col justify-start items-start gap-2">
                 <div className="self-stretch justify-start text-neutral-600 text-base font-medium leading-none">
-                  Email Address
+                  Admin ID
                 </div>
                 <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
+                  type="text"
+                  name="id"
+                  value={formData.id}
                   onChange={handleChange}
-                  placeholder="selleradmin@dreamshop.com"
+                  placeholder="Enter your admin ID"
                   className="self-stretch h-11 px-5 py-3.5 rounded-md outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-start items-center gap-2.5 text-zinc-500 text-sm font-normal leading-none"
                   required
                 />
@@ -101,9 +126,19 @@ export default function SellerAdminLoginPage() {
               </div>
             </div>
 
-            <button type="submit" className="w-[792px] h-14 px-5 py-3.5 bg-fuchsia-500 rounded-md inline-flex justify-center items-center gap-2.5">
+            {error && (
+              <div className="self-stretch bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                <span className="block sm:inline">{error}</span>
+              </div>
+            )}
+
+            <button 
+              type="submit" 
+              disabled={isLoading}
+              className="w-[792px] h-14 px-5 py-3.5 bg-fuchsia-500 rounded-md inline-flex justify-center items-center gap-2.5 hover:bg-fuchsia-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
               <div className="justify-start text-white text-base font-semibold leading-7">
-                Sign In
+                {isLoading ? 'Signing In...' : 'Sign In'}
               </div>
             </button>
           </form>

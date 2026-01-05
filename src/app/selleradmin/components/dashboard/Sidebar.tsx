@@ -3,9 +3,10 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, Plus, FolderPlus, TrendingUp, Star, LogOut, Palette, Image as ImageIcon, Megaphone, Tag, Sparkles, MessageSquare, Package, ShoppingCart, Menu, ChevronLeft, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { adminLogout } from '@/lib/adminAuth';
 
 interface NavItem {
   label: string;
@@ -27,6 +28,12 @@ interface SidebarProps {
  */
 export const Sidebar: React.FC<SidebarProps> = ({ className, isCollapsed = false, onToggleCollapse }) => {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    adminLogout();
+    router.push('/selleradmin/login');
+  };
 
   const navItems: NavItem[] = [
     { 
@@ -202,9 +209,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isCollapsed = false
         </div>
 
         {/* Logout Section - Bottom (fixed) */}
-        <div 
+        <button
+          onClick={handleLogout}
           className={cn(
-            'flex-shrink-0 p-2.5 flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity rounded-lg',
+            'flex-shrink-0 p-2.5 flex items-center gap-2.5 cursor-pointer hover:opacity-80 transition-opacity rounded-lg bg-transparent border-none',
             isCollapsed ? 'justify-center w-12 mx-auto' : 'justify-center w-full'
           )}
           title={isCollapsed ? 'Log Out' : undefined}
@@ -215,7 +223,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isCollapsed = false
               Log Out
             </div>
           )}
-        </div>
+        </button>
       </div>
     </div>
   );
