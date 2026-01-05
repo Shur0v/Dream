@@ -23,6 +23,7 @@ import { ShoppingCart, Search, Menu, X } from 'lucide-react';
 import { CartDropdown } from '../cart/CartDropdown';
 import { WishlistDropdown } from '../wishlist/WishlistDropdown';
 import { Category, Product } from '@/types';
+import { getCartCount, getWishlistCount, getCurrentUser } from '@/lib/userStorage';
 
 // User data interface
 interface UserData {
@@ -78,8 +79,8 @@ interface MainHeaderProps {
  * Main Navigation Header component
  */
 export const MainHeader: React.FC<MainHeaderProps> = ({
-  cartCount = 0,
-  wishlistCount = 0,
+  cartCount: propCartCount,
+  wishlistCount: propWishlistCount,
   onSearch,
   onCartClick,
   onWishlistClick,
@@ -88,26 +89,28 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
 }) => {
   // Get user data from localStorage
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [cartCount, setCartCount] = useState(0);
+  const [wishlistCount, setWishlistCount] = useState(0);
 
   useEffect(() => {
-    // Function to load user data
+    // Function to load user data and counts
     const loadUserData = () => {
-      const storedUserData = localStorage.getItem('userData');
-      if (storedUserData) {
-        try {
-          setUserData(JSON.parse(storedUserData));
-        } catch (e) {
-          console.error('Error parsing user data:', e);
-        }
+      const user = getCurrentUser();
+      if (user) {
+        setUserData(user);
+        setCartCount(getCartCount());
+        setWishlistCount(getWishlistCount());
       } else {
         setUserData(null);
+        setCartCount(0);
+        setWishlistCount(0);
       }
     };
 
     // Load initially
     loadUserData();
 
-    // Listen for storage changes (when user logs in from another tab)
+    // Listen for storage changes (when user logs in from another tab or cart/wishlist updates)
     window.addEventListener('storage', loadUserData);
 
     // Also check periodically (for same-tab updates)

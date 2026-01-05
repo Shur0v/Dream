@@ -4,12 +4,12 @@
 
 import { Router, Request, Response } from 'express';
 import {
-  getOrders,
+  getOrders as getOrdersFromMongo,
   getProducts,
-  getUsers,
-  saveOrder,
-  invalidateOrdersCache,
-} from '../express-lib/db';
+  getUsers as getUsersFromMongo,
+  saveOrder as saveOrderToMongo,
+} from '../lib/db';
+import { getUsers as getUsersFromExpress, getProducts as getProductsFromExpress } from '../express-lib/db';
 
 const router = Router();
 
@@ -24,9 +24,9 @@ router.get('/dashboard', async (req: Request, res: Response) => {
     await mockApiDelay(500);
 
     const [products, orders, users] = await Promise.all([
-      getProducts(),
-      getOrders(),
-      getUsers(),
+      getProductsFromExpress(),
+      getOrdersFromMongo(),
+      getUsersFromMongo(),
     ]);
 
     const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
@@ -68,8 +68,8 @@ router.get('/orders', async (req: Request, res: Response) => {
     const status = req.query.status as string;
     const search = req.query.search as string;
 
-    let orders = await getOrders();
-    console.log(`[GET /api/admin/orders] Fetched ${orders.length} orders from database`);
+    let orders = await getOrdersFromMongo();
+    console.log(`[GET /api/admin/orders] Fetched ${orders.length} orders from MongoDB`);
 
     if (status) {
       orders = orders.filter(order => order.status === status);
@@ -150,7 +150,7 @@ router.get('/orders/recent', async (req: Request, res: Response) => {
   try {
     await mockApiDelay(500);
 
-    const orders = await getOrders();
+    const orders = await getOrdersFromMongo();
     const recentOrders = orders
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 10);
@@ -180,10 +180,7 @@ router.post('/orders/:id/approve', async (req: Request, res: Response) => {
     const { id } = req.params;
     console.log(`[POST /api/admin/orders/${id}/approve] Approving order`);
     
-    // Invalidate cache first to ensure fresh data
-    invalidateOrdersCache();
-    
-    const orders = await getOrders();
+    const orders = await getOrdersFromMongo();
     const order = orders.find(o => o.id === id);
 
     if (!order) {
@@ -198,7 +195,7 @@ router.post('/orders/:id/approve', async (req: Request, res: Response) => {
     order.updatedAt = new Date().toISOString();
 
     console.log(`[POST /api/admin/orders/${id}/approve] Saving approved order`);
-    await saveOrder(order);
+    await saveOrderToMongo(order);
     console.log(`[POST /api/admin/orders/${id}/approve] Order approved successfully`);
 
     res.json({
@@ -226,10 +223,7 @@ router.post('/orders/:id/reject', async (req: Request, res: Response) => {
     const { id } = req.params;
     console.log(`[POST /api/admin/orders/${id}/reject] Rejecting order`);
     
-    // Invalidate cache first to ensure fresh data
-    invalidateOrdersCache();
-    
-    const orders = await getOrders();
+    const orders = await getOrdersFromMongo();
     const order = orders.find(o => o.id === id);
 
     if (!order) {
@@ -244,7 +238,7 @@ router.post('/orders/:id/reject', async (req: Request, res: Response) => {
     order.updatedAt = new Date().toISOString();
 
     console.log(`[POST /api/admin/orders/${id}/reject] Saving rejected order`);
-    await saveOrder(order);
+    await saveOrderToMongo(order);
     console.log(`[POST /api/admin/orders/${id}/reject] Order rejected successfully`);
 
     res.json({
@@ -270,7 +264,7 @@ router.post('/orders/:id/cancel', async (req: Request, res: Response) => {
     await mockApiDelay(600);
 
     const { id } = req.params;
-    const orders = await getOrders();
+    const orders = await getOrdersFromMongo();
     const order = orders.find(o => o.id === id);
 
     if (!order) {
@@ -283,7 +277,7 @@ router.post('/orders/:id/cancel', async (req: Request, res: Response) => {
     order.status = 'cancelled';
     order.updatedAt = new Date().toISOString();
 
-    await saveOrder(order);
+    await saveOrderToMongo(order);
 
     res.json({
       success: true,

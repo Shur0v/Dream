@@ -60,41 +60,91 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     username: '',
     mobile: '',
     email: '',
+    password: '', // Optional password field
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Store user data in localStorage
-    const userData = {
-      username: formData.username,
-      mobile: formData.mobile,
-      email: formData.email,
-      loginTime: new Date().toISOString(),
-    };
-    
-    localStorage.setItem('userData', JSON.stringify(userData));
-    
-    // Store in users list (for admin dashboard)
-    const existingUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
-    const userExists = existingUsers.find((u: any) => u.email === formData.email);
-    
-    if (!userExists) {
-      existingUsers.push(userData);
+    try {
+      // Save user to MongoDB via API
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiUrl}/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: formData.username,
+          mobile: formData.mobile,
+          email: formData.email,
+          password: formData.password || null,
+          loginTime: new Date().toISOString(),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to save user' }));
+        throw new Error(errorData.error || 'Failed to save user');
+      }
+
+      const result = await response.json();
+      const savedUser = result.data;
+
+      // Also save to localStorage for client-side access
+      const userData = {
+        username: formData.username,
+        mobile: formData.mobile,
+        email: formData.email,
+        password: formData.password || null,
+        loginTime: new Date().toISOString(),
+        cart: [],
+        wishlist: [],
+      };
+
+      // Check if user exists in localStorage
+      const existingUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
+      const existingUserIndex = existingUsers.findIndex((u: any) => u.email === formData.email);
+      
+      if (existingUserIndex >= 0) {
+        // Update existing user in localStorage
+        if (formData.password && existingUsers[existingUserIndex].password === formData.password) {
+          // Password matches - restore cart and wishlist
+          userData.cart = existingUsers[existingUserIndex].cart || [];
+          userData.wishlist = existingUsers[existingUserIndex].wishlist || [];
+        }
+        existingUsers[existingUserIndex] = userData;
+      } else {
+        // Add new user to localStorage
+        existingUsers.push(userData);
+      }
+      
       localStorage.setItem('allUsers', JSON.stringify(existingUsers));
+      localStorage.setItem('userData', JSON.stringify(userData));
+      
+      // Initialize empty cart and wishlist for this user if not exists
+      if (!localStorage.getItem(`cart_${formData.email}`)) {
+        localStorage.setItem(`cart_${formData.email}`, JSON.stringify(userData.cart || []));
+      }
+      if (!localStorage.getItem(`wishlist_${formData.email}`)) {
+        localStorage.setItem(`wishlist_${formData.email}`, JSON.stringify(userData.wishlist || []));
+      }
+      
+      // Call success callback and close modal
+      onLoginSuccess?.();
+      onClose();
+      
+      // Trigger storage event to update header (works across components)
+      window.dispatchEvent(new Event('storage'));
+      
+      // Small delay then reload to ensure localStorage is updated
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
+    } catch (error: any) {
+      console.error('Error saving user:', error);
+      alert('Failed to save user. Please try again. Error: ' + (error.message || 'Unknown error'));
     }
-    
-    // Call success callback and close modal
-    onLoginSuccess?.();
-    onClose();
-    
-    // Trigger storage event to update header (works across components)
-    window.dispatchEvent(new Event('storage'));
-    
-    // Small delay then reload to ensure localStorage is updated
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -197,6 +247,24 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               className="w-full h-10 px-3 py-2 rounded-md border border-gray-300 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent"
               required
             />
+          </div>
+
+          {/* Password Field (Optional) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password <span className="text-gray-400 text-xs">(Optional)</span>
+            </label>
+            <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Enter password to restore your data"
+              className="w-full h-10 px-3 py-2 rounded-md border border-gray-300 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:border-transparent"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              If you have an account, enter password to restore your cart and wishlist
+            </p>
           </div>
 
           {/* Sign In Button */}

@@ -6,6 +6,7 @@ import ProductCard from '@/components/product/ProductCard';
 import { Product, Category } from '@/types';
 import { fetchCategories as loadCategoriesFromApi } from '@/lib/categories';
 import FestivalBannerSection from '@/app/client/components/FestivalBannerSection';
+import { addToCart, addToWishlist, CartItem, WishlistItem } from '@/lib/userStorage';
 
 /**
  * ProductList component for displaying products with filtering and sorting
@@ -428,17 +429,44 @@ export default function ProductList() {
             </div>
           ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={(product) => console.log('Add to cart:', product.id)}
-                onAddToWishlist={(product) => console.log('Add to wishlist:', product.id)}
+            {filteredProducts.map((product) => {
+              const handleAddToCart = () => {
+                const cartItem: CartItem = {
+                  id: `cart-${product.id}-${Date.now()}`,
+                  productId: product.id,
+                  name: product.name,
+                  price: product.price,
+                  quantity: 1,
+                  image: product.images && product.images.length > 0 ? product.images[0] : '/placeholder-image.png',
+                };
+                addToCart(cartItem);
+                window.dispatchEvent(new Event('storage'));
+              };
+
+              const handleAddToWishlist = () => {
+                const wishlistItem: WishlistItem = {
+                  id: `wishlist-${product.id}-${Date.now()}`,
+                  productId: product.id,
+                  name: product.name,
+                  price: product.price,
+                  image: product.images && product.images.length > 0 ? product.images[0] : '/placeholder-image.png',
+                };
+                addToWishlist(wishlistItem);
+                window.dispatchEvent(new Event('storage'));
+              };
+
+              return (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onAddToCart={handleAddToCart}
+                  onAddToWishlist={handleAddToWishlist}
                   onProductClick={(product) => {
                     router.push(`/client/product-details/${product.id}`);
                   }}
-              />
-            ))}
+                />
+              );
+            })}
           </div>
           )}
 

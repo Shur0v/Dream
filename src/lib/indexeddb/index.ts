@@ -29,10 +29,15 @@ export {
   cacheMonitor,
 } from './cacheVerification';
 
+// Import for global window assignment
+import { clearAllCache } from './cacheManager';
+import { getCacheStats } from './imageCache';
+import { reportCacheStatus } from './cacheVerification';
+
 // Make cache utilities available globally for debugging (development only)
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   (window as any).__imageCache = {
-    clear: clearImageCache,
+    clear: clearAllCache,
     stats: getCacheStats,
     verify: reportCacheStatus,
   };

@@ -9,81 +9,10 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Plus, Minus, X, Trash2 } from 'lucide-react';
 import { CheckoutModal } from './CheckoutModal';
+import { getCartItems, saveCartItems, removeFromCart, updateCartQuantity, CartItem as StorageCartItem } from '@/lib/userStorage';
 
-interface CartItem {
-  id: string;
-  name: string;
-  quantity: number;
-  price: number;
-  image: string;
-}
-
-// Sample data with proper image paths from public/common/cart/
-const SAMPLE_ITEMS: CartItem[] = [
-  {
-    id: '1',
-    name: 'Wireless Bluetooth Headphones',
-    quantity: 2,
-    price: 89.99,
-    image: '/common/cart/image1.png'
-  },
-  {
-    id: '2',
-    name: 'Smart Watch Series 8',
-    quantity: 1,
-    price: 299.99,
-    image: '/common/cart/image2.jpg'
-  },
-  {
-    id: '3',
-    name: 'Gaming Mechanical Keyboard',
-    quantity: 3,
-    price: 149.99,
-    image: '/common/cart/image3.png'
-  },
-  {
-    id: '4',
-    name: 'Wireless Mouse Pro',
-    quantity: 1,
-    price: 79.99,
-    image: '/common/cart/image4.png'
-  },
-  {
-    id: '5',
-    name: 'USB-C Hub Adapter',
-    quantity: 2,
-    price: 45.99,
-    image: '/common/cart/image5.jpg'
-  },
-  {
-    id: '6',
-    name: 'Portable Power Bank',
-    quantity: 1,
-    price: 59.99,
-    image: '/common/cart/image6.png'
-  },
-  {
-    id: '7',
-    name: 'Bluetooth Speaker',
-    quantity: 2,
-    price: 129.99,
-    image: '/common/cart/image7.jpg'
-  },
-  {
-    id: '8',
-    name: 'Phone Case Premium',
-    quantity: 1,
-    price: 24.99,
-    image: '/common/cart/image8.png'
-  },
-  {
-    id: '9',
-    name: 'Screen Protector Glass',
-    quantity: 3,
-    price: 12.99,
-    image: '/common/cart/image9.png'
-  }
-];
+// Use CartItem from userStorage
+type CartItem = StorageCartItem;
 
 interface CartDropdownProps {
   isOpen: boolean;
@@ -102,17 +31,43 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
   onRemoveItem,
   onCheckout,
 }) => {
-  // Local state for cart items
-  const [localItems, setLocalItems] = useState<CartItem[]>(SAMPLE_ITEMS);
+  // Load cart items from localStorage
+  const [localItems, setLocalItems] = useState<CartItem[]>([]);
   // State for delete confirmation modal
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   // State for checkout modal
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
 
-  // Update local state when items prop changes
+  // Load cart items from localStorage on mount and when modal opens
+  useEffect(() => {
+    const loadCartItems = () => {
+      const cartItems = getCartItems();
+      setLocalItems(cartItems);
+    };
+    
+    loadCartItems();
+    
+    // Listen for storage changes (when cart is updated from other components)
+    const handleStorageChange = () => {
+      loadCartItems();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check periodically for same-tab updates
+    const interval = setInterval(loadCartItems, 500);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [isOpen]);
+
+  // Update local state when items prop changes (if provided)
   useEffect(() => {
     if (items.length > 0) {
       setLocalItems(items);
+      saveCartItems(items);
     }
   }, [items]);
 
@@ -124,14 +79,12 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
   const handleQuantityChange = (itemId: string, newQuantity: number) => {
     if (newQuantity < 0) return; // Allow 0 quantity
     
+    // Update in localStorage
+    updateCartQuantity(itemId, newQuantity);
+    
     // Update local state
-    setLocalItems(prevItems => 
-      prevItems.map(item => 
-        item.id === itemId 
-          ? { ...item, quantity: newQuantity }
-          : item
-      )
-    );
+    const updatedItems = getCartItems();
+    setLocalItems(updatedItems);
     
     // Call parent callback if provided
     onQuantityChange?.(itemId, newQuantity);
@@ -143,8 +96,12 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
 
   const handleConfirmDelete = () => {
     if (itemToDelete) {
+      // Remove from localStorage
+      removeFromCart(itemToDelete);
+      
       // Update local state
-      setLocalItems(prevItems => prevItems.filter(item => item.id !== itemToDelete));
+      const updatedItems = getCartItems();
+      setLocalItems(updatedItems);
       
       // Call parent callback if provided
       onRemoveItem?.(itemToDelete);

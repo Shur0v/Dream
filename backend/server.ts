@@ -20,6 +20,7 @@ import ordersRoutes from './express-routes/orders';
 import authRoutes from './express-routes/auth';
 import cartRoutes from './express-routes/cart';
 import adminRoutes from './express-routes/admin';
+import usersRoutes from './express-routes/users';
 
 const app: Express = express();
 const PORT = process.env.BACKEND_PORT || 5000;
@@ -59,6 +60,7 @@ app.use('/api/orders', ordersRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/users', usersRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

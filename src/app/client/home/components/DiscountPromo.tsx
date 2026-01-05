@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import CachedImage from '@/components/ui/CachedImage';
 import { PromoBanner } from '@/types';
-import { stateFirstPaymentService } from '@/services/payment';
+import { CheckoutModal } from '@/components/cart/CheckoutModal';
+import { SuccessModal } from '@/components/ui/SuccessModal';
 
 const getInitialCountdown = (banner?: PromoBanner) => ({
   days: banner?.initialTime?.days ?? 0,
@@ -26,6 +27,11 @@ export default function DiscountPromo() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processingPayment, setProcessingPayment] = useState<string | null>(null);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [selectedBanner, setSelectedBanner] = useState<PromoBanner | null>(null);
 
   // Auto-slide only on mobile (hidden on lg screens)
   useEffect(() => {
@@ -147,64 +153,120 @@ export default function DiscountPromo() {
 
   /**
    * Handle Buy Now button click for banner
-   * Calculates price and redirects to payment
+   * Opens checkout modal instead of redirecting to payment
    */
-  const handleBannerBuyNow = async (banner: PromoBanner) => {
+  const handleBannerBuyNow = (banner: PromoBanner) => {
+    setSelectedBanner(banner);
+    setIsCheckoutOpen(true);
+  };
+
+  /**
+   * Handle checkout form submission
+   */
+  const handleCheckoutSubmit = async (formData: {
+    name: string;
+    phoneNumber: string;
+    email: string;
+    district: string;
+    upazila: string;
+    thana: string;
+    postOffice: string;
+  }) => {
+    if (!selectedBanner) return;
+    
+    setIsSubmitting(true);
+    
     try {
-      setProcessingPayment(banner.id);
-      
-      // Extract price from banner (assuming priceText format like "$99.99" or "৳99.99")
-      const priceText = banner.priceText || '$0.00';
+      // Extract price from banner
+      const priceText = selectedBanner.priceText || '$0.00';
       const priceMatch = priceText.match(/[\d.]+/);
       const price = priceMatch ? parseFloat(priceMatch[0]) : 0;
 
       if (price <= 0) {
-        alert('Invalid product price. Please contact support.');
-        return;
+        throw new Error('Invalid product price');
       }
 
-      // Create order ID
-      const orderId = `banner-${banner.id}-${Date.now()}`;
-
-      // Prepare payment data
-      const paymentData = {
-        amount: price,
-        currency: 'BDT',
-        orderId: orderId,
-        customerName: '',
-        customerPhone: '',
-        customerEmail: '',
-        customerAddress: {
-          district: '',
-          upazila: '',
-          thana: '',
-          postOffice: '',
-        },
-        items: [{
-          productId: banner.id,
-          productName: banner.title || 'Promotional Product',
-          quantity: 1,
+      // Get or create a temporary userId
+      const tempUserId = `user-${Date.now()}`;
+      
+      // Create order item
+      const orderItem = {
+        id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        productId: selectedBanner.id,
+        product: {
+          id: selectedBanner.id,
+          name: selectedBanner.title || 'Promotional Product',
           price: price,
-        }],
-        returnUrl: `${window.location.origin}/client/payment/success?orderId=${orderId}`,
-        cancelUrl: `${window.location.origin}/client/payment/cancel?orderId=${orderId}`,
+          category: 'Promotional',
+          sellerId: 'promo-seller',
+          images: selectedBanner.image ? [selectedBanner.image] : ['/placeholder-image.png'],
+        },
+        quantity: 1,
+        price: price,
+      };
+      
+      // Create shipping address
+      const shippingAddress = {
+        street: `${formData.thana}, ${formData.upazila}`,
+        city: formData.district,
+        state: formData.district,
+        zipCode: formData.postOffice,
+        country: 'Bangladesh',
+      };
+      
+      // Prepare order data
+      const orderData = {
+        userId: tempUserId,
+        items: [orderItem],
+        shippingAddress: shippingAddress,
+        billingAddress: shippingAddress,
+        paymentMethod: 'Cash on Delivery',
+        notes: JSON.stringify({
+          customerName: formData.name,
+          phoneNumber: formData.phoneNumber,
+          email: formData.email,
+          district: formData.district,
+          upazila: formData.upazila,
+          thana: formData.thana,
+          postOffice: formData.postOffice,
+        }),
       };
 
-      // Store order data in sessionStorage for later use
-      sessionStorage.setItem(`order_${orderId}`, JSON.stringify({
-        bannerId: banner.id,
-        bannerTitle: banner.title,
-        price: price,
-        quantity: 1,
-      }));
+      // Create order directly via Express backend API
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiUrl}/orders`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
 
-      // Redirect to payment page with order data
-      router.push(`/client/payment/checkout?orderId=${orderId}&type=banner&price=${price}&productName=${encodeURIComponent(banner.title || 'Promotional Product')}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || 'Failed to create order' };
+        }
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setOrderId(result.data.id);
+        setIsCheckoutOpen(false);
+        setIsSuccessModalOpen(true);
+      } else {
+        throw new Error(result.error || 'Failed to create order');
+      }
     } catch (error: any) {
-      console.error('Error processing banner payment:', error);
-      alert('Failed to process payment. Please try again.');
+      console.error('Error creating order:', error);
+      alert('Failed to create order. Please try again. Error: ' + (error.message || 'Unknown error'));
     } finally {
-      setProcessingPayment(null);
+      setIsSubmitting(false);
     }
   };
 
@@ -386,9 +448,12 @@ export default function DiscountPromo() {
             </div>
             
             <button
-              onClick={() => handleBannerBuyNow(banner)}
-              disabled={processingPayment === banner.id}
-              className="layer-33 h-8 sm:h-9 md:h-11 px-4 sm:px-6 md:px-8 py-1.5 sm:py-2 md:py-3 bg-fuchsia-500 hover:bg-fuchsia-600 rounded-xl inline-flex justify-center items-center cursor-pointer transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed" 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleBannerBuyNow(banner);
+              }}
+              className="layer-33 h-8 sm:h-9 md:h-11 px-4 sm:px-6 md:px-8 py-1.5 sm:py-2 md:py-3 bg-fuchsia-500 hover:bg-fuchsia-600 rounded-xl inline-flex justify-center items-center cursor-pointer transition-colors duration-300" 
               role="button" 
               aria-label={`Buy now for ${banner.title}`} 
               data-layer="33"
@@ -396,7 +461,7 @@ export default function DiscountPromo() {
               {/* layer-33 = buy now button */}
               <div className="layer-34 justify-start text-white text-xs sm:text-sm md:text-base font-semibold font-['Poppins'] leading-none" data-layer="34">
                 {/* layer-34 = button text */}
-                {processingPayment === banner.id ? 'Processing...' : 'Buy Now'}
+                Buy Now
               </div>
             </button>
           </div>
@@ -478,6 +543,26 @@ export default function DiscountPromo() {
           </div>
         </div>
       </div>
+
+      {/* Checkout Modal */}
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => {
+          setIsCheckoutOpen(false);
+          setSelectedBanner(null);
+        }}
+        onSubmit={handleCheckoutSubmit}
+        isSubmitting={isSubmitting}
+      />
+
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        title="Order Confirmed!"
+        message="Your order has been placed successfully!"
+        orderId={orderId || undefined}
+      />
     </section>
   );
 }

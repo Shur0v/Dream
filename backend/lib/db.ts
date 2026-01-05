@@ -463,17 +463,39 @@ export async function getCategoryBySlug(slug: string): Promise<Category | undefi
  * @returns Promise<Category>
  */
 export async function saveCategory(category: Category): Promise<Category> {
-  const db = await readDatabase();
-  const index = db.categories.findIndex(c => c.id === category.id);
+  await ensureConnection();
   
-  if (index >= 0) {
-    db.categories[index] = category;
+  const { id, ...categoryData } = category;
+  const updateData = {
+    ...categoryData,
+    updatedAt: new Date().toISOString(),
+  };
+  
+  let saved;
+  if (id && mongoose.Types.ObjectId.isValid(id)) {
+    saved = await CategoryModel.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, setDefaultsOnInsert: true }
+    ).lean();
+  } else if (id) {
+    const existing = await CategoryModel.findOne({ id: id }).lean();
+    if (existing) {
+      saved = await CategoryModel.findByIdAndUpdate(
+        existing._id,
+        updateData,
+        { new: true, setDefaultsOnInsert: true }
+      ).lean();
+    } else {
+      saved = await CategoryModel.create({ ...updateData, id: id });
+      saved = saved.toObject();
+    }
   } else {
-    db.categories.push(category);
+    saved = await CategoryModel.create(updateData);
+    saved = saved.toObject();
   }
   
-  await writeDatabase(db);
-  return category;
+  return toType<Category>(saved);
 }
 
 /**
@@ -482,17 +504,27 @@ export async function saveCategory(category: Category): Promise<Category> {
  * @returns Promise<Category | null>
  */
 export async function deleteCategory(id: string): Promise<Category | null> {
-  const db = await readDatabase();
-  const category = db.categories.find(c => c.id === id);
+  await ensureConnection();
   
-  if (category) {
-    category.isActive = false;
-    category.updatedAt = new Date().toISOString();
-    await writeDatabase(db);
-    return category;
+  let category;
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    category = await CategoryModel.findByIdAndUpdate(
+      id,
+      { isActive: false, updatedAt: new Date().toISOString() },
+      { new: true }
+    ).lean();
+  } else {
+    const existing = await CategoryModel.findOne({ id: id }).lean();
+    if (existing) {
+      category = await CategoryModel.findByIdAndUpdate(
+        existing._id,
+        { isActive: false, updatedAt: new Date().toISOString() },
+        { new: true }
+      ).lean();
+    }
   }
   
-  return null;
+  return category ? toType<Category>(category) : null;
 }
 
 /**
@@ -598,8 +630,9 @@ export async function deleteColor(id: string): Promise<Color | null> {
  * @returns Promise<User[]>
  */
 export async function getUsers(): Promise<User[]> {
-  const db = await readDatabase();
-  return db.users;
+  await ensureConnection();
+  const users = await UserModel.find({}).lean();
+  return users.map(toType<User>);
 }
 
 /**
@@ -608,8 +641,64 @@ export async function getUsers(): Promise<User[]> {
  * @returns Promise<User | undefined>
  */
 export async function getUserById(id: string): Promise<User | undefined> {
-  const db = await readDatabase();
-  return db.users.find(u => u.id === id);
+  await ensureConnection();
+  let user;
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    user = await UserModel.findById(id).lean();
+  } else {
+    user = await UserModel.findOne({ id: id }).lean();
+  }
+  return user ? toType<User>(user) : undefined;
+}
+
+/**
+ * Get user by email
+ * @param email - User email
+ * @returns Promise<User | undefined>
+ */
+export async function getUserByEmail(email: string): Promise<User | undefined> {
+  await ensureConnection();
+  const user = await UserModel.findOne({ email }).lean();
+  return user ? toType<User>(user) : undefined;
+}
+
+/**
+ * Save user (create or update)
+ * @param user - User to save
+ * @returns Promise<User>
+ */
+export async function saveUser(user: Partial<User> & { email: string }): Promise<User> {
+  await ensureConnection();
+  
+  // Check if user exists by email
+  const existingUser = await UserModel.findOne({ email: user.email }).lean();
+  
+  let saved;
+  if (existingUser) {
+    // Update existing user
+    const updateData = {
+      ...user,
+      updatedAt: new Date().toISOString(),
+    };
+    saved = await UserModel.findByIdAndUpdate(
+      existingUser._id,
+      updateData,
+      { new: true, setDefaultsOnInsert: true }
+    ).lean();
+  } else {
+    // Create new user
+    const newUserData = {
+      ...user,
+      role: user.role || 'client',
+      isEmailVerified: user.isEmailVerified || false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    saved = await UserModel.create(newUserData);
+    saved = saved.toObject();
+  }
+  
+  return toType<User>(saved);
 }
 
 /**
@@ -654,33 +743,32 @@ export async function getFeaturedProductByProductId(productId: string): Promise<
  * @returns Promise<FeaturedProduct>
  */
 export async function addFeaturedProduct(productId: string): Promise<FeaturedProduct> {
-  const db = await readDatabase();
+  await ensureConnection();
   
   // Check if already featured
-  const existing = db.featuredProducts.find(fp => fp.productId === productId && fp.isActive);
+  const existing = await FeaturedProductModel.findOne({ productId, isActive: true }).lean();
   if (existing) {
-    return existing;
+    return toType<FeaturedProduct>(existing);
   }
   
   // Get the original product
-  const product = db.products.find(p => p.id === productId);
+  const product = await getProductById(productId);
   if (!product) {
     throw new Error(`Product with ID ${productId} not found`);
   }
   
   // Create a copy of the product as featured product
-  const featuredProduct: FeaturedProduct = {
+  const featuredProductData: Partial<FeaturedProduct> = {
     ...product,
-    id: `featured-${productId}-${Date.now()}`, // Unique ID for featured product
-    productId: product.id, // Reference to original
+    id: `featured-${productId}-${Date.now()}`,
+    productId: product.id,
     featuredAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
   };
   
-  db.featuredProducts.push(featuredProduct);
-  await writeDatabase(db);
-  
-  return featuredProduct;
+  const saved = await FeaturedProductModel.create(featuredProductData);
+  return toType<FeaturedProduct>(saved.toObject());
 }
 
 /**
@@ -689,17 +777,14 @@ export async function addFeaturedProduct(productId: string): Promise<FeaturedPro
  * @returns Promise<FeaturedProduct | null>
  */
 export async function removeFeaturedProduct(productId: string): Promise<FeaturedProduct | null> {
-  const db = await readDatabase();
-  const featuredProduct = db.featuredProducts.find(fp => fp.productId === productId && fp.isActive);
+  await ensureConnection();
+  const featuredProduct = await FeaturedProductModel.findOneAndUpdate(
+    { productId, isActive: true },
+    { isActive: false, updatedAt: new Date().toISOString() },
+    { new: true }
+  ).lean();
   
-  if (featuredProduct) {
-    featuredProduct.isActive = false;
-    featuredProduct.updatedAt = new Date().toISOString();
-    await writeDatabase(db);
-    return featuredProduct;
-  }
-  
-  return null;
+  return featuredProduct ? toType<FeaturedProduct>(featuredProduct) : null;
 }
 
 /**
@@ -708,17 +793,27 @@ export async function removeFeaturedProduct(productId: string): Promise<Featured
  * @returns Promise<FeaturedProduct | null>
  */
 export async function removeFeaturedProductById(id: string): Promise<FeaturedProduct | null> {
-  const db = await readDatabase();
-  const featuredProduct = db.featuredProducts.find(fp => fp.id === id);
+  await ensureConnection();
+  let featuredProduct;
   
-  if (featuredProduct) {
-    featuredProduct.isActive = false;
-    featuredProduct.updatedAt = new Date().toISOString();
-    await writeDatabase(db);
-    return featuredProduct;
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    featuredProduct = await FeaturedProductModel.findByIdAndUpdate(
+      id,
+      { isActive: false, updatedAt: new Date().toISOString() },
+      { new: true }
+    ).lean();
+  } else {
+    const existing = await FeaturedProductModel.findOne({ id }).lean();
+    if (existing) {
+      featuredProduct = await FeaturedProductModel.findByIdAndUpdate(
+        existing._id,
+        { isActive: false, updatedAt: new Date().toISOString() },
+        { new: true }
+      ).lean();
+    }
   }
   
-  return null;
+  return featuredProduct ? toType<FeaturedProduct>(featuredProduct) : null;
 }
 
 /**
@@ -727,30 +822,33 @@ export async function removeFeaturedProductById(id: string): Promise<FeaturedPro
  * @returns Promise<FeaturedProduct | null>
  */
 export async function updateFeaturedProduct(productId: string): Promise<FeaturedProduct | null> {
-  const db = await readDatabase();
-  const featuredProductIndex = db.featuredProducts.findIndex(fp => fp.productId === productId && fp.isActive);
+  await ensureConnection();
+  const featuredProduct = await FeaturedProductModel.findOne({ productId, isActive: true }).lean();
   
-  if (featuredProductIndex === -1) {
+  if (!featuredProduct) {
     return null;
   }
   
-  const product = db.products.find(p => p.id === productId);
+  const product = await getProductById(productId);
   if (!product) {
     return null;
   }
   
-  // Update featured product with latest product data
-  const featuredProduct = db.featuredProducts[featuredProductIndex];
-  db.featuredProducts[featuredProductIndex] = {
+  const updateData = {
     ...product,
-    id: featuredProduct.id, // Keep the featured product ID
+    id: featuredProduct.id,
     productId: product.id,
-    featuredAt: featuredProduct.featuredAt, // Keep original featured date
+    featuredAt: featuredProduct.featuredAt,
     updatedAt: new Date().toISOString(),
   };
   
-  await writeDatabase(db);
-  return db.featuredProducts[featuredProductIndex];
+  const updated = await FeaturedProductModel.findByIdAndUpdate(
+    featuredProduct._id,
+    updateData,
+    { new: true }
+  ).lean();
+  
+  return updated ? toType<FeaturedProduct>(updated) : null;
 }
 
 /**
@@ -795,33 +893,32 @@ export async function getBestSellingProductByProductId(productId: string): Promi
  * @returns Promise<BestSellingProduct>
  */
 export async function addBestSellingProduct(productId: string): Promise<BestSellingProduct> {
-  const db = await readDatabase();
+  await ensureConnection();
   
   // Check if already best selling
-  const existing = db.bestSellingProducts.find(bs => bs.productId === productId && bs.isActive);
+  const existing = await BestSellingProductModel.findOne({ productId, isActive: true }).lean();
   if (existing) {
-    return existing;
+    return toType<BestSellingProduct>(existing);
   }
   
   // Get the original product
-  const product = db.products.find(p => p.id === productId);
+  const product = await getProductById(productId);
   if (!product) {
     throw new Error(`Product with ID ${productId} not found`);
   }
   
   // Create a copy of the product as best selling product
-  const bestSellingProduct: BestSellingProduct = {
+  const bestSellingProductData: Partial<BestSellingProduct> = {
     ...product,
-    id: `bestselling-${productId}-${Date.now()}`, // Unique ID for best selling product
-    productId: product.id, // Reference to original
+    id: `bestselling-${productId}-${Date.now()}`,
+    productId: product.id,
     bestSellingAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
   };
   
-  db.bestSellingProducts.push(bestSellingProduct);
-  await writeDatabase(db);
-  
-  return bestSellingProduct;
+  const saved = await BestSellingProductModel.create(bestSellingProductData);
+  return toType<BestSellingProduct>(saved.toObject());
 }
 
 /**
@@ -830,17 +927,14 @@ export async function addBestSellingProduct(productId: string): Promise<BestSell
  * @returns Promise<BestSellingProduct | null>
  */
 export async function removeBestSellingProduct(productId: string): Promise<BestSellingProduct | null> {
-  const db = await readDatabase();
-  const bestSellingProduct = db.bestSellingProducts.find(bs => bs.productId === productId && bs.isActive);
+  await ensureConnection();
+  const bestSellingProduct = await BestSellingProductModel.findOneAndUpdate(
+    { productId, isActive: true },
+    { isActive: false, updatedAt: new Date().toISOString() },
+    { new: true }
+  ).lean();
   
-  if (bestSellingProduct) {
-    bestSellingProduct.isActive = false;
-    bestSellingProduct.updatedAt = new Date().toISOString();
-    await writeDatabase(db);
-    return bestSellingProduct;
-  }
-  
-  return null;
+  return bestSellingProduct ? toType<BestSellingProduct>(bestSellingProduct) : null;
 }
 
 /**
@@ -849,17 +943,27 @@ export async function removeBestSellingProduct(productId: string): Promise<BestS
  * @returns Promise<BestSellingProduct | null>
  */
 export async function removeBestSellingProductById(id: string): Promise<BestSellingProduct | null> {
-  const db = await readDatabase();
-  const bestSellingProduct = db.bestSellingProducts.find(bs => bs.id === id);
+  await ensureConnection();
+  let bestSellingProduct;
   
-  if (bestSellingProduct) {
-    bestSellingProduct.isActive = false;
-    bestSellingProduct.updatedAt = new Date().toISOString();
-    await writeDatabase(db);
-    return bestSellingProduct;
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    bestSellingProduct = await BestSellingProductModel.findByIdAndUpdate(
+      id,
+      { isActive: false, updatedAt: new Date().toISOString() },
+      { new: true }
+    ).lean();
+  } else {
+    const existing = await BestSellingProductModel.findOne({ id }).lean();
+    if (existing) {
+      bestSellingProduct = await BestSellingProductModel.findByIdAndUpdate(
+        existing._id,
+        { isActive: false, updatedAt: new Date().toISOString() },
+        { new: true }
+      ).lean();
+    }
   }
   
-  return null;
+  return bestSellingProduct ? toType<BestSellingProduct>(bestSellingProduct) : null;
 }
 
 /**
@@ -868,30 +972,33 @@ export async function removeBestSellingProductById(id: string): Promise<BestSell
  * @returns Promise<BestSellingProduct | null>
  */
 export async function updateBestSellingProduct(productId: string): Promise<BestSellingProduct | null> {
-  const db = await readDatabase();
-  const bestSellingProductIndex = db.bestSellingProducts.findIndex(bs => bs.productId === productId && bs.isActive);
+  await ensureConnection();
+  const bestSellingProduct = await BestSellingProductModel.findOne({ productId, isActive: true }).lean();
   
-  if (bestSellingProductIndex === -1) {
+  if (!bestSellingProduct) {
     return null;
   }
   
-  const product = db.products.find(p => p.id === productId);
+  const product = await getProductById(productId);
   if (!product) {
     return null;
   }
   
-  // Update best selling product with latest product data
-  const bestSellingProduct = db.bestSellingProducts[bestSellingProductIndex];
-  db.bestSellingProducts[bestSellingProductIndex] = {
+  const updateData = {
     ...product,
-    id: bestSellingProduct.id, // Keep the best selling product ID
+    id: bestSellingProduct.id,
     productId: product.id,
-    bestSellingAt: bestSellingProduct.bestSellingAt, // Keep original best selling date
+    bestSellingAt: bestSellingProduct.bestSellingAt,
     updatedAt: new Date().toISOString(),
   };
   
-  await writeDatabase(db);
-  return db.bestSellingProducts[bestSellingProductIndex];
+  const updated = await BestSellingProductModel.findByIdAndUpdate(
+    bestSellingProduct._id,
+    updateData,
+    { new: true }
+  ).lean();
+  
+  return updated ? toType<BestSellingProduct>(updated) : null;
 }
 
 /**
@@ -925,37 +1032,48 @@ export async function getHeroBannerById(id: string): Promise<HeroBanner | undefi
  * @returns Promise<HeroBanner>
  */
 export async function saveHeroBanner(heroBanner: HeroBanner): Promise<HeroBanner> {
-  const db = await readDatabase();
-  const index = db.heroBanners.findIndex(hb => hb.id === heroBanner.id);
+  await ensureConnection();
   
-  if (index >= 0) {
-    // Update existing
-    db.heroBanners[index] = {
-      ...heroBanner,
-      updatedAt: new Date().toISOString(),
-    };
-  } else {
-    // Create new
-    const newBanner: HeroBanner = {
-      ...heroBanner,
-      id: heroBanner.id || `hero-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    db.heroBanners.push(newBanner);
-  }
+  const { id, ...bannerData } = heroBanner;
+  const updateData = {
+    ...bannerData,
+    id: id || `hero-${Date.now()}`,
+    updatedAt: new Date().toISOString(),
+  };
   
   // If this banner is set to active, deactivate all others
   if (heroBanner.isActive) {
-    db.heroBanners.forEach((hb, idx) => {
-      if (hb.id !== heroBanner.id && hb.isActive) {
-        db.heroBanners[idx].isActive = false;
-      }
-    });
+    await HeroBannerModel.updateMany(
+      { isActive: true, id: { $ne: updateData.id } },
+      { isActive: false }
+    );
   }
   
-  await writeDatabase(db);
-  return db.heroBanners.find(hb => hb.id === heroBanner.id) || heroBanner;
+  let saved;
+  if (id && mongoose.Types.ObjectId.isValid(id)) {
+    saved = await HeroBannerModel.findByIdAndUpdate(
+      id,
+      updateData,
+      { new: true, setDefaultsOnInsert: true, upsert: true }
+    ).lean();
+  } else if (id) {
+    const existing = await HeroBannerModel.findOne({ id }).lean();
+    if (existing) {
+      saved = await HeroBannerModel.findByIdAndUpdate(
+        existing._id,
+        updateData,
+        { new: true }
+      ).lean();
+    } else {
+      saved = await HeroBannerModel.create({ ...updateData, createdAt: new Date().toISOString() });
+      saved = saved.toObject();
+    }
+  } else {
+    saved = await HeroBannerModel.create({ ...updateData, createdAt: new Date().toISOString() });
+    saved = saved.toObject();
+  }
+  
+  return toType<HeroBanner>(saved);
 }
 
 /**
@@ -964,17 +1082,27 @@ export async function saveHeroBanner(heroBanner: HeroBanner): Promise<HeroBanner
  * @returns Promise<HeroBanner | null>
  */
 export async function deleteHeroBanner(id: string): Promise<HeroBanner | null> {
-  const db = await readDatabase();
-  const heroBanner = db.heroBanners.find(hb => hb.id === id);
+  await ensureConnection();
+  let heroBanner;
   
-  if (heroBanner) {
-    heroBanner.isActive = false;
-    heroBanner.updatedAt = new Date().toISOString();
-    await writeDatabase(db);
-    return heroBanner;
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    heroBanner = await HeroBannerModel.findByIdAndUpdate(
+      id,
+      { isActive: false, updatedAt: new Date().toISOString() },
+      { new: true }
+    ).lean();
+  } else {
+    const existing = await HeroBannerModel.findOne({ id }).lean();
+    if (existing) {
+      heroBanner = await HeroBannerModel.findByIdAndUpdate(
+        existing._id,
+        { isActive: false, updatedAt: new Date().toISOString() },
+        { new: true }
+      ).lean();
+    }
   }
   
-  return null;
+  return heroBanner ? toType<HeroBanner>(heroBanner) : null;
 }
 
 /**
@@ -1038,47 +1166,68 @@ export async function getPromoBannerById(id: string): Promise<PromoBanner | unde
 }
 
 export async function savePromoBanner(promoBanner: PromoBanner): Promise<PromoBanner> {
-  const db = await readDatabase();
-  const normalized: PromoBanner = {
+  await ensureConnection();
+  
+  const count = await PromoBannerModel.countDocuments();
+  const normalized: Partial<PromoBanner> = {
     ...promoBanner,
     id: promoBanner.id || `promo-${Date.now()}`,
     initialTime: promoBanner.initialTime ?? defaultPromoCountdown(),
     variant: promoBanner.variant ?? 'slider',
-    order: typeof promoBanner.order === 'number' ? promoBanner.order : db.promoBanners.length,
-    createdAt: promoBanner.createdAt || new Date().toISOString(),
+    order: typeof promoBanner.order === 'number' ? promoBanner.order : count,
     updatedAt: new Date().toISOString(),
     isActive: promoBanner.isActive !== undefined ? promoBanner.isActive : true,
   };
 
-  const index = db.promoBanners.findIndex(banner => banner.id === normalized.id);
-
-  if (index >= 0) {
-    db.promoBanners[index] = {
-      ...db.promoBanners[index],
-      ...normalized,
-      updatedAt: new Date().toISOString(),
-    };
+  let saved;
+  if (normalized.id && mongoose.Types.ObjectId.isValid(normalized.id)) {
+    saved = await PromoBannerModel.findByIdAndUpdate(
+      normalized.id,
+      normalized,
+      { new: true, setDefaultsOnInsert: true, upsert: true }
+    ).lean();
+  } else if (normalized.id) {
+    const existing = await PromoBannerModel.findOne({ id: normalized.id }).lean();
+    if (existing) {
+      saved = await PromoBannerModel.findByIdAndUpdate(
+        existing._id,
+        normalized,
+        { new: true }
+      ).lean();
+    } else {
+      saved = await PromoBannerModel.create({ ...normalized, createdAt: new Date().toISOString() });
+      saved = saved.toObject();
+    }
   } else {
-    db.promoBanners.push(normalized);
+    saved = await PromoBannerModel.create({ ...normalized, createdAt: new Date().toISOString() });
+    saved = saved.toObject();
   }
 
-  await writeDatabase(db);
-  return db.promoBanners.find(banner => banner.id === normalized.id) || normalized;
+  return toType<PromoBanner>(saved);
 }
 
 export async function deletePromoBanner(id: string): Promise<PromoBanner | null> {
-  const db = await readDatabase();
-  const banner = db.promoBanners.find(pb => pb.id === id);
-
-  if (!banner) {
-    return null;
+  await ensureConnection();
+  let banner;
+  
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    banner = await PromoBannerModel.findByIdAndUpdate(
+      id,
+      { isActive: false, updatedAt: new Date().toISOString() },
+      { new: true }
+    ).lean();
+  } else {
+    const existing = await PromoBannerModel.findOne({ id }).lean();
+    if (existing) {
+      banner = await PromoBannerModel.findByIdAndUpdate(
+        existing._id,
+        { isActive: false, updatedAt: new Date().toISOString() },
+        { new: true }
+      ).lean();
+    }
   }
 
-  banner.isActive = false;
-  banner.updatedAt = new Date().toISOString();
-  await writeDatabase(db);
-
-  return banner;
+  return banner ? toType<PromoBanner>(banner) : null;
 }
 
 type FestivalBannerQueryOptions = {
@@ -1130,47 +1279,67 @@ export async function getFestivalBannerById(id: string): Promise<FestivalBanner 
 }
 
 export async function saveFestivalBanner(banner: FestivalBanner): Promise<FestivalBanner> {
-  const db = await readDatabase();
-  const normalized: FestivalBanner = {
+  await ensureConnection();
+  
+  const count = await FestivalBannerModel.countDocuments();
+  const normalized: Partial<FestivalBanner> = {
     ...banner,
     id: banner.id || `festival-${Date.now()}`,
     coupons: normalizeCoupons(banner.coupons),
-    order: typeof banner.order === 'number' ? banner.order : db.festivalBanners.length,
-    createdAt: banner.createdAt || new Date().toISOString(),
+    order: typeof banner.order === 'number' ? banner.order : count,
     updatedAt: new Date().toISOString(),
     isActive: banner.isActive !== undefined ? banner.isActive : true,
   };
 
-  const index = db.festivalBanners.findIndex(item => item.id === normalized.id);
-
-  if (index >= 0) {
-    db.festivalBanners[index] = {
-      ...db.festivalBanners[index],
-      ...normalized,
-      coupons: normalizeCoupons(normalized.coupons),
-      updatedAt: new Date().toISOString(),
-    };
+  let saved;
+  if (normalized.id && mongoose.Types.ObjectId.isValid(normalized.id)) {
+    saved = await FestivalBannerModel.findByIdAndUpdate(
+      normalized.id,
+      normalized,
+      { new: true, setDefaultsOnInsert: true, upsert: true }
+    ).lean();
+  } else if (normalized.id) {
+    const existing = await FestivalBannerModel.findOne({ id: normalized.id }).lean();
+    if (existing) {
+      saved = await FestivalBannerModel.findByIdAndUpdate(
+        existing._id,
+        { ...normalized, coupons: normalizeCoupons(normalized.coupons || []) },
+        { new: true }
+      ).lean();
+    } else {
+      saved = await FestivalBannerModel.create({ ...normalized, createdAt: new Date().toISOString() });
+      saved = saved.toObject();
+    }
   } else {
-    db.festivalBanners.push(normalized);
+    saved = await FestivalBannerModel.create({ ...normalized, createdAt: new Date().toISOString() });
+    saved = saved.toObject();
   }
 
-  await writeDatabase(db);
-  return db.festivalBanners.find(item => item.id === normalized.id) || normalized;
+  return toType<FestivalBanner>(saved);
 }
 
 export async function deleteFestivalBanner(id: string): Promise<FestivalBanner | null> {
-  const db = await readDatabase();
-  const banner = db.festivalBanners.find(item => item.id === id);
-
-  if (!banner) {
-    return null;
+  await ensureConnection();
+  let banner;
+  
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    banner = await FestivalBannerModel.findByIdAndUpdate(
+      id,
+      { isActive: false, updatedAt: new Date().toISOString() },
+      { new: true }
+    ).lean();
+  } else {
+    const existing = await FestivalBannerModel.findOne({ id }).lean();
+    if (existing) {
+      banner = await FestivalBannerModel.findByIdAndUpdate(
+        existing._id,
+        { isActive: false, updatedAt: new Date().toISOString() },
+        { new: true }
+      ).lean();
+    }
   }
 
-  banner.isActive = false;
-  banner.updatedAt = new Date().toISOString();
-  await writeDatabase(db);
-
-  return banner;
+  return banner ? toType<FestivalBanner>(banner) : null;
 }
 
 const clampRating = (value: number) => {

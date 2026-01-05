@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Product } from '@/types';
+import { addToCart, CartItem } from '@/lib/userStorage';
 
 /**
  * Complete Filtering System Component
@@ -1146,6 +1147,21 @@ export default function FilteringSystem() {
                 {/* Individual Product Row */}
                 
                 {rowProducts.map((product, productIndex) => {
+                  const handleAddToCart = (e: React.MouseEvent) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const cartItem: CartItem = {
+                      id: `cart-${product.id}-${Date.now()}`,
+                      productId: product.id,
+                      name: product.name,
+                      price: product.price,
+                      quantity: 1,
+                      image: product.image || '/placeholder-image.png',
+                    };
+                    addToCart(cartItem);
+                    window.dispatchEvent(new Event('storage'));
+                  };
+                  
                   return (
                     <Link 
                       key={product.id} 
@@ -1309,9 +1325,9 @@ export default function FilteringSystem() {
                           {/* Add to Cart Button Container */}
                           
                           <button 
-                            className="w-full h-0 opacity-0 px-7 bg-fuchsia-500 rounded-xl inline-flex justify-center items-center gap-1.5 group-hover:h-14 group-hover:py-3 group-hover:opacity-100 hover:bg-fuchsia-600 transition-all duration-500 ease-out transform translate-y-2 group-hover:translate-y-0"
+                            onClick={handleAddToCart}
+                            className="w-full h-0 opacity-0 px-7 bg-fuchsia-500 rounded-xl inline-flex justify-center items-center gap-1.5 group-hover:h-14 group-hover:py-3 group-hover:opacity-100 hover:bg-fuchsia-600 transition-all duration-500 ease-out transform translate-y-2 group-hover:translate-y-0 cursor-pointer"
                             aria-label={`Add ${product.name} to cart`}
-                            onClick={(e) => e.stopPropagation()}
                           >
                             {/* Add to Cart Button */}
                             

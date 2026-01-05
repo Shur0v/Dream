@@ -13,7 +13,7 @@
  * @version 1.0.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import Footer from './Footer';
 import LoginModal from '@/components/modals/LoginModal';
@@ -129,6 +129,19 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
 }) => {
   // Modal state management
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  // Listen for custom event to open login modal
+  useEffect(() => {
+    const handleOpenLoginModalEvent = (event: CustomEvent) => {
+      const userType = event.detail?.userType || 'client';
+      handleOpenLoginModal(userType);
+    };
+
+    window.addEventListener('openLoginModal' as any, handleOpenLoginModalEvent as EventListener);
+    return () => {
+      window.removeEventListener('openLoginModal' as any, handleOpenLoginModalEvent as EventListener);
+    };
+  }, []);
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [currentUserType, setCurrentUserType] = useState<'client' | 'seller' | 'reseller'>('client');
 

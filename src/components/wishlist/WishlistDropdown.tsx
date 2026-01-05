@@ -8,27 +8,10 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { X, Trash2 } from 'lucide-react';
-import { products, Product } from '@/lib/productData';
+import { getWishlistItems, removeFromWishlist, WishlistItem as StorageWishlistItem } from '@/lib/userStorage';
 
-interface WishlistItem {
-  id: number;
-  name: string;
-  image: string;
-  price: number;
-  currency: string;
-}
-
-// Convert products to wishlist items format
-const getWishlistItems = (): WishlistItem[] => {
-  // Using first 10 products from productData.ts as wishlist items
-  return products.slice(0, 10).map((product: Product) => ({
-    id: product.id,
-    name: product.name,
-    image: product.image,
-    price: product.price,
-    currency: product.currency,
-  }));
-};
+// Use WishlistItem from userStorage
+type WishlistItem = StorageWishlistItem;
 
 interface WishlistDropdownProps {
   isOpen: boolean;
@@ -43,10 +26,35 @@ export const WishlistDropdown: React.FC<WishlistDropdownProps> = ({
   items = [],
   onRemoveItem,
 }) => {
-  // Local state for wishlist items
-  const [localItems, setLocalItems] = useState<WishlistItem[]>(getWishlistItems());
+  // Load wishlist items from localStorage
+  const [localItems, setLocalItems] = useState<WishlistItem[]>([]);
 
-  // Update local state when items prop changes
+  // Load wishlist items from localStorage on mount and when modal opens
+  useEffect(() => {
+    const loadWishlistItems = () => {
+      const wishlistItems = getWishlistItems();
+      setLocalItems(wishlistItems);
+    };
+    
+    loadWishlistItems();
+    
+    // Listen for storage changes (when wishlist is updated from other components)
+    const handleStorageChange = () => {
+      loadWishlistItems();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check periodically for same-tab updates
+    const interval = setInterval(loadWishlistItems, 500);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [isOpen]);
+
+  // Update local state when items prop changes (if provided)
   useEffect(() => {
     if (items.length > 0) {
       setLocalItems(items);
@@ -55,12 +63,16 @@ export const WishlistDropdown: React.FC<WishlistDropdownProps> = ({
 
   const wishlistItems = localItems;
 
-  const handleRemoveItem = (itemId: number) => {
+  const handleRemoveItem = (productId: string) => {
+    // Remove from localStorage
+    removeFromWishlist(productId);
+    
     // Update local state
-    setLocalItems(prevItems => prevItems.filter(item => item.id !== itemId));
+    const updatedItems = getWishlistItems();
+    setLocalItems(updatedItems);
     
     // Call parent callback if provided
-    onRemoveItem?.(itemId);
+    onRemoveItem?.(productId as any);
   };
 
   if (!isOpen) return null;
@@ -108,7 +120,7 @@ export const WishlistDropdown: React.FC<WishlistDropdownProps> = ({
               {/* layer-7 = wishlist items container */}
               
               {wishlistItems.map((item) => (
-                <div key={item.id} className="layer-8 self-stretch inline-flex justify-between items-center py-2" data-layer="8">
+                <div key={item.productId} className="layer-8 self-stretch inline-flex justify-between items-center py-2" data-layer="8">
                   {/* layer-8 = individual wishlist item */}
                   
                   <div className="layer-9 self-stretch flex justify-start items-center gap-6" data-layer="9">
@@ -141,7 +153,7 @@ export const WishlistDropdown: React.FC<WishlistDropdownProps> = ({
                         
                         <div className="layer-14 self-stretch justify-start text-neutral-700 text-base font-normal font-['Poppins'] leading-5 tracking-tight" data-layer="14">
                           {/* layer-14 = price */}
-                          {item.currency}{item.price.toFixed(2)}
+                          ৳{item.price.toFixed(2)}
                         </div>
                       </div>
                     </div>
@@ -149,8 +161,8 @@ export const WishlistDropdown: React.FC<WishlistDropdownProps> = ({
                   
                   {/* Delete Button */}
                   <button
-                    onClick={() => handleRemoveItem(item.id)}
-                    className="layer-15 w-8 h-8 relative overflow-hidden hover:opacity-80 transition-opacity flex items-center justify-center"
+                    onClick={() => handleRemoveItem(item.productId)}
+                    className="layer-15 w-8 h-8 relative overflow-hidden hover:opacity-80 transition-opacity flex items-center justify-center cursor-pointer"
                     aria-label="Remove from wishlist"
                     data-layer="15"
                   >

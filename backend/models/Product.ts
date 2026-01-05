@@ -7,6 +7,7 @@ import { Product } from '@/types';
 
 export interface ProductDocument extends Omit<Product, 'id'>, Document {
   _id: mongoose.Types.ObjectId;
+  id?: string; // Optional custom id field
 }
 
 const ProductSchema = new Schema<ProductDocument>(

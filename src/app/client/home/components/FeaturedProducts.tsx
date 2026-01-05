@@ -5,6 +5,8 @@ import Image from 'next/image';
 import CachedImage from '@/components/ui/CachedImage';
 import Link from 'next/link';
 import { FeaturedProduct } from '@/types';
+import { addToCart, addToWishlist, isInWishlist, removeFromWishlist, isUserLoggedIn, CartItem, WishlistItem } from '@/lib/userStorage';
+import { SignInRequiredModal } from '@/components/ui/SignInRequiredModal';
 
 /**
  * Featured Products Component
@@ -17,6 +19,9 @@ export default function FeaturedProducts() {
   const [products, setProducts] = useState<FeaturedProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [showSignInModal, setShowSignInModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'cart' | 'wishlist' | null>(null);
+  const [pendingProduct, setPendingProduct] = useState<FeaturedProduct | null>(null);
 
   const filters = ['Man', 'Woman', 'Kids'];
 
@@ -203,7 +208,8 @@ export default function FeaturedProducts() {
               <div className="text-neutral-500">No featured products available</div>
             </div>
           ) : (
-            products.map((product, index) => (
+            products.map((product, index) => {
+              return (
              <Link key={product.id} href={`/client/product-details/${product.productId || product.id}`} className="block h-full md:flex md:items-center">
                <div
                  className="layer-14 w-full md:w-[312px] h-full md:h-auto p-3 md:p-4 bg-sky-50 rounded-xl border border-black/10 flex flex-col justify-start items-start group md:hover:shadow-md md:hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
@@ -240,7 +246,34 @@ export default function FeaturedProducts() {
                   </div>
                 </div>
                 
-                <div className="layer-19 transform md:group-hover:scale-110 md:group-hover:rotate-12 transition-all duration-300 cursor-pointer" data-layer="19">
+                <div 
+                  className="layer-19 transform md:group-hover:scale-110 md:group-hover:rotate-12 transition-all duration-300 cursor-pointer" 
+                  data-layer="19"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!isUserLoggedIn()) {
+                      setPendingAction('wishlist');
+                      setPendingProduct(product);
+                      setShowSignInModal(true);
+                    } else {
+                      const isWishlisted = isInWishlist(product.id);
+                      if (isWishlisted) {
+                        removeFromWishlist(product.id);
+                      } else {
+                        const wishlistItem: WishlistItem = {
+                          id: `wishlist-${product.id}-${Date.now()}`,
+                          productId: product.id,
+                          name: product.name,
+                          price: product.price,
+                          image: product.images && product.images.length > 0 ? product.images[0] : '/placeholder-image.png',
+                        };
+                        addToWishlist(wishlistItem);
+                      }
+                      window.dispatchEvent(new Event('storage'));
+                    }
+                  }}
+                >
                   {/* layer-19 = wishlist button container */}
                   <Image
                     src="/card/icon/butterfly.svg"
@@ -359,6 +392,26 @@ export default function FeaturedProducts() {
                   {/* layer-32 = add to cart button container */}
                   
                   <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (!isUserLoggedIn()) {
+                        setPendingAction('cart');
+                        setPendingProduct(product);
+                        setShowSignInModal(true);
+                      } else {
+                        const cartItem: CartItem = {
+                          id: `cart-${product.id}-${Date.now()}`,
+                          productId: product.id,
+                          name: product.name,
+                          price: product.price,
+                          quantity: 1,
+                          image: product.images && product.images.length > 0 ? product.images[0] : '/placeholder-image.png',
+                        };
+                        addToCart(cartItem);
+                        window.dispatchEvent(new Event('storage'));
+                      }
+                    }}
                     className="layer-33 w-full h-0 opacity-0 px-7 bg-fuchsia-500 rounded-xl inline-flex justify-center items-center gap-1.5 md:group-hover:h-14 md:group-hover:py-3 md:group-hover:opacity-100 hover:bg-fuchsia-600 transition-all duration-500 ease-out transform translate-y-2 md:group-hover:translate-y-0 cursor-pointer"
                     aria-label={`Add ${product.name} to cart`}
                     data-layer="33"
@@ -385,7 +438,8 @@ export default function FeaturedProducts() {
               </div>
                </div>
              </Link>
-            ))
+            );
+            })
           )}
         </div>
 
@@ -415,6 +469,50 @@ export default function FeaturedProducts() {
           </div>
         )}
       </div>
+
+      {/* Sign In Required Modal */}
+      <SignInRequiredModal
+        isOpen={showSignInModal}
+        onClose={() => {
+          setShowSignInModal(false);
+          setPendingAction(null);
+          setPendingProduct(null);
+        }}
+        onSignIn={() => {
+          // Trigger login modal via custom event
+          window.dispatchEvent(new CustomEvent('openLoginModal', { detail: { userType: 'client' } }));
+          // After login, retry the pending action
+          setTimeout(() => {
+            if (pendingProduct && pendingAction) {
+              if (pendingAction === 'cart') {
+                const cartItem: CartItem = {
+                  id: `cart-${pendingProduct.id}-${Date.now()}`,
+                  productId: pendingProduct.id,
+                  name: pendingProduct.name,
+                  price: pendingProduct.price,
+                  quantity: 1,
+                  image: pendingProduct.images && pendingProduct.images.length > 0 ? pendingProduct.images[0] : '/placeholder-image.png',
+                };
+                addToCart(cartItem);
+                window.dispatchEvent(new Event('storage'));
+              } else if (pendingAction === 'wishlist') {
+                const wishlistItem: WishlistItem = {
+                  id: `wishlist-${pendingProduct.id}-${Date.now()}`,
+                  productId: pendingProduct.id,
+                  name: pendingProduct.name,
+                  price: pendingProduct.price,
+                  image: pendingProduct.images && pendingProduct.images.length > 0 ? pendingProduct.images[0] : '/placeholder-image.png',
+                };
+                addToWishlist(wishlistItem);
+                window.dispatchEvent(new Event('storage'));
+              }
+            }
+          }, 1000);
+        }}
+        message={pendingAction === 'cart' 
+          ? 'Please sign in to add items to your cart.' 
+          : 'Please sign in to add items to your wishlist.'}
+      />
     </section>
   );
 }

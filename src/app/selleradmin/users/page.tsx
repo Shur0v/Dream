@@ -18,43 +18,62 @@ interface UserData {
 export default function UsersPage() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Load users from localStorage
-    const loadUsers = () => {
+    // Load users from MongoDB API
+    const loadUsers = async () => {
       try {
-        const allUsers = localStorage.getItem('allUsers');
-        if (allUsers) {
-          const parsedUsers = JSON.parse(allUsers);
+        setIsLoading(true);
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        const response = await fetch(`${apiUrl}/users`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-store',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch users');
+        }
+
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          // Transform MongoDB user data to UserData format
+          const transformedUsers: UserData[] = result.data.map((user: any) => ({
+            username: user.firstName || user.email?.split('@')[0] || 'Unknown',
+            mobile: user.phone || 'N/A',
+            email: user.email || 'N/A',
+            loginTime: user.createdAt || user.updatedAt || new Date().toISOString(),
+          }));
+          
           // Sort by login time (newest first)
-          const sortedUsers = parsedUsers.sort((a: UserData, b: UserData) => {
+          const sortedUsers = transformedUsers.sort((a: UserData, b: UserData) => {
             return new Date(b.loginTime).getTime() - new Date(a.loginTime).getTime();
           });
+          
           setUsers(sortedUsers);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error loading users:', error);
+        if (error.message?.includes('Failed to fetch') || error.message?.includes('ERR_CONNECTION_REFUSED')) {
+          setError('Backend server is not running. Please start the backend server with: pnpm backend:dev');
+        } else {
+          setError('Failed to load users: ' + (error.message || 'Unknown error'));
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadUsers();
+          loadUsers();
 
-    // Listen for storage changes (when new user signs in)
-    const handleStorageChange = () => {
-      loadUsers();
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Also check periodically (for same-tab updates)
-    const interval = setInterval(loadUsers, 1000);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
+          // No auto-refresh - data will only load on component mount or manual refresh
+          return () => {
+            // Cleanup if needed
+          };
   }, []);
 
   const formatDate = (dateString: string) => {
@@ -87,6 +106,12 @@ export default function UsersPage() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
             <div className="flex justify-center items-center">
               <div className="text-gray-600">Loading users...</div>
+            </div>
+          </div>
+        ) : error ? (
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+            <div className="flex justify-center items-center">
+              <div className="text-red-600">{error}</div>
             </div>
           </div>
         ) : users.length === 0 ? (

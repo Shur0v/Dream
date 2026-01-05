@@ -4,12 +4,15 @@
 
 import { Router, Request, Response } from 'express';
 import {
-  getOrders,
-  getOrderById,
-  saveOrder,
-  invalidateOrdersCache,
-} from '../express-lib/db';
+  getOrders as getOrdersFromMongo,
+  getOrderById as getOrderByIdFromMongo,
+  saveOrder as saveOrderToMongo,
+} from '../lib/db';
 import { OrderStatus } from '../../src/types';
+
+// Alias for easier use in the file
+const getOrderById = getOrderByIdFromMongo;
+const saveOrder = saveOrderToMongo;
 
 const router = Router();
 
@@ -25,7 +28,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     const userId = req.query.userId as string;
     const status = req.query.status as string;
-    let orders = await getOrders();
+    let orders = await getOrdersFromMongo();
 
     if (userId) {
       orders = orders.filter(order => order.userId === userId);
@@ -58,7 +61,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     await mockApiDelay(300);
 
     const { id } = req.params;
-    const order = await getOrderById(id);
+    const order = await getOrderByIdFromMongo(id);
 
     if (!order) {
       return res.status(404).json({
@@ -148,14 +151,9 @@ router.post('/', async (req: Request, res: Response) => {
       itemsCount: newOrder.items.length,
     });
 
-    // Invalidate cache before saving to ensure fresh read
-    invalidateOrdersCache();
-
-    const savedOrder = await saveOrder(newOrder);
+    // Save order to MongoDB
+    const savedOrder = await saveOrderToMongo(newOrder);
     console.log('[POST /api/orders] Order saved successfully:', savedOrder.id);
-    
-    // Invalidate cache after saving to ensure next read is fresh
-    invalidateOrdersCache();
 
     res.status(201).json({
       success: true,
@@ -180,7 +178,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     await mockApiDelay(1000);
 
     const { id } = req.params;
-    const existingOrder = await getOrderById(id);
+    const existingOrder = await getOrderByIdFromMongo(id);
 
     if (!existingOrder) {
       return res.status(404).json({
@@ -195,7 +193,7 @@ router.put('/:id', async (req: Request, res: Response) => {
       updatedAt: new Date().toISOString(),
     };
 
-    await saveOrder(updatedOrder);
+    await saveOrderToMongo(updatedOrder);
 
     res.json({
       success: true,

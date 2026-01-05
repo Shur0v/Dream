@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Minus, Plus, Heart, ShoppingCart, Star } from 'lucide-react';
 import { CheckoutModal } from '@/components/cart/CheckoutModal';
 import { SuccessModal } from '@/components/ui/SuccessModal';
+import { SignInRequiredModal } from '@/components/ui/SignInRequiredModal';
+import { addToCart, addToWishlist, isInWishlist, removeFromWishlist, isUserLoggedIn, CartItem, WishlistItem } from '@/lib/userStorage';
 
 interface ProductInfoProps {
   product: {
@@ -39,6 +41,14 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [showSignInModal, setShowSignInModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'cart' | 'wishlist' | null>(null);
+
+  // Check if product is in wishlist
+  useEffect(() => {
+    setIsWishlisted(isInWishlist(product.id));
+  }, [product.id]);
 
   const handleQuantityChange = (amount: number) => {
     setQuantity((prev) => Math.max(1, prev + amount));
@@ -47,6 +57,53 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
   const handleBuyNow = () => {
     // Open checkout modal instead of redirecting
     setIsCheckoutOpen(true);
+  };
+
+  const handleAddToCart = () => {
+    if (!isUserLoggedIn()) {
+      setPendingAction('cart');
+      setShowSignInModal(true);
+      return;
+    }
+
+    const cartItem: CartItem = {
+      id: `cart-${product.id}-${Date.now()}`,
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: quantity,
+      image: images && images.length > 0 ? images[0] : '/placeholder-image.png',
+      color: selectedColor || undefined,
+      size: selectedSize || undefined,
+    };
+    
+    addToCart(cartItem);
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  const handleToggleWishlist = () => {
+    if (!isUserLoggedIn()) {
+      setPendingAction('wishlist');
+      setShowSignInModal(true);
+      return;
+    }
+
+    if (isWishlisted) {
+      removeFromWishlist(product.id);
+      setIsWishlisted(false);
+    } else {
+      const wishlistItem: WishlistItem = {
+        id: `wishlist-${product.id}-${Date.now()}`,
+        productId: product.id,
+        name: product.name,
+        price: product.price,
+        image: images && images.length > 0 ? images[0] : '/placeholder-image.png',
+      };
+      
+      addToWishlist(wishlistItem);
+      setIsWishlisted(true);
+    }
+    window.dispatchEvent(new Event('storage'));
   };
 
   const handleCheckoutSubmit = async (formData: {
@@ -338,12 +395,18 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
 
               {/* Add to Cart and Wishlist */}
               <div className="flex flex-wrap items-center gap-3 sm:gap-4 ml-auto justify-end">
-                <button className="px-4 py-2.5 bg-fuchsia-500 rounded-md flex items-center gap-1.5 hover:bg-fuchsia-600 transition-colors shadow-[0_4px_12px_rgba(236,72,153,0.25)]">
+                <button 
+                  onClick={handleAddToCart}
+                  className="px-4 py-2.5 bg-fuchsia-500 rounded-md flex items-center gap-1.5 hover:bg-fuchsia-600 transition-colors shadow-[0_4px_12px_rgba(236,72,153,0.25)] cursor-pointer"
+                >
                   <ShoppingCart className="w-5 h-5 text-white" />
                   <span className="text-white text-base font-medium font-['Poppins'] leading-none">Add to Cart</span>
                 </button>
-                <button className="w-10 h-10 rounded-md border border-black/40 flex items-center justify-center hover:bg-gray-50 transition-colors flex-shrink-0 bg-white">
-                  <Heart className="w-5 h-5 text-black" />
+                <button 
+                  onClick={handleToggleWishlist}
+                  className={`w-10 h-10 rounded-md border border-black/40 flex items-center justify-center hover:bg-gray-50 transition-colors flex-shrink-0 bg-white cursor-pointer ${isWishlisted ? 'bg-red-50 border-red-300' : ''}`}
+                >
+                  <Heart className={`w-5 h-5 ${isWishlisted ? 'text-red-600 fill-red-600' : 'text-black'}`} />
                 </button>
               </div>
             </div>
@@ -374,6 +437,50 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
         title="Order Confirmed!"
         message="Your order has been placed successfully!"
         orderId={orderId || undefined}
+      />
+
+      {/* Sign In Required Modal */}
+      <SignInRequiredModal
+        isOpen={showSignInModal}
+        onClose={() => {
+          setShowSignInModal(false);
+          setPendingAction(null);
+        }}
+        onSignIn={() => {
+          // Trigger login modal via custom event
+          window.dispatchEvent(new CustomEvent('openLoginModal', { detail: { userType: 'client' } }));
+          // After login, retry the pending action
+          setTimeout(() => {
+            if (pendingAction === 'cart') {
+              const cartItem: CartItem = {
+                id: `cart-${product.id}-${Date.now()}`,
+                productId: product.id,
+                name: product.name,
+                price: product.price,
+                quantity: quantity,
+                image: images && images.length > 0 ? images[0] : '/placeholder-image.png',
+                color: selectedColor || undefined,
+                size: selectedSize || undefined,
+              };
+              addToCart(cartItem);
+              window.dispatchEvent(new Event('storage'));
+            } else if (pendingAction === 'wishlist') {
+              const wishlistItem: WishlistItem = {
+                id: `wishlist-${product.id}-${Date.now()}`,
+                productId: product.id,
+                name: product.name,
+                price: product.price,
+                image: images && images.length > 0 ? images[0] : '/placeholder-image.png',
+              };
+              addToWishlist(wishlistItem);
+              setIsWishlisted(true);
+              window.dispatchEvent(new Event('storage'));
+            }
+          }, 1000);
+        }}
+        message={pendingAction === 'cart' 
+          ? 'Please sign in to add items to your cart.' 
+          : 'Please sign in to add items to your wishlist.'}
       />
     </div>
   );
