@@ -11,6 +11,7 @@ export interface ProductDocument extends Omit<Product, 'id'>, Document {
 
 const ProductSchema = new Schema<ProductDocument>(
   {
+    id: { type: String, index: true }, // Store the custom id field (e.g., "product-1763585972720")
     name: { type: String, required: true, index: true },
     description: { type: String, required: true },
     price: { type: Number, required: true, min: 0 },
@@ -35,7 +36,8 @@ const ProductSchema = new Schema<ProductDocument>(
     timestamps: { createdAt: 'createdAt', updatedAt: 'updatedAt' },
     toJSON: {
       transform: function (doc: any, ret: any) {
-        ret.id = ret._id?.toString() || ret.id;
+        // Prioritize stored id field, fallback to _id if not present
+        ret.id = ret.id || ret._id?.toString();
         delete ret._id;
         delete ret.__v;
         return ret;

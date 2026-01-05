@@ -40,6 +40,7 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleteTargetName, setDeleteTargetName] = useState<string>('');
+  const [isDeleting, setIsDeleting] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<DisplayProduct | null>(null);
 
@@ -65,39 +66,36 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
     }));
   }, [rawProducts]);
 
-  // Fetch products from API with localStorage caching
+  // Fetch products from API without localStorage caching (to avoid quota issues)
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       
-      // Check localStorage cache first
-      const cacheKey = 'products_cache';
-      const cacheTimestampKey = 'products_cache_timestamp';
-      const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-      
-      const cachedData = localStorage.getItem(cacheKey);
-      const cachedTimestamp = localStorage.getItem(cacheTimestampKey);
-      
-      if (cachedData && cachedTimestamp) {
-        const age = Date.now() - parseInt(cachedTimestamp, 10);
-        if (age < CACHE_TTL) {
-          const parsed = JSON.parse(cachedData);
-          if (parsed.success && parsed.data) {
-            setRawProducts(parsed.data);
-            setLoading(false);
-            return;
-          }
-        }
+      // Remove old cache to free up space
+      try {
+        localStorage.removeItem('products_cache');
+        localStorage.removeItem('products_cache_timestamp');
+      } catch (e) {
+        // Ignore errors when clearing cache
       }
       
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/products?limit=40`);
       const result = await response.json();
       
       if (result.success && result.data) {
+        // Log first product to see what ID format we're getting
+        if (result.data.length > 0) {
+          console.log('[AllProductsGrid] Sample product ID from API:', {
+            id: result.data[0].id,
+            name: result.data[0].name,
+            idType: typeof result.data[0].id,
+            isObjectId: /^[0-9a-fA-F]{24}$/.test(result.data[0].id || ''),
+            idLength: result.data[0].id?.length
+          });
+        }
         setRawProducts(result.data);
-        // Cache the response
-        localStorage.setItem(cacheKey, JSON.stringify(result));
-        localStorage.setItem(cacheTimestampKey, Date.now().toString());
+        // Don't cache to localStorage to avoid quota issues
+        // Products will be fetched fresh each time
       }
     } catch (error) {
       console.error('Error fetching products:', error);
@@ -159,40 +157,84 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
   const pageData = filteredProducts.slice(start, end);
 
   const handleDeleteClick = (id: string, name: string) => {
+    console.log('[AllProductsGrid] Delete clicked for product:', { id, name, idType: typeof id });
     setDeleteTargetId(id);
     setDeleteTargetName(name);
     setDeleteModalOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
-    if (deleteTargetId !== null) {
+    if (deleteTargetId !== null && !isDeleting) {
+      setIsDeleting(true);
       try {
-        // Call API to delete product
-        const response = await fetch(`/api/products/${deleteTargetId}`, {
-          method: 'DELETE',
+        // Use the product ID as-is (could be MongoDB ObjectId or custom id format)
+        const productId = deleteTargetId;
+        
+        console.log(`[AllProductsGrid] Attempting to delete product with ID: ${productId}`);
+        console.log(`[AllProductsGrid] ID details:`, {
+          id: productId,
+          type: typeof productId,
+          length: productId.length,
+          isObjectId: /^[0-9a-fA-F]{24}$/.test(productId),
+          startsWithProduct: productId.startsWith('product-')
         });
+        
+        // Call API to delete product - use full API URL
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        const deleteUrl = `${apiUrl}/products/${encodeURIComponent(productId)}`;
+        console.log(`[AllProductsGrid] Delete URL: ${deleteUrl}`);
+        
+        const response = await fetch(deleteUrl, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { error: errorText || 'Failed to delete product' };
+          }
+          const errorMessage = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+          console.error(`[AllProductsGrid] Delete failed: ${errorMessage}`);
+          throw new Error(errorMessage);
+        }
         
         const result = await response.json();
         
         if (result.success) {
+          console.log(`[AllProductsGrid] Product deleted successfully: ${productId}`);
           setDeletedIds((prev) => {
             const next = new Set(prev);
             next.add(deleteTargetId);
             return next;
           });
           onDelete?.(deleteTargetId);
+          
+          // Clear cache to force fresh data
+          localStorage.removeItem('products_cache');
+          localStorage.removeItem('products_cache_timestamp');
+          
           // Refresh products list
           await fetchProducts();
+          
+          // Close modal after successful delete
+          setDeleteModalOpen(false);
+          setDeleteTargetId(null);
+          setDeleteTargetName('');
         } else {
-          alert(`Error: ${result.error || 'Failed to delete product'}`);
+          throw new Error(result.error || 'Failed to delete product');
         }
       } catch (error) {
         console.error('Error deleting product:', error);
-        alert('An error occurred while deleting the product');
+        const errorMessage = error instanceof Error ? error.message : 'An error occurred while deleting the product';
+        alert(`Error: ${errorMessage}`);
       } finally {
-        setDeleteTargetId(null);
-        setDeleteTargetName('');
-        setDeleteModalOpen(false);
+        setIsDeleting(false);
       }
     }
   };
@@ -481,14 +523,17 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
       <DeleteConfirmationModal
         isOpen={deleteModalOpen}
         onClose={() => {
-          setDeleteModalOpen(false);
-          setDeleteTargetId(null);
-          setDeleteTargetName('');
+          if (!isDeleting) {
+            setDeleteModalOpen(false);
+            setDeleteTargetId(null);
+            setDeleteTargetName('');
+          }
         }}
         onConfirm={handleDeleteConfirm}
         title="Delete Product"
         message="Are you sure you want to delete this product?"
         itemName={deleteTargetName}
+        isLoading={isDeleting}
       />
 
       {/* Edit Product Modal */}

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, X, Loader2 } from 'lucide-react';
 
 interface DeleteConfirmationModalProps {
   isOpen: boolean;
@@ -11,6 +11,7 @@ interface DeleteConfirmationModalProps {
   message?: string;
   itemName?: string;
   confirmButtonText?: string;
+  isLoading?: boolean;
 }
 
 export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = ({
@@ -21,12 +22,20 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
   message = 'Are you sure you want to delete this item?',
   itemName,
   confirmButtonText = 'Delete',
+  isLoading = false,
 }) => {
   if (!isOpen) return null;
 
   const handleConfirm = () => {
-    onConfirm();
-    onClose();
+    if (!isLoading) {
+      onConfirm();
+    }
+  };
+
+  const handleClose = () => {
+    if (!isLoading) {
+      onClose();
+    }
   };
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -50,8 +59,9 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
       >
         {/* Close Button */}
         <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-10 w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors"
+          onClick={handleClose}
+          disabled={isLoading}
+          className="absolute top-4 right-4 z-10 w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Close modal"
         >
           <X className="w-5 h-5 text-gray-600" />
@@ -61,9 +71,15 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
         <div className="p-6 md:p-8">
           {/* Icon */}
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
-              <AlertTriangle className="w-8 h-8 text-red-600" />
-            </div>
+            {isLoading ? (
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-red-600 animate-spin" />
+              </div>
+            ) : (
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertTriangle className="w-8 h-8 text-red-600" />
+              </div>
+            )}
           </div>
 
           {/* Title */}
@@ -88,15 +104,18 @@ export const DeleteConfirmationModal: React.FC<DeleteConfirmationModalProps> = (
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
-              onClick={onClose}
-              className="flex-1 h-12 px-6 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium font-['Poppins'] transition-colors duration-200"
+              onClick={handleClose}
+              disabled={isLoading}
+              className="flex-1 h-12 px-6 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium font-['Poppins'] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               onClick={handleConfirm}
-              className="flex-1 h-12 px-6 py-3 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium font-['Poppins'] transition-colors duration-200"
+              disabled={isLoading}
+              className="flex-1 h-12 px-6 py-3 rounded-lg bg-red-500 hover:bg-red-600 text-white font-medium font-['Poppins'] transition-colors duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
+              {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
               {confirmButtonText}
             </button>
           </div>

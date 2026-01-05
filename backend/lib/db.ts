@@ -56,7 +56,10 @@ const COLORS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
 function toType<T extends { id?: string }>(doc: any): T {
   if (!doc) return doc;
   const { _id, ...rest } = doc;
-  return { ...rest, id: _id?.toString() || doc.id } as T;
+  // Prioritize stored id field, fallback to _id.toString()
+  // This matches the ProductSchema toJSON transform behavior
+  const id = (rest as any).id || _id?.toString();
+  return { ...rest, id } as T;
 }
 
 /**
@@ -81,6 +84,16 @@ export async function getProducts(): Promise<Product[]> {
   const fetchTime = Date.now() - startTime;
   console.log(`[MongoDB] getProducts: Fetched ${typedProducts.length} products in ${fetchTime}ms`);
   
+  // Log sample product IDs for debugging
+  if (typedProducts.length > 0) {
+    console.log('[MongoDB] getProducts: Sample product IDs:', typedProducts.slice(0, 3).map(p => ({
+      id: p.id,
+      name: p.name,
+      idType: typeof p.id,
+      idLength: p.id?.length
+    })));
+  }
+  
   // Update cache
   productsCache = {
     data: typedProducts,
@@ -104,7 +117,24 @@ export function invalidateProductsCache(): void {
  */
 export async function getProductById(id: string): Promise<Product | undefined> {
   await ensureConnection();
-  const product = await ProductModel.findById(id).lean();
+  
+  // Try MongoDB ObjectId first
+  let product = null;
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    product = await ProductModel.findById(id).lean();
+  }
+  
+  // If not found, try custom id field
+  if (!product) {
+    product = await ProductModel.findOne({ id: id }).lean();
+  }
+  
+  // If still not found, try _id as string
+  if (!product) {
+    const allProducts = await ProductModel.find({}).lean();
+    product = allProducts.find(p => p._id?.toString() === id) || null;
+  }
+  
   return product ? toType<Product>(product) : undefined;
 }
 
@@ -120,19 +150,35 @@ export async function saveProduct(product: Product): Promise<Product> {
     const { id, ...productData } = product;
     const updateData = {
       ...productData,
+      id: id, // Include the id field so it's stored in MongoDB
       updatedAt: new Date().toISOString(),
     };
     
     let saved;
     if (id && mongoose.Types.ObjectId.isValid(id)) {
-      // Update existing document
+      // Update existing document by MongoDB ObjectId
       saved = await ProductModel.findByIdAndUpdate(
         id,
         updateData,
         { new: true, setDefaultsOnInsert: true }
       ).lean();
+    } else if (id) {
+      // Try to find by custom id field first
+      const existing = await ProductModel.findOne({ id: id }).lean();
+      if (existing) {
+        // Update existing document
+        saved = await ProductModel.findByIdAndUpdate(
+          existing._id,
+          updateData,
+          { new: true, setDefaultsOnInsert: true }
+        ).lean();
+      } else {
+        // Create new document
+        saved = await ProductModel.create(updateData);
+        saved = saved.toObject();
+      }
     } else {
-      // Create new document
+      // Create new document without id (MongoDB will generate _id)
       saved = await ProductModel.create(updateData);
       saved = saved.toObject();
     }
@@ -162,35 +208,106 @@ export async function deleteProduct(id: string): Promise<Product | null> {
     let product = null;
     let productIdToDelete = null;
     
-    // Try to find by MongoDB ObjectId first
+    console.log(`[deleteProduct] Attempting to delete product with ID: ${id}`);
+    
+    // Priority 1: Try MongoDB ObjectId first (most common case since id field is often undefined)
     if (mongoose.Types.ObjectId.isValid(id)) {
       product = await ProductModel.findById(id).lean();
       if (product) {
         productIdToDelete = id;
+        console.log(`[deleteProduct] Found product by MongoDB ObjectId: ${id}`);
       }
     }
     
-    // If not found by ObjectId, try to find by the id field (string)
+    // Priority 2: Try to find by the custom id field (string)
     if (!product) {
       product = await ProductModel.findOne({ id: id }).lean();
       if (product && product._id) {
         productIdToDelete = product._id.toString();
+        console.log(`[deleteProduct] Found product by custom id field: ${id}, MongoDB _id: ${productIdToDelete}`);
       }
     }
     
-    // If still not found, try to find by _id converted to string
+    // Priority 3: If still not found and id starts with "product-", try to extract timestamp
+    // and find by matching the stored id field more flexibly
+    if (!product && id.startsWith('product-')) {
+      // Try exact match first
+      product = await ProductModel.findOne({ id: id }).lean();
+      if (product && product._id) {
+        productIdToDelete = product._id.toString();
+        console.log(`[deleteProduct] Found product by custom id (product- prefix): ${id}`);
+      }
+      
+      // If still not found, try partial match or find by any product with similar pattern
+      if (!product) {
+        const allProducts = await ProductModel.find({}).lean();
+        // Try to find by checking if any product's stored id matches
+        const found = allProducts.find(p => {
+          const storedId = (p as any).id;
+          if (storedId === id) return true;
+          // Also check _id.toString() in case the id was transformed
+          if (p._id?.toString() === id) return true;
+          return false;
+        });
+        if (found) {
+          product = found;
+          productIdToDelete = found._id.toString();
+          console.log(`[deleteProduct] Found product by scanning (product- prefix): ${id}`);
+        }
+      }
+    }
+    
+    // Priority 4: Final fallback - scan all products and match by _id.toString()
+    // This handles cases where id might be the _id string but ObjectId validation failed
     if (!product) {
-      // Get all products and find by matching id string
       const allProducts = await ProductModel.find({}).lean();
-      const found = allProducts.find(p => p._id?.toString() === id);
+      const found = allProducts.find(p => {
+        // Check if _id.toString() matches the provided id
+        if (p._id?.toString() === id) return true;
+        // Check if stored id field matches
+        if ((p as any).id === id) return true;
+        return false;
+      });
       if (found) {
         product = found;
         productIdToDelete = found._id.toString();
+        console.log(`[deleteProduct] Found product by final scan: ${id}`);
       }
     }
     
     if (!product || !productIdToDelete) {
-      console.warn(`Product not found with ID: ${id}`);
+      console.warn(`[deleteProduct] Product not found with ID: ${id}`);
+      console.warn(`[deleteProduct] ID type: ${typeof id}, length: ${id.length}, isObjectId: ${mongoose.Types.ObjectId.isValid(id)}`);
+      
+      // Log all product IDs for debugging (first 20)
+      const allProducts = await ProductModel.find({}).select('id _id name').lean().limit(20);
+      const productInfo = allProducts.map(p => {
+        const storedId = (p as any).id;
+        const mongoId = p._id?.toString();
+        // Check what the API would return (via toJSON transform)
+        const apiId = storedId || mongoId;
+        return {
+          storedId: storedId || 'undefined',
+          mongoId: mongoId,
+          apiId: apiId, // This is what the API actually returns
+          name: (p as any).name,
+          mongoIdMatches: mongoId === id,
+          storedIdMatches: storedId === id,
+          apiIdMatches: apiId === id
+        };
+      });
+      console.log(`[deleteProduct] Available products (first 20):`, productInfo);
+      
+      // If id starts with "product-", it's likely a custom ID that wasn't stored
+      // Try to find by matching the timestamp part or suggest using MongoDB ObjectId
+      if (id.startsWith('product-')) {
+        console.log(`[deleteProduct] ID starts with "product-", this is a custom ID format`);
+        console.log(`[deleteProduct] The database doesn't store this format - products use MongoDB ObjectIds`);
+        console.log(`[deleteProduct] The API should return MongoDB ObjectIds, but frontend is using custom ID`);
+        console.log(`[deleteProduct] This suggests the frontend has cached/stale data`);
+        console.log(`[deleteProduct] Solution: Clear browser cache and refresh the page`);
+      }
+      
       return null;
     }
     

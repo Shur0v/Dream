@@ -379,22 +379,25 @@ router.put('/:id', async (req: Request, res: Response) => {
 
 /**
  * DELETE /api/products/:id
- * Delete product (soft delete)
+ * Delete product (hard delete - permanently removes from database)
  */
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
     await mockApiDelay(600);
 
     const { id } = req.params;
+    console.log(`[Express DELETE /api/products/${id}] Received delete request`);
     const deletedProduct = await deleteProduct(id);
 
     if (!deletedProduct) {
+      console.log(`[Express DELETE /api/products/${id}] Product not found`);
       return res.status(404).json({
         success: false,
         error: 'Product not found',
       });
     }
 
+    console.log(`[Express DELETE /api/products/${id}] Product deleted successfully`);
     res.json({
       success: true,
       data: deletedProduct,

@@ -18,7 +18,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { ShoppingCart, Search, Menu, X } from 'lucide-react';
 import { CartDropdown } from '../cart/CartDropdown';
 import { WishlistDropdown } from '../wishlist/WishlistDropdown';
@@ -79,6 +79,7 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
   onOpenRegisterModal,
 }) => {
   const router = useRouter();
+  const pathname = usePathname();
   const [searchQuery, setSearchQuery] = useState('');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
@@ -286,7 +287,25 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
           <div className="layer-2 w-full lg:w-[190.5px] h-[69.3px] flex items-center justify-between lg:justify-start" data-layer="2">
             {/* layer-2 = logo container */}
             
-            <Link href="/" aria-label="DreamShop homepage" className="flex-shrink-0">
+            <Link
+              href="/"
+              onClick={(e) => {
+                // If already on home page, prevent navigation and just scroll to top
+                if (pathname === '/') {
+                  e.preventDefault();
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                  // Let Link handle navigation (it's already prefetched)
+                  // Just ensure smooth scroll after navigation
+                  setTimeout(() => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }, 50);
+                }
+              }}
+              aria-label="DreamShop homepage"
+              className="flex-shrink-0 hover:opacity-80 transition-opacity"
+              prefetch={true}
+            >
               <Image
                 className="w-[190.5px] h-[69.3px] object-contain"
                 src="/common/logo.svg"

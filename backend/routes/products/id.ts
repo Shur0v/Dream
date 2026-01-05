@@ -185,6 +185,7 @@ export async function DELETE(
     await mockApiDelay(800);
 
     const { id } = await params;
+    console.log(`[DELETE /api/products/${id}] Received delete request for ID: ${id}`);
     const deletedProduct = await deleteProduct(id);
 
     if (!deletedProduct) {

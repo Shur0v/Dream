@@ -111,14 +111,32 @@ export async function saveProduct(product: Product): Promise<Product> {
 }
 
 export async function deleteProduct(id: string): Promise<Product | null> {
+  console.log(`[express-lib/db] deleteProduct called with ID: ${id}`);
   const products = await getProducts();
-  const product = products.find(p => p.id === id);
+  console.log(`[express-lib/db] Total products in JSON: ${products.length}`);
+  
+  // Try to find product by id
+  let product = products.find(p => p.id === id);
+  
+  // If not found, log available IDs for debugging
+  if (!product) {
+    console.log(`[express-lib/db] Product not found with ID: ${id}`);
+    console.log(`[express-lib/db] Available product IDs (first 10):`, products.slice(0, 10).map(p => ({
+      id: p.id,
+      name: p.name,
+      idMatches: p.id === id
+    })));
+  }
   
   if (product) {
-    product.isActive = false;
-    product.updatedAt = new Date().toISOString();
-    await saveProducts(products);
-    return product;
+    // Hard delete - remove from array instead of soft delete
+    const index = products.findIndex(p => p.id === id);
+    if (index >= 0) {
+      products.splice(index, 1);
+      await saveProducts(products);
+      console.log(`[express-lib/db] Product deleted successfully: ${id}`);
+      return product;
+    }
   }
   
   return null;
