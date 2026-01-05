@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Minus, Plus, Heart, ShoppingCart, Star } from 'lucide-react';
 import { CheckoutModal } from '@/components/cart/CheckoutModal';
+import { SuccessModal } from '@/components/ui/SuccessModal';
 
 interface ProductInfoProps {
   product: {
@@ -36,6 +37,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
   const [selectedSize, setSelectedSize] = useState(product.sizes?.[0] ?? 'M');
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [orderId, setOrderId] = useState<string | null>(null);
 
   const handleQuantityChange = (amount: number) => {
     setQuantity((prev) => Math.max(1, prev + amount));
@@ -137,11 +140,9 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
       
       if (result.success && result.data) {
         // Order created successfully
-        alert(`Order placed successfully! Order ID: ${result.data.id}\n\nYour order will be processed and you will be contacted soon.`);
+        setOrderId(result.data.id);
         setIsCheckoutOpen(false);
-        
-        // Optionally redirect to order confirmation page or home
-        // router.push(`/client/orders/${result.data.id}`);
+        setIsSuccessModalOpen(true);
       } else {
         throw new Error(result.error || 'Failed to create order');
       }
@@ -364,6 +365,15 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
         onClose={() => setIsCheckoutOpen(false)}
         onSubmit={handleCheckoutSubmit}
         isSubmitting={isSubmitting}
+      />
+
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        title="Order Confirmed!"
+        message="Your order has been placed successfully!"
+        orderId={orderId || undefined}
       />
     </div>
   );
