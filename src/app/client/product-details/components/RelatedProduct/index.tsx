@@ -167,8 +167,17 @@ export default function RelatedProduct({ currentProduct }: RelatedProductProps) 
               <div className="text-neutral-500">Loading related products...</div>
             </div>
           ) : (
-            products.map((product, index) => (
-             <Link key={product.id} href={`/client/product-details/${(product as any).productId || product.id}`} className="block h-full md:flex md:items-center">
+            products.map((product, index) => {
+              // Ensure consistent product ID format
+              const productId = (product as any).productId || product.id;
+              return (
+             <Link 
+               key={`${product.id}-${index}`} 
+               href={`/client/product-details/${productId}`}
+               className="block h-full md:flex md:items-center"
+               scroll={true}
+               prefetch={true}
+             >
                <div
                  className="layer-6 w-full md:w-[312px] h-full md:h-auto p-3 md:p-4 bg-sky-50 rounded-xl border border-black/10 flex flex-col justify-start items-start group md:hover:shadow-md md:hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
                  style={{ transformOrigin: 'center', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
@@ -349,7 +358,8 @@ export default function RelatedProduct({ currentProduct }: RelatedProductProps) 
               </div>
                </div>
              </Link>
-            ))
+            );
+            })
           )}
         </div>
 

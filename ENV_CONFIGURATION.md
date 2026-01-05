@@ -9,7 +9,7 @@
 UPSTASH_REDIS_REST_URL="https://civil-sawfish-31828.upstash.io"
 UPSTASH_REDIS_REST_TOKEN="AXxUAAIncDIwODQ5ZWM1ZTI2Y2M0MjYzYWViMzRmY2YyNmRjZDBhMXAyMzE4Mjg"
 
-# Database Seed Token (for initial data seeding)
+# Database Seed Token  (for initial data seeding)
 DB_SEED_TOKEN=seed-9f4c7f2d13e64d8a9c81d7a6e2b5c0ff
 
 # Express Backend API URL (REQUIRED)
