@@ -26,46 +26,31 @@ const app: Express = express();
 const PORT = process.env.BACKEND_PORT || 5000;
 
 // Middleware - CORS with proper headers
-// Allow multiple origins for development and production
-const allowedOrigins = [
-  'http://localhost:3000',
-  'https://dreamshopltd.com',
-  'https://www.dreamshopltd.com',
-  process.env.FRONTEND_URL,
-].filter(Boolean) as string[];
-
+// PERMISSIVE CORS: Allow all origins for maximum compatibility
+// This removes all CORS restrictions to ensure API works from any domain
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) {
-      return callback(null, true);
-    }
-    
-    // Check if origin is in allowed list
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else if (origin.includes('dreamshopltd.com')) {
-      // Allow any subdomain of dreamshopltd.com
-      callback(null, true);
-    } else if (process.env.NODE_ENV === 'development' && origin.includes('localhost')) {
-      // In development, allow any localhost origin
-      callback(null, true);
-    } else {
-      console.warn(`CORS blocked origin: ${origin}. Allowed origins: ${allowedOrigins.join(', ')}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true, // Allow all origins
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization', 
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'Access-Control-Request-Method',
+    'Access-Control-Request-Headers',
+  ],
+  exposedHeaders: ['Content-Length', 'Content-Type'],
+  maxAge: 86400, // 24 hours
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
 }));
 
-// Log allowed origins on server start
-console.log(`🌐 CORS enabled for origins: ${allowedOrigins.join(', ')}`);
-if (process.env.NODE_ENV === 'development') {
-  console.log('   + Any localhost origin (development mode)');
-}
-console.log('   + Any dreamshopltd.com subdomain');
+// Log CORS configuration
+console.log(`🌐 CORS enabled: ALL ORIGINS ALLOWED (permissive mode)`);
+console.log(`   Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD`);
+console.log(`   Credentials: enabled`);
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
