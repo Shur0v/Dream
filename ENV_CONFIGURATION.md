@@ -107,7 +107,28 @@ FRONTEND_URL=http://localhost:3000
 
 Production এ `.env.local` এর পরিবর্তে Vercel/Deployment platform এ environment variables set করুন:
 
-- `NEXT_PUBLIC_API_URL` = আপনার production backend URL (e.g., `https://api.yourdomain.com/api`)
+### Frontend (Vercel/Next.js):
+- `NEXT_PUBLIC_API_URL` = আপনার production backend URL (e.g., `https://api.dreamshopltd.com/api` বা `https://backend.dreamshopltd.com/api`)
+
+### Backend (Express Server):
+`backend/.env` file এ এই variables set করুন:
+
+```env
+BACKEND_PORT=5000
+NODE_ENV=production
+FRONTEND_URL=https://dreamshopltd.com
+```
+
+**Important**: Backend server CORS automatically allow করবে:
+- `https://dreamshopltd.com`
+- `https://www.dreamshopltd.com`
+- যেকোনো `dreamshopltd.com` subdomain
+- Development mode এ `localhost` origins
+
+**CORS Issue Fix**: যদি production এ CORS error দেখেন, তাহলে:
+1. Backend server restart করুন
+2. `backend/.env` file এ `FRONTEND_URL` সঠিক আছে কিনা check করুন
+3. Backend logs এ CORS allowed origins দেখুন
 
 
 
