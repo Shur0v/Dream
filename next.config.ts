@@ -4,12 +4,36 @@ const nextConfig: NextConfig = {
   // Performance optimizations
   compress: true,
   
+  // Exclude backend directory from Next.js build (it's a separate Express server)
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+      };
+    }
+    // Exclude backend directory
+    config.externals = config.externals || [];
+    if (typeof config.externals === 'function') {
+      const originalExternals = config.externals;
+      config.externals = [
+        ...(Array.isArray(originalExternals) ? originalExternals : []),
+        ({ request }: { request: string }) => {
+          if (request?.includes('backend/routes') || request?.includes('backend/lib/db')) {
+            return true;
+          }
+        },
+      ];
+    }
+    return config;
+  },
+  
   // Optimize build output
   outputFileTracingExcludes: {
     '*': [
       'node_modules/@swc/core-linux-x64-gnu',
       'node_modules/@swc/core-linux-x64-musl',
       'node_modules/@esbuild/linux-x64',
+      'backend/**/*',
     ],
   },
   

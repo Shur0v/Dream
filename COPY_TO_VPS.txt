@@ -1,0 +1,35 @@
+==========================================
+VPS Setup - Copy This Entire Block
+==========================================
+
+SSH Command:
+ssh root@72.60.205.98
+Password: fzD#zxCsjU6pUSB
+
+After connecting, copy and paste this ENTIRE block:
+
+==========================================
+cd /var/www/dreamshop && \
+echo "🚀 Starting Setup..." && \
+echo "📦 Installing dependencies..." && \
+npm install && \
+echo "🔨 Building backend..." && \
+npm run backend:build && \
+echo "🔨 Building frontend..." && \
+npm run build && \
+echo "🛑 Stopping old processes..." && \
+pm2 delete all 2>/dev/null || true && \
+echo "🚀 Starting services..." && \
+mkdir -p logs && \
+pm2 start ecosystem.config.js && \
+pm2 save && \
+echo "⏳ Waiting for services..." && \
+sleep 8 && \
+echo "📊 Service Status:" && \
+pm2 status && \
+echo "" && \
+echo "✅ Setup Complete!" && \
+echo "View logs: pm2 logs" && \
+echo "Visit: https://dreamshopltd.com"
+==========================================
+
