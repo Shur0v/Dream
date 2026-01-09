@@ -7,6 +7,7 @@ import OrderDetailModal from './OrderDetailModal';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
 import Pagination from '../ui/Pagination';
 import { Order as ApiOrder } from '@/types';
+import { getApiUrl } from '@/lib/apiConfig';
 
 // Order data structure matching checkout form data
 export interface OrderItem {
@@ -129,27 +130,20 @@ export default function OrdersTable() {
   const [totalPages, setTotalPages] = useState(0);
   const itemsPerPage = 10;
 
-  // Fetch orders from API
+  // Fetch orders from API with IndexedDB cache
   const fetchOrders = async () => {
     try {
       setIsLoading(true);
       setError(null);
       
-      // Fetch orders from admin API endpoint with pagination (Express backend)
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiUrl}/admin/orders?page=${currentPage}&limit=${itemsPerPage}&sortBy=createdAt&sortOrder=desc`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store', // Ensure fresh data
+      // Use admin cache for instant loading
+      const { getAdminOrders } = await import('@/lib/indexeddb/adminCache');
+      const result = await getAdminOrders({
+        page: currentPage,
+        limit: itemsPerPage,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch orders');
-      }
-
-      const result = await response.json();
       
       if (result.success && result.data) {
         // Transform API orders to table format
@@ -164,12 +158,12 @@ export default function OrdersTable() {
           setTotalPages(result.pagination.totalPages);
         }
       } else {
-        throw new Error(result.error || 'Failed to fetch orders');
+        throw new Error('Failed to fetch orders');
       }
     } catch (err: any) {
       console.error('Error fetching orders:', err);
-      setError(err.message || 'Failed to load orders');
-      // Fallback to empty array on error
+      // Silent error - don't show error message
+      setError(null);
       setOrders([]);
       setTotalItems(0);
       setTotalPages(0);
@@ -198,8 +192,8 @@ export default function OrdersTable() {
       try {
         setIsRejecting(true);
         // Update order status via admin API endpoint
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        const response = await fetch(`${apiUrl}/admin/orders/${orderToReject.id}/reject`, {
+        const { getApiUrl } = await import('@/lib/apiConfig');
+        const response = await fetch(getApiUrl(`admin/orders/${orderToReject.id}/reject`), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -209,6 +203,22 @@ export default function OrdersTable() {
         const result = await response.json();
 
         if (response.ok && result.success) {
+          // Invalidate cache so dashboard stats refresh
+          const { invalidateAdminOrdersCache } = await import('@/lib/indexeddb/adminCache');
+          await invalidateAdminOrdersCache();
+          
+          // Invalidate client-side IndexedDB cache
+          try {
+            const { clearClientAPICache } = await import('@/lib/indexeddb/apiCache');
+            await clearClientAPICache();
+            // Dispatch event to notify client-side components
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new Event('dashboard:invalidate-cache'));
+            }
+          } catch (e) {
+            // Silent fail
+          }
+          
           // Refresh orders immediately after update
           await fetchOrders();
           setIsRejectModalOpen(false);
@@ -229,12 +239,12 @@ export default function OrdersTable() {
     try {
       setIsAccepting(orderId);
       // Update order status via admin API endpoint
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+      const { getApiUrl } = await import('@/lib/apiConfig');
       const order = orders.find(o => o.id === orderId);
       
       if (!order) return;
 
-      const response = await fetch(`${apiUrl}/admin/orders/${orderId}/approve`, {
+      const response = await fetch(getApiUrl(`admin/orders/${orderId}/approve`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -244,6 +254,22 @@ export default function OrdersTable() {
       const result = await response.json();
 
       if (response.ok && result.success) {
+        // Invalidate cache so dashboard stats refresh
+        const { invalidateAdminOrdersCache } = await import('@/lib/indexeddb/adminCache');
+        await invalidateAdminOrdersCache();
+        
+        // Invalidate client-side IndexedDB cache
+        try {
+          const { clearClientAPICache } = await import('@/lib/indexeddb/apiCache');
+          await clearClientAPICache();
+          // Dispatch event to notify client-side components
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('dashboard:invalidate-cache'));
+          }
+        } catch (e) {
+          // Silent fail
+        }
+        
         // Refresh orders immediately after update
         await fetchOrders();
         setIsDetailModalOpen(false);

@@ -321,28 +321,34 @@ function extractImageUrls(data: any): string[] {
 
 /**
  * Fetch API with caching
+ * Client-side URLs are NOT cached (always fetch fresh)
  */
 export async function fetchWithCache(
   url: string,
   options: RequestInit = {},
   ttl: number = 60 * 60 * 1000 // 1 hour
 ): Promise<Response> {
-  // Check cache first
-  const cachedData = await apiCacheDB.getResponse(url);
+  const isClientSide = isClientSideURL(url);
+  
+  // For client-side URLs, don't check cache - always fetch fresh
+  if (!isClientSide) {
+    // Check cache first (only for admin URLs)
+    const cachedData = await apiCacheDB.getResponse(url);
 
-  if (cachedData) {
-    // Return cached data as Response
-    return new Response(JSON.stringify(cachedData), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    if (cachedData) {
+      // Return cached data as Response
+      return new Response(JSON.stringify(cachedData), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
   }
 
-  // Fetch from network
+  // Fetch from network (always fresh for client-side)
   const response = await fetch(url, {
     ...options,
-    cache: 'force-cache',
-    next: { revalidate: 60 },
+    cache: isClientSide ? 'no-store' : 'force-cache',
+    ...(isClientSide ? {} : { next: { revalidate: 60 } }),
   });
 
   if (!response.ok) {
@@ -355,10 +361,12 @@ export async function fetchWithCache(
   // Extract image URLs
   const imageUrls = extractImageUrls(data.data || data);
 
-  // Cache response
-  await apiCacheDB.setResponse(url, data, imageUrls, ttl);
+  // Only cache admin URLs (not client-side)
+  if (!isClientSide) {
+    await apiCacheDB.setResponse(url, data, imageUrls, ttl);
+  }
 
-  // Preload images in background
+  // Preload images in background (for both client and admin)
   if (imageUrls.length > 0) {
     import('@/lib/indexeddb/imageCache').then(({ preloadImages }) => {
       preloadImages(imageUrls).catch(() => {});
@@ -373,9 +381,39 @@ export async function fetchWithCache(
 }
 
 /**
+ * Check if URL is client-side (should not be cached)
+ */
+function isClientSideURL(url: string): boolean {
+  // Client-side URLs that should not be cached
+  const clientSidePatterns = [
+    '/api/products',
+    '/api/featured-products',
+    '/api/best-selling-products',
+    '/api/promo-banners',
+    '/api/hero-banners',
+    '/api/festival-banners',
+    '/api/categories',
+  ];
+  
+  // Admin URLs should be cached
+  if (url.includes('/admin/') || url.includes('/selleradmin/')) {
+    return false;
+  }
+  
+  // Check if URL matches client-side patterns
+  return clientSidePatterns.some(pattern => url.includes(pattern));
+}
+
+/**
  * Get cached API response (synchronous check)
+ * Returns null for client-side URLs (no caching)
  */
 export async function getCachedResponse(url: string): Promise<any | null> {
+  // Disable caching for client-side URLs
+  if (isClientSideURL(url)) {
+    return null;
+  }
+  
   return apiCacheDB.getResponse(url);
 }
 
@@ -384,6 +422,59 @@ export async function getCachedResponse(url: string): Promise<any | null> {
  */
 export async function clearAPICache(): Promise<void> {
   return apiCacheDB.clearAll();
+}
+
+/**
+ * Clear client-side API cache only (keep admin cache)
+ */
+export async function clearClientAPICache(): Promise<void> {
+  try {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+
+    const transaction = db.transaction([API_STORE], 'readonly');
+    const store = transaction.objectStore(API_STORE);
+    const getAllRequest = store.getAll();
+
+    await new Promise<void>((resolve, reject) => {
+      getAllRequest.onsuccess = async () => {
+        const allEntries = getAllRequest.result;
+        
+        // Filter client-side cache entries (delete these)
+        const clientCacheKeys = allEntries
+          .filter((entry: any) => {
+            const url = entry.url || '';
+            // Delete client-side cache, keep admin cache
+            return isClientSideURL(url);
+          })
+          .map((entry: any) => entry.url);
+
+        // Delete client cache entries
+        const deleteTransaction = db.transaction([API_STORE], 'readwrite');
+        const deleteStore = deleteTransaction.objectStore(API_STORE);
+        
+        let deletedCount = 0;
+        for (const key of clientCacheKeys) {
+          deleteStore.delete(key);
+          deletedCount++;
+        }
+
+        deleteTransaction.oncomplete = () => {
+          console.log(`[APICache] Cleared ${deletedCount} client-side cache entries`);
+          resolve();
+        };
+        deleteTransaction.onerror = () => reject(deleteTransaction.error);
+      };
+      getAllRequest.onerror = () => reject(getAllRequest.error);
+    });
+
+    db.close();
+  } catch (error) {
+    console.warn('[APICache] Error clearing client cache:', error);
+  }
 }
 
 export default apiCacheDB;

@@ -21,7 +21,7 @@ const UserSchema = new Schema<UserDocument>(
   {
     email: { type: String, required: true, unique: true, index: true },
     firstName: { type: String, required: true },
-    lastName: { type: String, required: true },
+    lastName: { type: String, required: false, default: '' },
     role: { type: String, enum: ['client', 'seller', 'reseller', 'super-admin'], default: 'client', index: true },
     avatar: { type: String },
     phone: { type: String },

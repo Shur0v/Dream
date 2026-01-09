@@ -21,7 +21,8 @@ const mockApiDelay = (ms: number) => new Promise(resolve => setTimeout(resolve, 
  */
 router.get('/dashboard', async (req: Request, res: Response) => {
   try {
-    await mockApiDelay(500);
+    // Reduced delay for better performance (was 500ms)
+    await mockApiDelay(50);
 
     const [products, orders, users] = await Promise.all([
       getProductsFromExpress(),
@@ -61,7 +62,8 @@ router.get('/dashboard', async (req: Request, res: Response) => {
  */
 router.get('/orders', async (req: Request, res: Response) => {
   try {
-    await mockApiDelay(800);
+    // Reduced delay for better performance (was 800ms)
+    await mockApiDelay(100);
 
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
@@ -148,7 +150,8 @@ router.get('/orders', async (req: Request, res: Response) => {
  */
 router.get('/orders/recent', async (req: Request, res: Response) => {
   try {
-    await mockApiDelay(500);
+    // Reduced delay for better performance (was 500ms)
+    await mockApiDelay(50);
 
     const orders = await getOrdersFromMongo();
     const recentOrders = orders
@@ -175,7 +178,8 @@ router.get('/orders/recent', async (req: Request, res: Response) => {
  */
 router.post('/orders/:id/approve', async (req: Request, res: Response) => {
   try {
-    await mockApiDelay(600);
+    // Reduced delay for better performance (was 600ms)
+    await mockApiDelay(100);
 
     const { id } = req.params;
     console.log(`[POST /api/admin/orders/${id}/approve] Approving order`);
@@ -218,7 +222,8 @@ router.post('/orders/:id/approve', async (req: Request, res: Response) => {
  */
 router.post('/orders/:id/reject', async (req: Request, res: Response) => {
   try {
-    await mockApiDelay(600);
+    // Reduced delay for better performance (was 600ms)
+    await mockApiDelay(100);
 
     const { id } = req.params;
     console.log(`[POST /api/admin/orders/${id}/reject] Rejecting order`);
@@ -261,7 +266,8 @@ router.post('/orders/:id/reject', async (req: Request, res: Response) => {
  */
 router.post('/orders/:id/cancel', async (req: Request, res: Response) => {
   try {
-    await mockApiDelay(600);
+    // Reduced delay for better performance (was 600ms)
+    await mockApiDelay(100);
 
     const { id } = req.params;
     const orders = await getOrdersFromMongo();

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
 import ReduxProvider from "./ReduxProvider";
+import ClientCacheHandler from "./ClientCacheHandler";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -32,6 +33,7 @@ export default function RootLayout({
       <body
         className={`${poppins.variable} antialiased`}
       >
+        <ClientCacheHandler />
         <ReduxProvider>
           {children}
         </ReduxProvider>

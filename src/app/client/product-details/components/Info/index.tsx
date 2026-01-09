@@ -91,10 +91,10 @@ export default function Info() {
               
               <div className="layer-4" data-layer="4">
                 {/* layer-4 = pricing display */}
-                <span className="text-3xl font-bold text-gray-900">${product.price}</span>
-                <span className="text-xl text-gray-500 line-through">${product.originalPrice}</span>
+                <span className="text-3xl font-bold text-gray-900">৳{product.price}</span>
+                <span className="text-xl text-gray-500 line-through">৳{product.originalPrice}</span>
                 <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-sm font-medium">
-                  Save ${(product.originalPrice - product.price).toFixed(2)}
+                  Save ৳{(product.originalPrice - product.price).toFixed(2)}
                 </span>
               </div>
             </div>

@@ -275,7 +275,7 @@ export default function AddDiscountPromoForm({ onBack, onSave, onDelete }: AddDi
               <input
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                placeholder="$849.00"
+                placeholder="৳849.00"
                 className="w-full bg-transparent outline-none text-zinc-700 text-base font-['Poppins']"
               />
             </div>
@@ -423,7 +423,7 @@ export default function AddDiscountPromoForm({ onBack, onSave, onDelete }: AddDi
             {banners.map((banner, index) => {
               const countdown = banner.initialTime || { days: 0, hours: 0, minutes: 0, seconds: 0 };
               const startingLabel = banner.startingBidLabel || 'Starting bid:';
-              const priceText = banner.priceText || '$0.00';
+              const priceText = banner.priceText || '৳0.00';
               const backgroundImage = banner.backgroundImage || banner.image || '/placeholder-image.png';
               const altText = banner.title || 'discount promo banner';
               return (

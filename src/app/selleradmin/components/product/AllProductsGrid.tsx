@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Product } from '@/types';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
 import EditProductModal from './EditProductModal';
+import { getApiUrl } from '@/lib/apiConfig';
 
 interface AllProductsGridProps {
   onDelete?: (id: string) => void;
@@ -79,7 +80,7 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
         // Ignore errors when clearing cache
       }
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/products?limit=40`);
+      const response = await fetch(getApiUrl('products?limit=40'));
       const result = await response.json();
       
       if (result.success && result.data) {
@@ -179,9 +180,9 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
           startsWithProduct: productId.startsWith('product-')
         });
         
-        // Call API to delete product - use full API URL
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        const deleteUrl = `${apiUrl}/products/${encodeURIComponent(productId)}`;
+        // Call API to delete product - use centralized API config
+        const { getApiUrl } = await import('@/lib/apiConfig');
+        const deleteUrl = getApiUrl(`products/${encodeURIComponent(productId)}`);
         console.log(`[AllProductsGrid] Delete URL: ${deleteUrl}`);
         
         const response = await fetch(deleteUrl, {
@@ -219,6 +220,18 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
           localStorage.removeItem('products_cache');
           localStorage.removeItem('products_cache_timestamp');
           
+          // Invalidate client-side IndexedDB cache
+          try {
+            const { clearClientAPICache } = await import('@/lib/indexeddb/apiCache');
+            await clearClientAPICache();
+            // Dispatch event to notify client-side components
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new Event('dashboard:invalidate-cache'));
+            }
+          } catch (e) {
+            // Silent fail
+          }
+          
           // Refresh products list
           await fetchProducts();
           
@@ -242,8 +255,8 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
   const handleEdit = async (product: DisplayProduct) => {
     try {
       // Fetch full product data with all images from Express backend
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiUrl}/products/${product.id}`);
+      const { getApiUrl } = await import('@/lib/apiConfig');
+      const response = await fetch(getApiUrl(`products/${product.id}`));
       const result = await response.json();
       
       if (result.success && result.data) {
@@ -322,8 +335,8 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
       console.log('[AllProductsGrid] Updating product:', editingProduct.id, updateData);
       
       // Call Express backend API to update product
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiUrl}/products/${editingProduct.id}`, {
+      const { getApiUrl } = await import('@/lib/apiConfig');
+      const response = await fetch(getApiUrl(`products/${editingProduct.id}`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -338,6 +351,19 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
         // Invalidate cache
         localStorage.removeItem('products_cache');
         localStorage.removeItem('products_cache_timestamp');
+        
+        // Invalidate client-side IndexedDB cache
+        try {
+          const { clearClientAPICache } = await import('@/lib/indexeddb/apiCache');
+          await clearClientAPICache();
+          // Dispatch event to notify client-side components
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('dashboard:invalidate-cache'));
+          }
+        } catch (e) {
+          // Silent fail
+        }
+        
         // Refresh products list
         await fetchProducts();
         setEditModalOpen(false);

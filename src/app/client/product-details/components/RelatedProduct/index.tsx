@@ -272,7 +272,7 @@ export default function RelatedProduct({ currentProduct }: RelatedProductProps) 
                         {/* layer-18 = current price */}
                         <div className="layer-19 justify-start text-black text-lg md:text-2xl font-semibold font-['Poppins'] leading-6 md:leading-9" data-layer="19">
                           {/* layer-19 = current price display */}
-                          ${product.price.toFixed(2)}
+                          ৳{product.price.toFixed(2)}
                         </div>
                       </div>
                       
@@ -281,7 +281,7 @@ export default function RelatedProduct({ currentProduct }: RelatedProductProps) 
                           {/* layer-20 = original price */}
                           <span className="text-red-500 text-xs md:text-base font-normal font-['Poppins'] leading-normal">(</span>
                           <span className="text-red-500 text-xs md:text-base font-normal font-['Poppins'] line-through leading-normal">
-                            ${product.originalPrice.toFixed(2)}
+                            ৳{product.originalPrice.toFixed(2)}
                           </span>
                           <span className="text-red-500 text-xs md:text-base font-normal font-['Poppins'] leading-normal">)</span>
                         </div>

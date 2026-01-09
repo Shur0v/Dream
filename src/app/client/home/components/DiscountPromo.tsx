@@ -178,7 +178,7 @@ export default function DiscountPromo() {
     
     try {
       // Extract price from banner
-      const priceText = selectedBanner.priceText || '$0.00';
+      const priceText = selectedBanner.priceText || '৳0.00';
       const priceMatch = priceText.match(/[\d.]+/);
       const price = priceMatch ? parseFloat(priceMatch[0]) : 0;
 
@@ -233,8 +233,8 @@ export default function DiscountPromo() {
       };
 
       // Create order directly via Express backend API
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiUrl}/orders`, {
+      const { getApiUrl } = await import('@/lib/apiConfig');
+      const response = await fetch(getApiUrl('orders'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -329,7 +329,7 @@ export default function DiscountPromo() {
               
               <div className="layer-10 self-stretch justify-start text-white text-lg sm:text-2xl md:text-3xl font-semibold font-['Poppins']" data-layer="10">
                 {/* layer-10 = price display */}
-                {banner.priceText || '$0.00'}
+                {banner.priceText || '৳0.00'}
               </div>
             </div>
             

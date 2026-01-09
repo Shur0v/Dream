@@ -145,7 +145,7 @@ export default function ResellerDashboard() {
           <Card className="text-center">
             <CardContent className="pt-6">
               <DollarSign className="h-8 w-8 text-green-500 mx-auto mb-2" />
-              <h3 className="text-2xl font-bold text-gray-900">$45,230</h3>
+              <h3 className="text-2xl font-bold text-gray-900">৳45,230</h3>
               <p className="text-sm text-gray-600">Total Purchases</p>
               <p className="text-xs text-green-600 mt-1">+18% from last month</p>
             </CardContent>
@@ -244,10 +244,10 @@ export default function ResellerDashboard() {
                   </h3>
                   <div className="space-y-1 mb-3">
                     <p className="text-sm text-gray-500 line-through">
-                      Retail: ${product.price}
+                      Retail: ৳{product.price}
                     </p>
                     <p className="text-lg font-bold text-green-600">
-                      Wholesale: ${(product.price * 0.7).toFixed(2)}
+                      Wholesale: ৳{(product.price * 0.7).toFixed(2)}
                     </p>
                     <p className="text-xs text-green-600">
                       Save 30%
@@ -311,7 +311,7 @@ export default function ResellerDashboard() {
                         50 units
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        $3,450.00
+                        ৳3,450.00
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
@@ -330,7 +330,7 @@ export default function ResellerDashboard() {
                         100 units
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        $2,100.00
+                        ৳2,100.00
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">

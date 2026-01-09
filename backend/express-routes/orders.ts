@@ -24,7 +24,8 @@ const mockApiDelay = (ms: number) => new Promise(resolve => setTimeout(resolve, 
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
-    await mockApiDelay(800);
+    // Reduced delay for better performance (was 800ms)
+    await mockApiDelay(100);
 
     const userId = req.query.userId as string;
     const status = req.query.status as string;

@@ -23,7 +23,7 @@ export default function SellerAnalytics() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow-sm p-6">
           <h3 className="text-sm font-medium text-gray-500 mb-2">Total Sales</h3>
-          <p className="text-2xl font-bold text-gray-900">$12,345</p>
+          <p className="text-2xl font-bold text-gray-900">৳12,345</p>
           <p className="text-sm text-green-600">+12% from last month</p>
         </div>
         <div className="bg-white rounded-lg shadow-sm p-6">

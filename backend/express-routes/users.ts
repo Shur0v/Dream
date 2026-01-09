@@ -102,7 +102,7 @@ router.post('/', async (req: Request, res: Response) => {
       userData = {
         email: email,
         firstName: username || email.split('@')[0],
-        lastName: '',
+        lastName: '', // Optional field, default empty string
         role: 'client',
         phone: mobile || undefined,
         isEmailVerified: false,

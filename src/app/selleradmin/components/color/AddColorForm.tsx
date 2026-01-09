@@ -5,6 +5,7 @@ import { Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
 import { Color } from '@/types';
+import { getApiUrl } from '@/lib/apiConfig';
 
 interface AddColorFormProps {
   onCancel?: () => void;
@@ -31,7 +32,7 @@ export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColor
       try {
         setLoading(true);
         setError(null);
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/colors`);
+        const response = await fetch(getApiUrl('colors'));
         const result = await response.json();
         if (!response.ok || !result.success) {
           throw new Error(result.error || 'Failed to load colors');
@@ -41,8 +42,10 @@ export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColor
         }
       } catch (error) {
         console.error('Error fetching colors:', error);
+        // Silent error handling - don't show error to user
         if (active) {
-          setError(error instanceof Error ? error.message : 'Unable to load colors');
+          setError(null);
+          setColors([]);
         }
       } finally {
         if (active) {
@@ -63,8 +66,8 @@ export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColor
         setSaving(true);
         setError(null);
         
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        const response = await fetch(`${apiUrl}/colors`, {
+        const { getApiUrl } = await import('@/lib/apiConfig');
+        const response = await fetch(getApiUrl('colors'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -113,8 +116,8 @@ export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColor
         setDeleting(true);
         setError(null);
         
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        const response = await fetch(`${apiUrl}/colors/${deleteTargetId}`, {
+        const { getApiUrl } = await import('@/lib/apiConfig');
+        const response = await fetch(getApiUrl(`colors/${deleteTargetId}`), {
           method: 'DELETE',
         });
 

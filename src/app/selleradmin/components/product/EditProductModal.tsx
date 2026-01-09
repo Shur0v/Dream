@@ -43,7 +43,7 @@ interface EditProductModalProps {
 }
 
 const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL'];
-const currencyOptions = ['৳', '$', '€', '£', '¥'];
+const currencyOptions = ['৳', '৳', '€', '£', '¥'];
 
 export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpdate, product }: EditProductModalProps) {
   const [form, setForm] = useState<Partial<EditableProduct>>({

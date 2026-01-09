@@ -7,6 +7,7 @@ import type { CustomerOrderItem } from '../../types/customer';
 import { Modal } from '../ui/Modal';
 import Pagination from '../ui/Pagination';
 import { Order as ApiOrder } from '@/types';
+import { getApiUrl } from '@/lib/apiConfig';
 
 interface RecentCustomerInfoTableProps {
   className?: string;
@@ -125,22 +126,12 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
         setIsLoading(true);
         setError(null);
         
-        // Fetch orders from admin API endpoint with pagination (same as OrdersTable)
-        // Use Express backend API (same as orders page)
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        const response = await fetch(`${apiUrl}/admin/orders?page=${currentPage}&limit=${itemsPerPage}&sortBy=createdAt&sortOrder=desc`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          cache: 'no-store',
+        // Use admin cache for instant loading
+        const { getRecentOrders } = await import('@/lib/indexeddb/adminCache');
+        const result = await getRecentOrders({
+          page: currentPage,
+          limit: itemsPerPage,
         });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch orders');
-        }
-
-        const result = await response.json();
         
         if (result.success && result.data) {
           // Transform API orders to CustomerOrderItem format (order-level, same as OrdersTable)
@@ -163,11 +154,15 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
             new Set(transformedOrders.filter((item: CustomerOrderItem) => item.status === 'approved').map((item: CustomerOrderItem) => item.id))
           );
         } else {
-          throw new Error(result.error || 'Failed to fetch orders');
+          // Silent error - don't show error message
+          setOrders([]);
+          setTotalItems(0);
+          setTotalPages(0);
         }
       } catch (err: any) {
         console.error('Error fetching orders:', err);
-        setError(err.message || 'Failed to load orders');
+        // Silent error - don't show error message
+        setError(null);
         setOrders([]);
         setTotalItems(0);
         setTotalPages(0);
@@ -270,6 +265,18 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
         setOrders(prev => prev.map((item, idx) => 
           idx === index ? { ...item, status: 'cancelled' as const } : item
         ));
+        
+        // Invalidate client-side IndexedDB cache
+        try {
+          const { clearClientAPICache } = await import('@/lib/indexeddb/apiCache');
+          await clearClientAPICache();
+          // Dispatch event to notify client-side components
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('dashboard:invalidate-cache'));
+          }
+        } catch (e) {
+          // Silent fail
+        }
       } else {
         const result = await response.json();
         throw new Error(result.error || 'Failed to cancel order');

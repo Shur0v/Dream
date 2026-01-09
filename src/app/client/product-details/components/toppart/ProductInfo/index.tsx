@@ -287,7 +287,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
 
         {/* Price */}
         <div className="text-black text-[26px] sm:text-3xl font-semibold font-['Poppins'] leading-tight tracking-wide">
-          ${product.price.toFixed(2)}
+          ৳{product.price.toFixed(2)}
         </div>
 
         {/* Product Details */}

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
 import { Users } from 'lucide-react';
+import { getApiUrl } from '@/lib/apiConfig';
 
 interface UserData {
   username: string;
@@ -25,8 +26,9 @@ export default function UsersPage() {
     const loadUsers = async () => {
       try {
         setIsLoading(true);
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        const response = await fetch(`${apiUrl}/users`, {
+        setError(null);
+        
+        const response = await fetch(getApiUrl('users'), {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -35,12 +37,13 @@ export default function UsersPage() {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to fetch users');
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP ${response.status}: Failed to fetch users`);
         }
 
         const result = await response.json();
         
-        if (result.success && result.data) {
+        if (result.success && result.data && Array.isArray(result.data)) {
           // Transform MongoDB user data to UserData format
           const transformedUsers: UserData[] = result.data.map((user: any) => ({
             username: user.firstName || user.email?.split('@')[0] || 'Unknown',
@@ -55,14 +58,14 @@ export default function UsersPage() {
           });
           
           setUsers(sortedUsers);
+        } else {
+          setUsers([]);
         }
       } catch (error: any) {
         console.error('Error loading users:', error);
-        if (error.message?.includes('Failed to fetch') || error.message?.includes('ERR_CONNECTION_REFUSED')) {
-          setError('Backend server is not running. Please start the backend server with: pnpm backend:dev');
-        } else {
-          setError('Failed to load users: ' + (error.message || 'Unknown error'));
-        }
+        // Silent error handling - don't show error message to user
+        setError(null);
+        setUsers([]);
       } finally {
         setIsLoading(false);
       }

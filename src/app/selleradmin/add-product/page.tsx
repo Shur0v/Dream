@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { DashboardLayout } from '../components/dashboard';
 import AddProductForm, { ProductFormData } from '../components/product/AddProductForm';
 import { useRouter } from 'next/navigation';
+import { getApiUrl } from '@/lib/apiConfig';
 
 export default function AddProductPage() {
   const router = useRouter();
@@ -27,7 +28,7 @@ export default function AddProductPage() {
         console.log('[AddProductPage] Processing colors array:', data.colors);
         
         // Fetch colors to validate the IDs
-        const colorsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/colors`);
+        const colorsResponse = await fetch(getApiUrl('colors'));
         if (colorsResponse.ok) {
           const colorsData = await colorsResponse.json();
           const colors = colorsData.data || [];
@@ -88,7 +89,7 @@ export default function AddProductPage() {
       console.log('[AddProductPage] Colors in product data:', productData.colors);
 
       // Save product via API
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'}/products`, {
+      const response = await fetch(getApiUrl('products'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,6 +100,26 @@ export default function AddProductPage() {
       const result = await response.json();
 
       if (result.success) {
+        // Invalidate admin cache so stats refresh
+        try {
+          const { invalidateAdminOrdersCache } = await import('@/lib/indexeddb/adminCache');
+          await invalidateAdminOrdersCache();
+        } catch (e) {
+          // Silent fail
+        }
+        
+        // Invalidate client-side cache
+        try {
+          const { clearClientAPICache } = await import('@/lib/indexeddb/apiCache');
+          await clearClientAPICache();
+          // Dispatch event to notify client-side components
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('dashboard:invalidate-cache'));
+          }
+        } catch (e) {
+          // Silent fail
+        }
+        
         alert('Product saved successfully!');
         // Add a timestamp to force refresh
         router.push(`/selleradmin/all-products?refresh=${Date.now()}`);

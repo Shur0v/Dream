@@ -345,10 +345,10 @@ export default function ProductList() {
             <div className="space-y-2">
               {[
                 { label: 'All', value: 'all' },
-                { label: 'Under $50', value: 'under-50' },
-                { label: '$50 - $100', value: '50-100' },
-                { label: '$100 - $200', value: '100-200' },
-                { label: 'Over $200', value: 'over-200' }
+                { label: 'Under ৳50', value: 'under-50' },
+                { label: '৳50 - ৳100', value: '50-100' },
+                { label: '৳100 - ৳200', value: '100-200' },
+                { label: 'Over ৳200', value: 'over-200' }
               ].map((range) => (
                 <label key={range.value} className="flex items-center gap-2 cursor-pointer">
                   <input

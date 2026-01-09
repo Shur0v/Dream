@@ -10,6 +10,7 @@ import SimpleSelect from '../ui/SimpleSelect';
 import SearchableMultiSelect from '../ui/SearchableMultiSelect';
 import { Color, Category } from '@/types';
 import { fetchCategories as loadCategoriesFromApi } from '@/lib/categories';
+import { getApiUrl } from '@/lib/apiConfig';
 
 // Zod schema for validation
 const productSchema = z.object({
@@ -45,7 +46,7 @@ type Distribution = 'Best selling' | 'Featured' | 'New arrival';
 
 const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL'];
 const distributionOptions: Distribution[] = ['Best selling', 'Featured', 'New arrival'];
-const currencyOptions = ['৳', '$', '€', '£', '¥'];
+const currencyOptions = ['৳', '৳', '€', '£', '¥'];
 
 export default function AddProductForm({ onBack, onSave, isSaving = false }: AddProductFormProps) {
   const [images, setImages] = useState<string[]>(Array(12).fill(''));
@@ -106,7 +107,7 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
       try {
         setColorsLoading(true);
         setColorsError(null);
-        const response = await fetch(`/api/colors`);
+        const response = await fetch(getApiUrl('colors'));
         const result = await response.json();
         if (!response.ok || !result.success) {
           throw new Error(result.error || 'Failed to load colors');

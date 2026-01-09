@@ -435,9 +435,11 @@ export default function FilteringSystem() {
             (async () => {
               try {
                 // Use same API endpoint as selleradmin: /api/products?limit=500
-                const productsResponse = await fetchWithTimeout(`${apiUrl}/products?limit=500`, API_TIMEOUT).catch(() => {
-                  return fetchWithTimeout('/api/products?limit=500', API_TIMEOUT);
-                });
+                 // Use centralized API config
+                 const { getApiUrl } = await import('@/lib/apiConfig');
+                 const productsResponse = await fetchWithTimeout(getApiUrl('products?limit=500'), API_TIMEOUT).catch(() => {
+                   return fetchWithTimeout('/api/products?limit=500', API_TIMEOUT);
+                 });
                 
                 if (productsResponse.ok) {
                   const productsResult = await productsResponse.json();
@@ -1275,7 +1277,7 @@ export default function FilteringSystem() {
                                 {/* Original Price */}
                                 <span className="text-red-500 text-base font-normal font-['Poppins'] leading-normal">(</span>
                                 <span className="text-red-500 text-base font-normal font-['Poppins'] line-through leading-normal">
-                                  ${product.originalPrice}
+                                  ৳{product.originalPrice}
                                 </span>
                                 <span className="text-red-500 text-base font-normal font-['Poppins'] leading-normal">)</span>
                               </div>
@@ -1473,7 +1475,7 @@ export default function FilteringSystem() {
                       <div className="justify-start">
                         <span className="text-red-500 text-xs font-normal font-['Poppins'] leading-normal">(</span>
                         <span className="text-red-500 text-xs font-normal font-['Poppins'] line-through leading-normal">
-                          ${product.originalPrice}
+                          ৳{product.originalPrice}
                         </span>
                         <span className="text-red-500 text-xs font-normal font-['Poppins'] leading-normal">)</span>
                       </div>

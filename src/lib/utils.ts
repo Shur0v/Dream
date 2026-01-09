@@ -47,7 +47,7 @@ export function cn(...inputs: ClassValue[]) {
  * 
  * @example
  * ```tsx
- * formatPrice(1234.56) // Returns: '$1,234.56'
+ * formatPrice(1234.56) // Returns: '৳1,234.56'
  * formatPrice(1234.56, 'EUR', 'de-DE') // Returns: '1.234,56 €'
  * ```
  */

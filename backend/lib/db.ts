@@ -678,6 +678,7 @@ export async function saveUser(user: Partial<User> & { email: string }): Promise
     // Update existing user
     const updateData = {
       ...user,
+      lastName: user.lastName !== undefined ? user.lastName : existingUser.lastName || '',
       updatedAt: new Date().toISOString(),
     };
     saved = await UserModel.findByIdAndUpdate(
@@ -689,6 +690,7 @@ export async function saveUser(user: Partial<User> & { email: string }): Promise
     // Create new user
     const newUserData = {
       ...user,
+      lastName: user.lastName || '', // Ensure lastName is always set
       role: user.role || 'client',
       isEmailVerified: user.isEmailVerified || false,
       createdAt: new Date().toISOString(),

@@ -5,21 +5,31 @@
 
 // Use Express backend URL - automatically detect production or development
 const getApiBaseUrl = (): string => {
-  // If explicitly set, use that
+  // If explicitly set, use that (highest priority)
   if (process.env.NEXT_PUBLIC_API_URL) {
     return process.env.NEXT_PUBLIC_API_URL;
   }
 
   // In browser (client-side)
   if (typeof window !== 'undefined') {
-    // Production: use same domain for backend (assuming backend is on same domain or subdomain)
     const hostname = window.location.hostname;
+    const protocol = window.location.protocol;
+    
+    // Production: dreamshopltd.com
     if (hostname === 'dreamshopltd.com' || hostname === 'www.dreamshopltd.com' || hostname.includes('dreamshopltd.com')) {
-      // Try to use backend API on same domain or subdomain
-      // If backend is on api.dreamshopltd.com, use that
-      // Otherwise, try same domain
-      return `https://${hostname.replace('www.', '')}/api`;
+      // Try multiple backend URL patterns in order of preference:
+      // 1. Same domain /api (if reverse proxy configured) - most common
+      // 2. Same domain with port 5000 (direct access)
+      // 3. API subdomain (api.dreamshopltd.com)
+      
+      const baseHost = hostname.replace('www.', '');
+      
+      // First try: Same domain /api (reverse proxy)
+      // This is the most common setup - backend proxied through Nginx
+      // If this doesn't work, the backend should be accessible on port 5000
+      return `${protocol}//${baseHost}/api`;
     }
+    
     // Development: use localhost
     return 'http://localhost:5000/api';
   }
@@ -36,8 +46,29 @@ export const getApiUrl = (endpoint: string): string => {
   return `${API_BASE_URL}/${cleanEndpoint}`;
 };
 
-// Helper function for fetch calls
+// Helper function for fetch calls with error handling
 export const apiFetch = async (endpoint: string, options?: RequestInit): Promise<Response> => {
   const url = getApiUrl(endpoint);
-  return fetch(url, options);
+  
+  try {
+    // Create AbortController for timeout (fallback for browsers without AbortSignal.timeout)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options?.headers,
+      },
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    // Log error but don't throw - let caller handle
+    console.error(`[apiFetch] Error fetching ${url}:`, error);
+    throw error;
+  }
 };

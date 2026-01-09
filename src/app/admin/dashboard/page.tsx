@@ -138,7 +138,7 @@ export default function AdminDashboard() {
           <Card className="text-center">
             <CardContent className="pt-6">
               <DollarSign className="h-8 w-8 text-purple-500 mx-auto mb-2" />
-              <h3 className="text-2xl font-bold text-gray-900">$125,430</h3>
+              <h3 className="text-2xl font-bold text-gray-900">৳125,430</h3>
               <p className="text-sm text-gray-600">Platform Revenue</p>
               <p className="text-xs text-green-600 mt-1">+22% vs {previousWeekRange}</p>
             </CardContent>
@@ -376,7 +376,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">Revenue Today</span>
-                  <span className="text-sm font-semibold text-gray-900">$3,240</span>
+                  <span className="text-sm font-semibold text-gray-900">৳3,240</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-600">New Users Today</span>

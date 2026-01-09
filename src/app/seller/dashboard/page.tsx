@@ -117,7 +117,7 @@ export default function SellerDashboard() {
           <Card className="text-center">
             <CardContent className="pt-6">
               <DollarSign className="h-8 w-8 text-green-500 mx-auto mb-2" />
-              <h3 className="text-2xl font-bold text-gray-900">$12,450</h3>
+              <h3 className="text-2xl font-bold text-gray-900">৳12,450</h3>
               <p className="text-sm text-gray-600">Total Revenue</p>
               <p className="text-xs text-green-600 mt-1">+12% from last month</p>
             </CardContent>
@@ -231,7 +231,7 @@ export default function SellerDashboard() {
                         John Doe
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        $199.99
+                        ৳199.99
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
@@ -257,7 +257,7 @@ export default function SellerDashboard() {
                         Jane Smith
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        $299.99
+                        ৳299.99
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
@@ -313,7 +313,7 @@ export default function SellerDashboard() {
                     {product.name}
                   </h3>
                   <p className="text-sm text-gray-600 mb-2">
-                    ${product.price}
+                    ৳{product.price}
                   </p>
                   <div className="flex items-center justify-between">
                     <span className={`px-2 py-1 text-xs rounded-full ${

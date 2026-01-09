@@ -9,7 +9,9 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Plus, Minus, X, Trash2 } from 'lucide-react';
 import { CheckoutModal } from './CheckoutModal';
-import { getCartItems, saveCartItems, removeFromCart, updateCartQuantity, CartItem as StorageCartItem } from '@/lib/userStorage';
+import { SuccessModal } from '@/components/ui/SuccessModal';
+import { getCartItems, saveCartItems, removeFromCart, updateCartQuantity, CartItem as StorageCartItem, getUserEmail } from '@/lib/userStorage';
+import { getApiUrl } from '@/lib/apiConfig';
 
 // Use CartItem from userStorage
 type CartItem = StorageCartItem;
@@ -37,6 +39,10 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
   // State for checkout modal
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  // State for success modal
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load cart items from localStorage on mount and when modal opens
   useEffect(() => {
@@ -119,7 +125,7 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
     setIsCheckoutOpen(true);
   };
 
-  const handleCheckoutSubmit = (formData: {
+  const handleCheckoutSubmit = async (formData: {
     name: string;
     phoneNumber: string;
     email: string;
@@ -128,16 +134,112 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
     thana: string;
     postOffice: string;
   }) => {
-    // Close checkout modal
-    setIsCheckoutOpen(false);
-    // Close cart dropdown
-    onClose();
-    // Call parent callback if provided
-    onCheckout?.();
-    // Log form data (you can replace this with API call)
-    console.log('Checkout form data:', formData);
-    console.log('Cart items:', cartItems);
-    console.log('Total price:', totalPrice);
+    setIsSubmitting(true);
+    
+    try {
+      // Get user email for userId (or create temp userId)
+      const userEmail = getUserEmail() || formData.email;
+      const tempUserId = userEmail ? `user-${userEmail.replace('@', '-').replace('.', '-')}` : `user-${Date.now()}`;
+      
+      // Calculate total amount from all cart items
+      const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      
+      // Create order items from cart items
+      const orderItems = cartItems.map((item) => ({
+        id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        productId: item.productId,
+        product: {
+          id: item.productId,
+          name: item.name,
+          price: item.price,
+          images: [item.image],
+        },
+        quantity: item.quantity,
+        price: item.price,
+        color: item.color || undefined,
+        size: item.size || undefined,
+      }));
+      
+      // Create shipping address from form data
+      const shippingAddress = {
+        street: `${formData.thana}, ${formData.upazila}`,
+        city: formData.district,
+        state: formData.district,
+        zipCode: formData.postOffice,
+        country: 'Bangladesh',
+      };
+      
+      // Prepare order data (same format as product detail page)
+      const orderData = {
+        userId: tempUserId,
+        items: orderItems,
+        shippingAddress: shippingAddress,
+        billingAddress: shippingAddress, // Use same address for billing
+        paymentMethod: 'Cash on Delivery',
+        notes: JSON.stringify({
+          customerName: formData.name,
+          phoneNumber: formData.phoneNumber,
+          email: formData.email,
+          district: formData.district,
+          upazila: formData.upazila,
+          thana: formData.thana,
+          postOffice: formData.postOffice,
+        }),
+      };
+
+      // Create order via Express backend API (same endpoint as product detail page)
+      const response = await fetch(getApiUrl('orders'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { error: errorText || 'Failed to create order' };
+        }
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        // Order created successfully
+        setOrderId(result.data.id);
+        
+        // Clear all cart items
+        saveCartItems([]);
+        setLocalItems([]);
+        
+        // Close checkout modal
+        setIsCheckoutOpen(false);
+        
+        // Close cart dropdown
+        onClose();
+        
+        // Show success modal
+        setIsSuccessModalOpen(true);
+        
+        // Call parent callback if provided
+        onCheckout?.();
+        
+        // Trigger storage event to update header cart count
+        window.dispatchEvent(new Event('storage'));
+      } else {
+        throw new Error(result.error || 'Failed to create order');
+      }
+    } catch (error: any) {
+      console.error('Error creating order:', error);
+      alert('Failed to create order. Please try again. Error: ' + (error.message || 'Unknown error'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -362,6 +464,16 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
         onSubmit={handleCheckoutSubmit}
+        isSubmitting={isSubmitting}
+      />
+
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        title="Order Confirmed!"
+        message="Your order has been placed successfully!"
+        orderId={orderId || undefined}
       />
     </>
   );
