@@ -22,7 +22,8 @@ const mockApiDelay = (ms: number) => new Promise(resolve => setTimeout(resolve, 
  */
 router.get('/', async (req: Request, res: Response) => {
   try {
-    await mockApiDelay(300);
+    // Reduced delay for faster loading
+    await mockApiDelay(50);
 
     const includeInactive = req.query.includeInactive === 'true';
     // Force fresh read by invalidating cache if explicitly requested

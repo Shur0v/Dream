@@ -23,6 +23,8 @@ import usersRoutes from './express-routes/users';
 import featuredRoutes from './express-routes/featured';
 import bannersRoutes from './express-routes/banners';
 import bestSellingRoutes from './express-routes/best-selling';
+import uploadRoutes from './express-routes/upload';
+import reviewsRoutes from './express-routes/reviews';
 
 const app: Express = express();
 const PORT = process.env.BACKEND_PORT || 5000;
@@ -91,6 +93,8 @@ app.use('/api/users', usersRoutes);
 app.use('/api/featured-products', featuredRoutes);
 app.use('/api', bannersRoutes);
 app.use('/api', bestSellingRoutes);
+app.use('/api', uploadRoutes);
+app.use('/api', reviewsRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

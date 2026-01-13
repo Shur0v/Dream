@@ -90,7 +90,14 @@ router.get('/festival-banners', async (req: Request, res: Response) => {
   try {
     await mockApiDelay(300);
 
-    const banners = await getFestivalBanners();
+    const includeInactive = req.query.includeInactive === 'true';
+    const limitParam = req.query.limit;
+    const limit = limitParam ? parseInt(limitParam as string, 10) : undefined;
+
+    const banners = await getFestivalBanners({
+      includeInactive,
+      limit,
+    });
 
     res.json({
       success: true,
