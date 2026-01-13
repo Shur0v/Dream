@@ -26,10 +26,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     const includeInactive = req.query.includeInactive === 'true';
     
-    const allCategories = await getCategories();
-    const filteredCategories = includeInactive
-      ? allCategories
-      : allCategories.filter(cat => cat.isActive);
+    const allCategories = await getCategories(includeInactive);
 
     filteredCategories.sort((a, b) => a.name.localeCompare(b.name));
 

@@ -425,11 +425,12 @@ export async function saveOrder(order: Order): Promise<Order> {
  * Get all categories
  * @returns Promise<Category[]>
  */
-export async function getCategories(): Promise<Category[]> {
+export async function getCategories(includeInactive: boolean = false): Promise<Category[]> {
   const startTime = Date.now();
   await ensureConnection();
   console.log('[MongoDB] getCategories: Fetching from MongoDB...');
-  const categories = await CategoryModel.find({ isActive: true }).lean();
+  const query = includeInactive ? {} : { isActive: true };
+  const categories = await CategoryModel.find(query).lean();
   const typedCategories = categories.map(toType<Category>);
   console.log(`[MongoDB] getCategories: Fetched ${typedCategories.length} categories in ${Date.now() - startTime}ms`);
   return typedCategories;
