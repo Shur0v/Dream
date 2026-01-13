@@ -17,7 +17,7 @@ module.exports = {
     {
       name: 'dreamshop-backend',
       script: 'node',
-      args: 'backend/dist/server.js',
+      args: 'backend/dist/backend/server.js',
       cwd: process.cwd(),
       instances: 1,
       exec_mode: 'fork',
