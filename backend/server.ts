@@ -7,6 +7,7 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import mongoose from 'mongoose';
 import { connectToDatabase } from './config/database';
 
 // Load environment variables from root .env
@@ -121,7 +122,20 @@ async function startServer() {
     // Connect to MongoDB first
     console.log('🔄 Connecting to MongoDB...');
     await connectToDatabase();
-    console.log('✅ MongoDB connection established');
+    
+    // Wait for connection to be fully ready (readyState === 1)
+    let attempts = 0;
+    while (mongoose.connection.readyState !== 1 && attempts < 50) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      attempts++;
+    }
+    
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error('MongoDB connection not ready after waiting. ReadyState: ' + mongoose.connection.readyState);
+    }
+    
+    console.log('✅ MongoDB connection established and ready');
+    console.log(`📦 Database: ${mongoose.connection.db?.databaseName || 'unknown'}`);
     
     // Start Express server
     app.listen(PORT, '0.0.0.0', () => {

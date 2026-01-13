@@ -93,26 +93,51 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
     }, connectionTimeout);
   });
 
-  connectionPromise = Promise.race([
-    mongoose.connect(MONGODB_URI, connectionOptions),
-    timeoutPromise,
-  ])
-    .then((mongooseInstance) => {
+  // Create connection promise that waits for actual connection
+  connectionPromise = new Promise<typeof mongoose>((resolve, reject) => {
+    // Set up event listeners before connecting
+    const onConnected = () => {
       isConnected = true;
       console.log('✅ Connected to MongoDB');
       console.log(`📦 Database: ${MONGODB_DB_NAME}`);
-      return mongooseInstance;
-    })
-    .catch((error) => {
+      cleanup();
+      resolve(mongoose);
+    };
+
+    const onError = (error: Error) => {
       console.error('❌ MongoDB connection error:', error);
       console.error('💡 Please verify:');
       console.error('   1. MONGODB_URI is correct in .env file');
       console.error('   2. MongoDB server is running and accessible');
       console.error('   3. Network/firewall allows connection');
-      connectionPromise = null;
       isConnected = false;
-      throw error;
-    }) as Promise<typeof mongoose>;
+      cleanup();
+      reject(error);
+    };
+
+    const cleanup = () => {
+      mongoose.connection.removeListener('connected', onConnected);
+      mongoose.connection.removeListener('error', onError);
+    };
+
+    // Add event listeners
+    mongoose.connection.once('connected', onConnected);
+    mongoose.connection.once('error', onError);
+
+    // Start connection
+    mongoose.connect(MONGODB_URI, connectionOptions).catch((error) => {
+      // Connection initiation failed
+      onError(error);
+    });
+
+    // Set timeout
+    setTimeout(() => {
+      if (!isConnected && mongoose.connection.readyState !== 1) {
+        cleanup();
+        reject(new Error(`MongoDB connection timeout after ${connectionTimeout}ms. Please check your MONGODB_URI.`));
+      }
+    }, connectionTimeout);
+  });
 
   return connectionPromise;
 }
@@ -132,22 +157,41 @@ export async function ensureConnection(): Promise<void> {
   const readyState = mongoose.connection.readyState;
   // 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting
   
-  if (readyState === 1) {
-    // Already connected
+  if (readyState === 1 && isConnected) {
+    // Already connected and verified
     return;
   }
   
   if (readyState === 2) {
     // Connection in progress, wait for it
     if (connectionPromise) {
-      await connectionPromise;
-      return;
+      try {
+        await connectionPromise;
+        // Wait a bit more to ensure readyState is updated
+        await new Promise(resolve => setTimeout(resolve, 100));
+        if (mongoose.connection.readyState === 1) {
+          return;
+        }
+      } catch (error) {
+        // Connection failed, try to reconnect
+        connectionPromise = null;
+      }
     }
   }
   
   // Not connected, establish connection
   if (!isConnected || readyState === 0 || readyState === 3) {
     await connectToDatabase();
+    // Wait for connection to be fully established
+    let attempts = 0;
+    while (mongoose.connection.readyState !== 1 && attempts < 30) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
+    }
+    
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error('MongoDB connection not established after waiting');
+    }
   }
 }
 
