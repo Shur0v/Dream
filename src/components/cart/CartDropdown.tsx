@@ -60,12 +60,8 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
     
     window.addEventListener('storage', handleStorageChange);
     
-    // Also check periodically for same-tab updates
-    const interval = setInterval(loadCartItems, 500);
-    
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
     };
   }, [isOpen]);
 

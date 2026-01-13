@@ -98,7 +98,7 @@ export const SignInRequiredModal: React.FC<SignInRequiredModalProps> = ({
             <Image
               className="h-12 object-contain"
               src="/common/logo.svg"
-              alt="DreamShop Logo"
+              alt="Dreamshop Logo"
               width={200}
               height={48}
               priority

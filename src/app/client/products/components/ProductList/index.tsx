@@ -6,7 +6,8 @@ import ProductCard from '@/components/product/ProductCard';
 import { Product, Category } from '@/types';
 import { fetchCategories as loadCategoriesFromApi } from '@/lib/categories';
 import FestivalBannerSection from '@/app/client/components/FestivalBannerSection';
-import { addToCart, addToWishlist, CartItem, WishlistItem } from '@/lib/userStorage';
+import { addToCart, addToWishlist, isUserLoggedIn, CartItem, WishlistItem } from '@/lib/userStorage';
+import { SignInRequiredModal } from '@/components/ui/SignInRequiredModal';
 
 /**
  * ProductList component for displaying products with filtering and sorting
@@ -31,6 +32,9 @@ export default function ProductList() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
+  const [showSignInModal, setShowSignInModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'cart' | 'wishlist' | null>(null);
+  const [pendingProduct, setPendingProduct] = useState<Product | null>(null);
 
   // Fetch products from API with caching
   useEffect(() => {
@@ -121,6 +125,45 @@ export default function ProductList() {
       active = false;
     };
   }, []);
+
+  // Listen for login success to retry pending actions
+  useEffect(() => {
+    const handleStorageChange = () => {
+      if (isUserLoggedIn() && pendingAction && pendingProduct && showSignInModal) {
+        // User logged in, retry the pending action
+        if (pendingAction === 'cart') {
+          const cartItem: CartItem = {
+            id: `cart-${pendingProduct.id}-${Date.now()}`,
+            productId: pendingProduct.id,
+            name: pendingProduct.name,
+            price: pendingProduct.price,
+            quantity: 1,
+            image: pendingProduct.images && pendingProduct.images.length > 0 ? pendingProduct.images[0] : '/placeholder-image.png',
+          };
+          addToCart(cartItem);
+          window.dispatchEvent(new Event('storage'));
+        } else if (pendingAction === 'wishlist') {
+          const wishlistItem: WishlistItem = {
+            id: `wishlist-${pendingProduct.id}-${Date.now()}`,
+            productId: pendingProduct.id,
+            name: pendingProduct.name,
+            price: pendingProduct.price,
+            image: pendingProduct.images && pendingProduct.images.length > 0 ? pendingProduct.images[0] : '/placeholder-image.png',
+          };
+          addToWishlist(wishlistItem);
+          window.dispatchEvent(new Event('storage'));
+        }
+        setShowSignInModal(false);
+        setPendingAction(null);
+        setPendingProduct(null);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [pendingAction, pendingProduct, showSignInModal]);
 
   // Sample products data (fallback)
   const sampleProducts = [
@@ -431,6 +474,13 @@ export default function ProductList() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product) => {
               const handleAddToCart = () => {
+                if (!isUserLoggedIn()) {
+                  setPendingProduct(product);
+                  setPendingAction('cart');
+                  setShowSignInModal(true);
+                  return;
+                }
+
                 const cartItem: CartItem = {
                   id: `cart-${product.id}-${Date.now()}`,
                   productId: product.id,
@@ -444,6 +494,13 @@ export default function ProductList() {
               };
 
               const handleAddToWishlist = () => {
+                if (!isUserLoggedIn()) {
+                  setPendingProduct(product);
+                  setPendingAction('wishlist');
+                  setShowSignInModal(true);
+                  return;
+                }
+
                 const wishlistItem: WishlistItem = {
                   id: `wishlist-${product.id}-${Date.now()}`,
                   productId: product.id,
@@ -487,6 +544,24 @@ export default function ProductList() {
         </div>
       </div>
       </div>
+
+      {/* Sign In Required Modal */}
+      <SignInRequiredModal
+        isOpen={showSignInModal}
+        onClose={() => {
+          setShowSignInModal(false);
+          setPendingAction(null);
+          setPendingProduct(null);
+        }}
+        onSignIn={() => {
+          // Trigger login modal via custom event
+          window.dispatchEvent(new CustomEvent('openLoginModal', { detail: { userType: 'client' } }));
+          // The storage event listener will handle retry after login
+        }}
+        message={pendingAction === 'cart' 
+          ? 'Please sign in to add items to your cart.' 
+          : 'Please sign in to add items to your wishlist.'}
+      />
     </>
   );
 }

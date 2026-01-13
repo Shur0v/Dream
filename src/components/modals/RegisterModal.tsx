@@ -119,7 +119,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
             <Image 
               className="self-stretch h-20 sm:h-24 lg:h-28 object-contain" 
               src="/common/logo.svg" 
-              alt="DreamShop Logo"
+              alt="Dreamshop Logo"
               width={400}
               height={120}
               priority

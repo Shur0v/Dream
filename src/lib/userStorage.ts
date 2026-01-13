@@ -87,25 +87,40 @@ export const saveCartItems = (items: CartItem[]): void => {
   const email = getUserEmail();
   if (!email) return;
   
-  localStorage.setItem(`cart_${email}`, JSON.stringify(items));
-  
-  // Also update in allUsers for persistence
-  const allUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
-  const userIndex = allUsers.findIndex((u: UserData) => u.email === email);
-  if (userIndex !== -1) {
-    allUsers[userIndex].cart = items;
-    localStorage.setItem('allUsers', JSON.stringify(allUsers));
+  try {
+    // Only save to user-specific key to avoid quota issues
+    localStorage.setItem(`cart_${email}`, JSON.stringify(items));
+    
+    // Update current user data (lightweight, only basic info)
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+      // Don't store full cart in userData to avoid quota issues
+      // Cart is stored separately in cart_${email}
+      localStorage.setItem('userData', JSON.stringify({
+        ...currentUser,
+        // Only store cart count, not full cart data
+        cartCount: items.reduce((total, item) => total + item.quantity, 0),
+      }));
+    }
+    
+    // Trigger storage event
+    window.dispatchEvent(new Event('storage'));
+  } catch (error) {
+    // Handle quota exceeded error
+    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      console.warn('localStorage quota exceeded. Clearing old cart data...');
+      // Clear old cart data and retry
+      try {
+        localStorage.removeItem(`cart_${email}`);
+        localStorage.setItem(`cart_${email}`, JSON.stringify(items));
+        window.dispatchEvent(new Event('storage'));
+      } catch (retryError) {
+        console.error('Failed to save cart after cleanup:', retryError);
+      }
+    } else {
+      throw error;
+    }
   }
-  
-  // Update current user data
-  const currentUser = getCurrentUser();
-  if (currentUser) {
-    currentUser.cart = items;
-    localStorage.setItem('userData', JSON.stringify(currentUser));
-  }
-  
-  // Trigger storage event
-  window.dispatchEvent(new Event('storage'));
 };
 
 /**
@@ -173,25 +188,40 @@ export const saveWishlistItems = (items: WishlistItem[]): void => {
   const email = getUserEmail();
   if (!email) return;
   
-  localStorage.setItem(`wishlist_${email}`, JSON.stringify(items));
-  
-  // Also update in allUsers for persistence
-  const allUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
-  const userIndex = allUsers.findIndex((u: UserData) => u.email === email);
-  if (userIndex !== -1) {
-    allUsers[userIndex].wishlist = items;
-    localStorage.setItem('allUsers', JSON.stringify(allUsers));
+  try {
+    // Only save to user-specific key to avoid quota issues
+    localStorage.setItem(`wishlist_${email}`, JSON.stringify(items));
+    
+    // Update current user data (lightweight, only basic info)
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+      // Don't store full wishlist in userData to avoid quota issues
+      // Wishlist is stored separately in wishlist_${email}
+      localStorage.setItem('userData', JSON.stringify({
+        ...currentUser,
+        // Only store wishlist count, not full wishlist data
+        wishlistCount: items.length,
+      }));
+    }
+    
+    // Trigger storage event
+    window.dispatchEvent(new Event('storage'));
+  } catch (error) {
+    // Handle quota exceeded error
+    if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+      console.warn('localStorage quota exceeded. Clearing old wishlist data...');
+      // Clear old wishlist data and retry
+      try {
+        localStorage.removeItem(`wishlist_${email}`);
+        localStorage.setItem(`wishlist_${email}`, JSON.stringify(items));
+        window.dispatchEvent(new Event('storage'));
+      } catch (retryError) {
+        console.error('Failed to save wishlist after cleanup:', retryError);
+      }
+    } else {
+      throw error;
+    }
   }
-  
-  // Update current user data
-  const currentUser = getCurrentUser();
-  if (currentUser) {
-    currentUser.wishlist = items;
-    localStorage.setItem('userData', JSON.stringify(currentUser));
-  }
-  
-  // Trigger storage event
-  window.dispatchEvent(new Event('storage'));
 };
 
 /**

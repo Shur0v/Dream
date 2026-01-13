@@ -113,12 +113,8 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
     // Listen for storage changes (when user logs in from another tab or cart/wishlist updates)
     window.addEventListener('storage', loadUserData);
 
-    // Also check periodically (for same-tab updates)
-    const interval = setInterval(loadUserData, 500);
-
     return () => {
       window.removeEventListener('storage', loadUserData);
-      clearInterval(interval);
     };
   }, []);
   const router = useRouter();
@@ -345,14 +341,14 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
                   }, 50);
                 }
               }}
-              aria-label="DreamShop homepage"
+              aria-label="Dreamshop homepage"
               className="flex-shrink-0 hover:opacity-80 transition-opacity"
               prefetch={true}
             >
               <Image
                 className="w-[190.5px] h-[69.3px] object-contain"
                 src="/common/logo.svg"
-                alt="DreamShop logo"
+                alt="Dreamshop logo"
                 width={190}
                 height={69}
                 priority

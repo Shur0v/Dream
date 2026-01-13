@@ -684,7 +684,11 @@ export async function saveUser(user: Partial<User> & { email: string }): Promise
     saved = await UserModel.findByIdAndUpdate(
       existingUser._id,
       updateData,
-      { new: true, setDefaultsOnInsert: true }
+      { 
+        new: true, 
+        setDefaultsOnInsert: true,
+        writeConcern: { w: 1 } // Use numeric 1 to avoid write concern parsing issues
+      }
     ).lean();
   } else {
     // Create new user

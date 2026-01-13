@@ -8,9 +8,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load environment variables from backend/.env
-const envPath = path.join(process.cwd(), 'backend', '.env');
-dotenv.config({ path: envPath });
+// Load environment variables from root .env
+dotenv.config({ path: path.join(process.cwd(), '.env') });
 
 // Import routes
 import productsRoutes from './express-routes/products';

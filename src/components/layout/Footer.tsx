@@ -56,7 +56,7 @@ export default function Footer({ onOpenLoginModal, onOpenRegisterModal }: Footer
    */
   const companyInfo = {
     logo: "/footer/logo.png",
-    description: "DreamShop Ltd. – A trusted e-commerce platform for quality products and secure shopping. We connect customers & vendors."
+    description: "Dreamshop – A trusted e-commerce platform for quality products and secure shopping. We connect customers & vendors."
   };
 
   const socialMediaIcons = [
@@ -123,7 +123,7 @@ export default function Footer({ onOpenLoginModal, onOpenRegisterModal }: Footer
     },
     { 
       icon: "location", 
-      text: "DreamShop Limited\nKayra Bazar, Ullapara, Sirajgonj",
+      text: "Dreamshop Limited\nKayra Bazar, Ullapara, Sirajgonj",
       href: "https://maps.google.com"
     }
   ];
@@ -158,7 +158,7 @@ export default function Footer({ onOpenLoginModal, onOpenRegisterModal }: Footer
                     <img 
                       className="w-full max-w-[280px] sm:max-w-[256px] md:max-w-[288px] lg:w-72 h-auto sm:h-20 lg:h-28 object-contain" 
                       src={companyInfo.logo} 
-                      alt="DreamShop Logo" 
+                      alt="Dreamshop Logo" 
                       loading="lazy"
                     />
                   </div>
@@ -394,7 +394,7 @@ export default function Footer({ onOpenLoginModal, onOpenRegisterModal }: Footer
               
               <div className="layer-33 text-center sm:text-left lg:text-center justify-start text-gray-200 text-sm sm:text-base lg:text-lg font-normal font-['Poppins'] leading-6 sm:leading-7 lg:leading-7" data-layer="33">
                 {/* layer-33 = copyright text */}
-                © 2025 DreamShop All rights reserved.
+                © 2025 Dreamshop All rights reserved.
               </div>
             </div>
           </div>

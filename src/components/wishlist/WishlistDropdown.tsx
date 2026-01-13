@@ -45,12 +45,8 @@ export const WishlistDropdown: React.FC<WishlistDropdownProps> = ({
     
     window.addEventListener('storage', handleStorageChange);
     
-    // Also check periodically for same-tab updates
-    const interval = setInterval(loadWishlistItems, 500);
-    
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
     };
   }, [isOpen]);
 

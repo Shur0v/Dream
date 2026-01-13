@@ -71,10 +71,13 @@ router.get('/:id', async (req: Request, res: Response) => {
  * Create or update user
  */
 router.post('/', async (req: Request, res: Response) => {
+  // Extract email early so it's available in catch block
+  const { username, mobile, email, password, loginTime } = req.body;
+  let existingUser: any = null;
+  let userData: any = null;
+
   try {
     await mockApiDelay(800);
-
-    const { username, mobile, email, password, loginTime } = req.body;
 
     if (!email) {
       return res.status(400).json({
@@ -84,9 +87,7 @@ router.post('/', async (req: Request, res: Response) => {
     }
 
     // Check if user exists by email
-    const existingUser = await getUserByEmail(email);
-
-    let userData: any;
+    existingUser = await getUserByEmail(email);
 
     if (existingUser) {
       // Update existing user
@@ -117,8 +118,34 @@ router.post('/', async (req: Request, res: Response) => {
       data: savedUser,
       message: existingUser ? 'User updated successfully' : 'User created successfully',
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('[POST /api/users] Error:', error);
+    
+    // Handle write concern errors - if operation succeeded, treat as success
+    if (error?.code === 79 && error?.codeName === 'UnknownReplWriteConcern') {
+      // Check if the operation actually succeeded despite the write concern error
+      if (error?.lastErrorObject?.n === 1 || error?.result?.lastErrorObject?.n === 1) {
+        // Operation succeeded, return success
+        try {
+          // Fetch the updated user using email from request
+          if (email) {
+            const updatedUser = await getUserByEmail(email);
+            if (updatedUser) {
+              // Determine if it was an update or create by checking if we had existingUser
+              const wasUpdate = existingUser !== null;
+              return res.status(200).json({
+                success: true,
+                data: updatedUser,
+                message: wasUpdate ? 'User updated successfully' : 'User created successfully',
+              });
+            }
+          }
+        } catch (fetchError) {
+          console.error('[POST /api/users] Error fetching user after write concern error:', fetchError);
+        }
+      }
+    }
+    
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Internal server error',

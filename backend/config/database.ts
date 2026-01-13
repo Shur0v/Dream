@@ -7,23 +7,17 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load environment variables
-const envPath = path.join(process.cwd(), 'backend', '.env');
-const envResult = dotenv.config({ path: envPath });
-
-// Also try loading from root .env if backend/.env doesn't exist
-if (envResult.error) {
-  dotenv.config({ path: path.join(process.cwd(), '.env') });
-}
+// Load environment variables from root .env
+dotenv.config({ path: path.join(process.cwd(), '.env') });
 
 const MONGODB_URI = process.env.MONGODB_URI || '';
 const MONGODB_DB_NAME = process.env.MONGODB_DB_NAME || 'dream';
 
 if (!MONGODB_URI) {
   console.error('❌ MONGODB_URI is not defined in environment variables');
-  console.error('📁 Expected .env file at:', envPath);
-  console.error('💡 Please create backend/.env file with MONGODB_URI');
-  throw new Error('MONGODB_URI is not defined in environment variables. Please create backend/.env file.');
+  console.error('📁 Expected .env file at:', path.join(process.cwd(), '.env'));
+  console.error('💡 Please create .env file in root directory with MONGODB_URI');
+  throw new Error('MONGODB_URI is not defined in environment variables. Please create .env file in root directory.');
 }
 
 // Connection state
@@ -46,9 +40,16 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
   }
 
   // Create new connection promise
-  connectionPromise = mongoose.connect(MONGODB_URI, {
+  // Fix write concern issue by explicitly setting it to override any URI parameters
+  const connectionOptions: mongoose.ConnectOptions = {
     dbName: MONGODB_DB_NAME,
-  })
+    // Explicitly set write concern to override any malformed parameters in URI
+    writeConcern: {
+      w: 1, // Use numeric 1 (acknowledge write) instead of string to avoid parsing issues
+    },
+  };
+
+  connectionPromise = mongoose.connect(MONGODB_URI, connectionOptions)
     .then((mongooseInstance) => {
       isConnected = true;
       console.log('✅ Connected to MongoDB');

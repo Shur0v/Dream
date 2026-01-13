@@ -1,15 +1,92 @@
 import React from "react";
+import { Metadata } from "next";
 import TopPart from "../components/toppart";
 import Reviews from "../components/Reviews";
 import RelatedProduct from "../components/RelatedProduct";
 import ShopInstagram from "../components/ShopInstagram";
 import ForYou from "../../home/components/ForYou";
 import DeliveryInfo from "../components/toppart/DeliveryInfo";
+import StructuredData from "@/components/SEO/StructuredData";
 import { getReviewsByProduct } from '@backend/lib/db';
 
 // Force dynamic rendering to prevent caching issues
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+// Generate metadata for product pages
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dreamshoptld.com';
+  
+  try {
+    const response = await fetch(`${apiUrl}/products/${slug}`, {
+      cache: 'no-store',
+      next: { revalidate: 0 },
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success && result.data) {
+        const product = result.data;
+        const productName = product.name || 'Product';
+        const productDescription = product.description || `Buy ${productName} at Dreamshop. Best prices, fast delivery, secure shopping.`;
+        const productImage = product.images && product.images.length > 0 
+          ? product.images[0] 
+          : `${baseUrl}/placeholder-image.png`;
+        const productPrice = product.price || 0;
+        
+        return {
+          title: `${productName} | Dreamshop`,
+          description: productDescription,
+          keywords: [
+            productName.toLowerCase(),
+            'dreamshop',
+            'buy online',
+            'online shopping',
+            product.category?.toLowerCase() || '',
+          ].filter(Boolean),
+          openGraph: {
+            title: `${productName} | Dreamshop`,
+            description: productDescription,
+            url: `${baseUrl}/client/product-details/${slug}`,
+            siteName: 'Dreamshop',
+            images: [
+              {
+                url: productImage,
+                width: 1200,
+                height: 630,
+                alt: productName,
+              },
+            ],
+            type: 'website', // Use 'website' instead of 'product' (product is not a valid OpenGraph type)
+          },
+          twitter: {
+            card: 'summary_large_image',
+            title: `${productName} | Dreamshop`,
+            description: productDescription,
+            images: [productImage],
+          },
+          alternates: {
+            canonical: `${baseUrl}/client/product-details/${slug}`,
+          },
+          other: {
+            'product:price:amount': productPrice.toString(),
+            'product:price:currency': 'BDT',
+          },
+        };
+      }
+    }
+  } catch (error) {
+    console.error('Error generating metadata:', error);
+  }
+  
+  // Fallback metadata
+  return {
+    title: 'Product | Dreamshop',
+    description: 'View product details at Dreamshop. Best prices, fast delivery, secure shopping.',
+  };
+}
 
 export default async function ProductDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -214,8 +291,41 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
     console.log('[Product Details] Final color details map:', productData.colorDetailsMap);
   }
 
+  // Generate structured data for product
+  const productStructuredData = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: productData.name,
+    description: productData.description,
+    image: productData.images,
+    brand: {
+      '@type': 'Brand',
+      name: 'Dreamshop',
+    },
+    offers: {
+      '@type': 'Offer',
+      url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dreamshoptld.com'}/client/product-details/${slug}`,
+      priceCurrency: 'BDT',
+      price: productData.price.toString(),
+      availability: productData.inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      seller: {
+        '@type': 'Organization',
+        name: 'Dreamshop',
+      },
+    },
+    ...(productData.reviewsCount > 0 && {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: productData.rating.toString(),
+        reviewCount: productData.reviewsCount.toString(),
+      },
+    }),
+  };
+
   return (
-    <div className="w-full bg-white flex flex-col justify-start items-center gap-10 py-6 sm:py-8">
+    <>
+      <StructuredData type="Product" data={productStructuredData} />
+      <div className="w-full bg-white flex flex-col justify-start items-center gap-10 py-6 sm:py-8">
       {/* Top Part - Contains ProductGallery, ProductInfo, and DeliveryInfo */}
       <TopPart product={productData} images={productData.images} />
 
@@ -243,7 +353,8 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
       <section className="lg:hidden w-full max-w-[1320px] mx-auto px-2">
         <DeliveryInfo />
       </section>
-    </div>
+      </div>
+    </>
   );
 }
 

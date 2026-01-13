@@ -32,10 +32,9 @@ backend/
 pnpm install
 ```
 
-2. Create `.env` file (copy from `.env.example`):
-```bash
-cp backend/.env.example backend/.env
-```
+2. Configure environment variables:
+   - The project uses a single `.env` file in the root directory
+   - Make sure all required environment variables are set in the root `.env` file
 
 3. Start development server:
 ```bash
@@ -109,4 +108,4 @@ Each file is cached in memory for 5 minutes to improve performance.
 
 The server runs on `http://localhost:5000` by default.
 
-To change the port, set `BACKEND_PORT` in `.env` file.
+To change the port, set `BACKEND_PORT` in the root `.env` file.

@@ -6,12 +6,8 @@ import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
 import path from 'path';
 
-const envPath = path.join(process.cwd(), 'backend', '.env');
-dotenv.config({ path: envPath });
-
-// Also try .env.local
-const envLocalPath = path.join(process.cwd(), '.env.local');
-dotenv.config({ path: envLocalPath });
+// Load environment variables from root .env
+dotenv.config({ path: path.join(process.cwd(), '.env') });
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME || '',

@@ -24,9 +24,8 @@ import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load environment variables
-const envPath = path.join(process.cwd(), 'backend', '.env');
-dotenv.config({ path: envPath });
+// Load environment variables from root .env
+dotenv.config({ path: path.join(process.cwd(), '.env') });
 
 // Configure Cloudinary
 cloudinary.config({
@@ -314,7 +313,7 @@ async function migrate() {
 
     // Check Cloudinary configuration
     if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-      throw new Error('Cloudinary credentials not found in environment variables. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in backend/.env');
+      throw new Error('Cloudinary credentials not found in environment variables. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in root .env file');
     }
 
     await connectToDatabase();

@@ -2,6 +2,15 @@ import React from 'react';
 import Footer from '@/components/layout/Footer';
 import { MainHeader } from '@/components/layout/MainHeader';
 import FeaturesSection from './home/components/FeaturesSection';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: {
+    default: 'Dreamshop - Your Trusted Online Shopping Destination',
+    template: '%s | Dreamshop',
+  },
+  description: 'Dreamshop - Bangladesh\'s leading online shopping platform. Shop for electronics, fashion, home & living, beauty products and more.',
+};
 
 /**
  * Layout for all client pages

@@ -50,6 +50,47 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
     setIsWishlisted(isInWishlist(product.id));
   }, [product.id]);
 
+  // Listen for login success to retry pending actions
+  useEffect(() => {
+    const handleStorageChange = () => {
+      if (isUserLoggedIn() && pendingAction && showSignInModal) {
+        // User logged in, retry the pending action
+        if (pendingAction === 'cart') {
+          const cartItem: CartItem = {
+            id: `cart-${product.id}-${Date.now()}`,
+            productId: product.id,
+            name: product.name,
+            price: product.price,
+            quantity: quantity,
+            image: images && images.length > 0 ? images[0] : '/placeholder-image.png',
+            color: selectedColor || undefined,
+            size: selectedSize || undefined,
+          };
+          addToCart(cartItem);
+          window.dispatchEvent(new Event('storage'));
+        } else if (pendingAction === 'wishlist') {
+          const wishlistItem: WishlistItem = {
+            id: `wishlist-${product.id}-${Date.now()}`,
+            productId: product.id,
+            name: product.name,
+            price: product.price,
+            image: images && images.length > 0 ? images[0] : '/placeholder-image.png',
+          };
+          addToWishlist(wishlistItem);
+          setIsWishlisted(true);
+          window.dispatchEvent(new Event('storage'));
+        }
+        setShowSignInModal(false);
+        setPendingAction(null);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [pendingAction, showSignInModal, product, quantity, selectedColor, selectedSize, images]);
+
   const handleQuantityChange = (amount: number) => {
     setQuantity((prev) => Math.max(1, prev + amount));
   };
@@ -449,34 +490,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
         onSignIn={() => {
           // Trigger login modal via custom event
           window.dispatchEvent(new CustomEvent('openLoginModal', { detail: { userType: 'client' } }));
-          // After login, retry the pending action
-          setTimeout(() => {
-            if (pendingAction === 'cart') {
-              const cartItem: CartItem = {
-                id: `cart-${product.id}-${Date.now()}`,
-                productId: product.id,
-                name: product.name,
-                price: product.price,
-                quantity: quantity,
-                image: images && images.length > 0 ? images[0] : '/placeholder-image.png',
-                color: selectedColor || undefined,
-                size: selectedSize || undefined,
-              };
-              addToCart(cartItem);
-              window.dispatchEvent(new Event('storage'));
-            } else if (pendingAction === 'wishlist') {
-              const wishlistItem: WishlistItem = {
-                id: `wishlist-${product.id}-${Date.now()}`,
-                productId: product.id,
-                name: product.name,
-                price: product.price,
-                image: images && images.length > 0 ? images[0] : '/placeholder-image.png',
-              };
-              addToWishlist(wishlistItem);
-              setIsWishlisted(true);
-              window.dispatchEvent(new Event('storage'));
-            }
-          }, 1000);
+          // The storage event listener will handle retry after login
         }}
         message={pendingAction === 'cart' 
           ? 'Please sign in to add items to your cart.' 
