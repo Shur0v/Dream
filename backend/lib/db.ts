@@ -1356,7 +1356,7 @@ const clampRating = (value: number) => {
 };
 
 const normalizeReview = (
-  review: ProductReview,
+  review: Partial<ProductReview> & { productId: string },
   fallbackProductName?: string
 ): ProductReview => {
   const now = new Date().toISOString();
@@ -1428,7 +1428,7 @@ export async function getReviewsByProduct(productId: string, productName?: strin
   return getReviews(productId, productName);
 }
 
-export async function saveReview(review: ProductReview): Promise<ProductReview> {
+export async function saveReview(review: Partial<ProductReview> & { productId: string }): Promise<ProductReview> {
   await ensureConnection();
   
   // Get product name from MongoDB if productId is provided

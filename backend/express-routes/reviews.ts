@@ -8,6 +8,7 @@ import {
   saveReview,
   getReviewById,
 } from '../lib/db';
+import { ProductReview } from '@/types';
 
 const router = Router();
 
@@ -97,7 +98,7 @@ router.post('/reviews', async (req: Request, res: Response) => {
       });
     }
 
-    const review = await saveReview({
+    const reviewData: Partial<ProductReview> & { productId: string } = {
       productId,
       author: author || 'Anonymous',
       comment: comment || '',
@@ -105,7 +106,8 @@ router.post('/reviews', async (req: Request, res: Response) => {
       verified: verified || false,
       date: date || new Date().toISOString(),
       source: source || 'admin',
-    });
+    };
+    const review = await saveReview(reviewData);
 
     res.json({
       success: true,

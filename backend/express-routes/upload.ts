@@ -4,7 +4,6 @@
  */
 
 import { Router, Request, Response } from 'express';
-import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
 import sharp from 'sharp';
@@ -24,36 +23,121 @@ async function ensureUploadDir() {
   }
 }
 
-// Configure multer for memory storage
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage,
-  limits: {
-    fileSize: MAX_FILE_SIZE,
-  },
-  fileFilter: (req, file, cb) => {
-    if (ALLOWED_TYPES.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Unsupported file type'));
+// Manual file parsing (without multer dependency)
+interface ParsedFile {
+  buffer: Buffer;
+  originalname: string;
+  mimetype: string;
+  size: number;
+}
+
+async function parseMultipartForm(req: Request): Promise<ParsedFile | null> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let boundary = '';
+    let contentType = req.headers['content-type'] || '';
+
+    if (!contentType.includes('multipart/form-data')) {
+      return reject(new Error('Content-Type must be multipart/form-data'));
     }
-  },
-});
+
+    boundary = contentType.split('boundary=')[1] || '';
+    if (!boundary) {
+      return reject(new Error('Invalid multipart form data'));
+    }
+
+    req.on('data', (chunk: Buffer) => {
+      chunks.push(chunk);
+    });
+
+    req.on('end', () => {
+      try {
+        const buffer = Buffer.concat(chunks);
+        const boundaryBuffer = Buffer.from(`--${boundary}`);
+        
+        // Manual split by boundary
+        const parts: Buffer[] = [];
+        let start = 0;
+        while (true) {
+          const index = buffer.indexOf(boundaryBuffer, start);
+          if (index === -1) {
+            if (start < buffer.length) {
+              parts.push(buffer.slice(start));
+            }
+            break;
+          }
+          if (index > start) {
+            parts.push(buffer.slice(start, index));
+          }
+          start = index + boundaryBuffer.length;
+        }
+
+        for (const part of parts) {
+          const headerEnd = part.indexOf('\r\n\r\n');
+          if (headerEnd === -1) continue;
+
+          const headers = part.slice(0, headerEnd).toString();
+          if (!headers.includes('Content-Disposition: form-data')) continue;
+          if (!headers.includes('name="file"')) continue;
+
+          const contentStart = headerEnd + 4;
+          const contentEnd = part.lastIndexOf('\r\n');
+          const fileContent = part.slice(contentStart, contentEnd);
+
+          const filenameMatch = headers.match(/filename="([^"]+)"/);
+          const filename = filenameMatch ? filenameMatch[1] : 'image.jpg';
+
+          const mimetypeMatch = headers.match(/Content-Type: ([^\r\n]+)/);
+          const mimetype = mimetypeMatch ? mimetypeMatch[1].trim() : 'image/jpeg';
+
+          resolve({
+            buffer: fileContent,
+            originalname: filename,
+            mimetype,
+            size: fileContent.length,
+          });
+          return;
+        }
+
+        reject(new Error('No file found in form data'));
+      } catch (error) {
+        reject(error);
+      }
+    });
+
+    req.on('error', reject);
+  });
+}
 
 /**
  * POST /api/upload-image
  * Upload and compress image
  */
-router.post('/upload-image', upload.single('file'), async (req: Request, res: Response) => {
+router.post('/upload-image', async (req: Request, res: Response) => {
   try {
-    if (!req.file) {
+    const file = await parseMultipartForm(req);
+
+    if (!file) {
       return res.status(400).json({
         success: false,
         error: 'No file provided',
       });
     }
 
-    const file = req.file;
+    if (!ALLOWED_TYPES.includes(file.mimetype)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Unsupported file type',
+      });
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      return res.status(400).json({
+        success: false,
+        error: `File exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit`,
+      });
+    }
+
     console.log(`[UploadImage] Original image size: ${(file.buffer.length / 1024).toFixed(2)}KB`);
 
     // Compress image to max 200KB using sharp
