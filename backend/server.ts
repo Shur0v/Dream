@@ -7,6 +7,7 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
+import { connectToDatabase } from './config/database';
 
 // Load environment variables from root .env
 dotenv.config({ path: path.join(process.cwd(), '.env') });
@@ -114,12 +115,29 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-// Start server - listen on all interfaces (0.0.0.0) for Nginx proxy
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Express server running on http://0.0.0.0:${PORT}`);
-  console.log(`📁 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`✅ Server is ready to accept connections`);
-});
+// Initialize MongoDB connection before starting server
+async function startServer() {
+  try {
+    // Connect to MongoDB first
+    console.log('🔄 Connecting to MongoDB...');
+    await connectToDatabase();
+    console.log('✅ MongoDB connection established');
+    
+    // Start Express server
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Express server running on http://0.0.0.0:${PORT}`);
+      console.log(`📁 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`✅ Server is ready to accept connections`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to start server:', error);
+    console.error('💡 Please check your MongoDB connection string in .env file');
+    process.exit(1);
+  }
+}
+
+// Start the server
+startServer();
 
 export default app;
 

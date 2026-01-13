@@ -39,9 +39,11 @@ router.get('/', async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Get categories error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     res.status(500).json({
       success: false,
-      error: 'Internal server error',
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined,
     });
   }
 });
