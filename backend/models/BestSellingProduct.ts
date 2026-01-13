@@ -46,8 +46,8 @@ const BestSellingProductSchema = new Schema<BestSellingProductDocument>(
 );
 
 // Indexes for performance
-BestSellingProductSchema.index({ productId: 1, isActive: 1 });
-BestSellingProductSchema.index({ isActive: 1 });
+// Note: productId and isActive already have index: true in schema fields above
+BestSellingProductSchema.index({ productId: 1, isActive: 1 }); // Compound index (both fields already indexed, but compound is useful)
 
 const BestSellingProductModel = mongoose.models.BestSellingProduct || mongoose.model<BestSellingProductDocument>('BestSellingProduct', BestSellingProductSchema);
 

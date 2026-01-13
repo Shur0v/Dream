@@ -28,8 +28,8 @@ const HeroBannerSchema = new Schema<HeroBannerDocument>(
   }
 );
 
-// Indexes for performance
-HeroBannerSchema.index({ isActive: 1 });
+// Note: isActive already has index: true in schema field above
+// No need to duplicate index here
 
 const HeroBannerModel = mongoose.models.HeroBanner || mongoose.model<HeroBannerDocument>('HeroBanner', HeroBannerSchema);
 

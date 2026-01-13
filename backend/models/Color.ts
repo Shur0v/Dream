@@ -28,8 +28,8 @@ const ColorSchema = new Schema<ColorDocument>(
   }
 );
 
-// Indexes for performance
-ColorSchema.index({ isActive: 1 });
+// Note: isActive already has index: true in schema field above
+// No need to duplicate index here
 
 const ColorModel = mongoose.models.Color || mongoose.model<ColorDocument>('Color', ColorSchema);
 

@@ -41,9 +41,8 @@ const UserSchema = new Schema<UserDocument>(
   }
 );
 
-// Indexes for performance
-UserSchema.index({ email: 1 });
-UserSchema.index({ role: 1 });
+// Note: email and role indexes are already defined in schema fields above
+// No need to duplicate them here
 
 const UserModel = mongoose.models.User || mongoose.model<UserDocument>('User', UserSchema);
 

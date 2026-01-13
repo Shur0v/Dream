@@ -34,7 +34,7 @@ const ProductReviewSchema = new Schema<ProductReviewDocument>(
 );
 
 // Indexes for performance
-ProductReviewSchema.index({ productId: 1 });
+// Note: productId already has index: true in schema field above
 ProductReviewSchema.index({ createdAt: -1 });
 
 const ProductReviewModel = mongoose.models.ProductReview || mongoose.model<ProductReviewDocument>('ProductReview', ProductReviewSchema);

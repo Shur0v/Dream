@@ -46,8 +46,8 @@ const FeaturedProductSchema = new Schema<FeaturedProductDocument>(
 );
 
 // Indexes for performance
-FeaturedProductSchema.index({ productId: 1, isActive: 1 });
-FeaturedProductSchema.index({ isActive: 1 });
+// Note: productId and isActive already have index: true in schema fields above
+FeaturedProductSchema.index({ productId: 1, isActive: 1 }); // Compound index (both fields already indexed, but compound is useful)
 
 const FeaturedProductModel = mongoose.models.FeaturedProduct || mongoose.model<FeaturedProductDocument>('FeaturedProduct', FeaturedProductSchema);
 

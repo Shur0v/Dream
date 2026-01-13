@@ -48,8 +48,8 @@ const ProductSchema = new Schema<ProductDocument>(
 );
 
 // Indexes for performance
-ProductSchema.index({ categoryId: 1, isActive: 1 });
-ProductSchema.index({ slug: 1 });
+// Note: slug and isActive already have index: true in schema fields above
+ProductSchema.index({ categoryId: 1, isActive: 1 }); // Compound index (isActive already indexed, but compound is useful)
 ProductSchema.index({ brand: 1 });
 ProductSchema.index({ createdAt: -1 });
 
