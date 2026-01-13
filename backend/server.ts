@@ -27,7 +27,7 @@ import uploadRoutes from './express-routes/upload';
 import reviewsRoutes from './express-routes/reviews';
 
 const app: Express = express();
-const PORT = process.env.BACKEND_PORT || 5000;
+const PORT = Number.parseInt(process.env.BACKEND_PORT || '5000', 10);
 
 // Middleware - CORS with proper headers
 // PERMISSIVE CORS: Allow all origins for maximum compatibility
