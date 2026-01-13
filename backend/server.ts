@@ -114,10 +114,11 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Express server running on http://localhost:${PORT}`);
+// Start server - listen on all interfaces (0.0.0.0) for Nginx proxy
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Express server running on http://0.0.0.0:${PORT}`);
   console.log(`📁 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`✅ Server is ready to accept connections`);
 });
 
 export default app;
