@@ -28,13 +28,13 @@ router.get('/', async (req: Request, res: Response) => {
     
     const allCategories = await getCategories(includeInactive);
 
-    filteredCategories.sort((a, b) => a.name.localeCompare(b.name));
+    allCategories.sort((a, b) => a.name.localeCompare(b.name));
 
-    console.log(`[GET /api/categories] Returning ${filteredCategories.length} categories (includeInactive: ${includeInactive})`);
+    console.log(`[GET /api/categories] Returning ${allCategories.length} categories (includeInactive: ${includeInactive})`);
 
     res.json({
       success: true,
-      data: filteredCategories,
+      data: allCategories,
       message: 'Categories retrieved successfully',
     });
   } catch (error) {
