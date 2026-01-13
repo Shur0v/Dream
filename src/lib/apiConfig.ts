@@ -15,18 +15,19 @@ const getApiBaseUrl = (): string => {
     const hostname = window.location.hostname;
     const protocol = window.location.protocol;
     
-    // Production: dreamshopltd.com
-    if (hostname === 'dreamshopltd.com' || hostname === 'www.dreamshopltd.com' || hostname.includes('dreamshopltd.com')) {
-      // Try multiple backend URL patterns in order of preference:
-      // 1. Same domain /api (if reverse proxy configured) - most common
-      // 2. Same domain with port 5000 (direct access)
-      // 3. API subdomain (api.dreamshopltd.com)
-      
+    // Production: Check if not localhost (any production domain)
+    // If it's not localhost, localhost IP, or 127.0.0.1, assume production
+    const isProduction = 
+      hostname !== 'localhost' && 
+      hostname !== '127.0.0.1' && 
+      !hostname.startsWith('192.168.') &&
+      !hostname.startsWith('10.') &&
+      !hostname.endsWith('.local');
+    
+    if (isProduction) {
+      // Production: Use same domain /api (reverse proxy setup)
+      // This is the most common VPS setup - backend proxied through Nginx
       const baseHost = hostname.replace('www.', '');
-      
-      // First try: Same domain /api (reverse proxy)
-      // This is the most common setup - backend proxied through Nginx
-      // If this doesn't work, the backend should be accessible on port 5000
       return `${protocol}//${baseHost}/api`;
     }
     
