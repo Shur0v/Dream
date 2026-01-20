@@ -8,8 +8,9 @@ import {
   getProductById,
   saveProduct,
   deleteProduct,
+  invalidateProductsCache,
   getColors,
-} from '../express-lib/db';
+} from '../lib/db';
 import { Product } from '../../src/types';
 
 const router = Router();
@@ -306,6 +307,7 @@ router.post('/', async (req: Request, res: Response) => {
     };
 
     await saveProduct(newProduct);
+    invalidateProductsCache(); // Clear cache after adding product
 
     res.status(201).json({
       success: true,
@@ -362,6 +364,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     };
 
     await saveProduct(updatedProduct);
+    invalidateProductsCache(); // Clear cache after updating product
 
     res.json({
       success: true,
@@ -398,6 +401,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
     console.log(`[Express DELETE /api/products/${id}] Product deleted successfully`);
+    invalidateProductsCache(); // Clear cache after deleting product
     res.json({
       success: true,
       data: deletedProduct,
