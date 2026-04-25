@@ -8,6 +8,7 @@ import {
 } from '@backend/lib/db';
 import { mockApiDelay } from '@/lib/dummyData';
 import { Category } from '@/types';
+import { validateImageField } from '@backend/lib/imageValidation';
 
 export async function GET(
   request: NextRequest,
@@ -76,12 +77,22 @@ export async function PUT(
       }
     }
 
+    if (image !== undefined && image !== null && String(image).trim() !== '') {
+      const imageValidation = validateImageField(image, { fieldName: 'image' });
+      if (!imageValidation.valid) {
+        return NextResponse.json(
+          { success: false, error: imageValidation.error },
+          { status: 400 }
+        );
+      }
+    }
+
     const updatedCategory: Category = {
       ...existingCategory,
       ...(name && { name }),
       ...(slug && { slug }),
       ...(description !== undefined && { description }),
-      ...(image !== undefined && { image }),
+      ...(image !== undefined && { image: image ? String(image).trim() : undefined }),
       ...(parentId !== undefined && { parentId }),
       ...(isActive !== undefined && { isActive }),
       updatedAt: new Date().toISOString(),

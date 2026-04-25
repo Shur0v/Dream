@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getHeroBanner, saveHeroBanner, getAllHeroBanners } from '@backend/lib/db';
 import { mockApiDelay } from '@/lib/dummyData';
 import { HeroBanner } from '@/types';
+import { validateImageField, validateImageList } from '@backend/lib/imageValidation';
 
 export async function GET(request: NextRequest) {
   try {
@@ -68,20 +69,45 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    const sliderValidation = validateImageList(sliderImages, 'sliderImages');
+    if (!sliderValidation.valid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: sliderValidation.error,
+        },
+        { status: 400 }
+      );
+    }
 
     // Limit rightBanners to 3 (1 header + 2 bottom)
     // Preserve positions: [0] = header, [1] = first bottom, [2] = second bottom
     // Always ensure we have 3 positions, using empty strings for missing ones
     const limitedRightBanners: string[] = [];
     for (let i = 0; i < 3; i++) {
-      limitedRightBanners.push((rightBanners[i] || '').trim());
+      const value = String(rightBanners[i] || '').trim();
+      if (!value) {
+        limitedRightBanners.push('');
+        continue;
+      }
+      const rightValidation = validateImageField(value, { fieldName: `rightBanners[${i}]`, allowEmpty: true });
+      if (!rightValidation.valid) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: rightValidation.error,
+          },
+          { status: 400 }
+        );
+      }
+      limitedRightBanners.push(rightValidation.value);
     }
     // Keep empty strings to preserve positions - filter them out only when displaying
 
     // Create or update hero banner
     const heroBanner: HeroBanner = {
       id: body.id || `hero-${Date.now()}`,
-      sliderImages,
+      sliderImages: sliderValidation.value,
       rightBanners: limitedRightBanners,
       isActive,
       createdAt: body.createdAt || new Date().toISOString(),

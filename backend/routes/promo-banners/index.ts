@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getPromoBanners, savePromoBanner } from '@backend/lib/db';
 import { mockApiDelay } from '@/lib/dummyData';
 import { PromoBanner, PromoBannerVariant } from '@/types';
+import { validateImageField } from '@backend/lib/imageValidation';
 
 const parseInitialTime = (value: Partial<PromoBanner['initialTime']> = {}): PromoBanner['initialTime'] => ({
   days: Number.isFinite(Number(value.days)) ? Math.max(0, Number(value.days)) : 0,
@@ -79,6 +80,30 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    const imageValidation = validateImageField(image, { fieldName: 'image' });
+    if (!imageValidation.valid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: imageValidation.error,
+        },
+        { status: 400 }
+      );
+    }
+    let normalizedBackgroundImage: string | undefined;
+    if (backgroundImage !== undefined && backgroundImage !== null && String(backgroundImage).trim() !== '') {
+      const backgroundValidation = validateImageField(backgroundImage, { fieldName: 'backgroundImage' });
+      if (!backgroundValidation.valid) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: backgroundValidation.error,
+          },
+          { status: 400 }
+        );
+      }
+      normalizedBackgroundImage = backgroundValidation.value;
+    }
 
     const saved = await savePromoBanner({
       id,
@@ -87,8 +112,8 @@ export async function POST(request: NextRequest) {
       description: description ? String(description).trim() : undefined,
       startingBidLabel: startingBidLabel ? String(startingBidLabel).trim() : undefined,
       priceText: priceText ? String(priceText).trim() : undefined,
-      image: String(image).trim(),
-      backgroundImage: backgroundImage ? String(backgroundImage).trim() : undefined,
+      image: imageValidation.value,
+      backgroundImage: normalizedBackgroundImage,
       ctaLabel: ctaLabel ? String(ctaLabel).trim() : undefined,
       ctaLink: ctaLink ? String(ctaLink).trim() : undefined,
       initialTime: parseInitialTime(initialTime),

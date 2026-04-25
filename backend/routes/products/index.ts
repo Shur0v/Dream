@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getProducts, saveProduct, getColors } from '@backend/lib/db';
 import { mockApiDelay } from '@/lib/dummyData';
 import { Product } from '@/types';
+import { validateImageList } from '@backend/lib/imageValidation';
 
 export async function GET(request: NextRequest) {
   try {
@@ -230,6 +231,16 @@ export async function POST(request: NextRequest) {
     const originalPriceNum = originalPrice
       ? (typeof originalPrice === 'string' ? parseFloat(originalPrice) : Number(originalPrice))
       : undefined;
+    const normalizedImages = Array.isArray(images)
+      ? images.filter((img: string) => img && img.trim() !== '')
+      : [];
+    const imageValidation = validateImageList(normalizedImages, 'images');
+    if (!imageValidation.valid) {
+      return NextResponse.json(
+        { success: false, error: imageValidation.error },
+        { status: 400 }
+      );
+    }
 
     const newProduct: Product = {
       id: `product-${Date.now()}`,
@@ -240,7 +251,7 @@ export async function POST(request: NextRequest) {
       discount: originalPriceNum && originalPriceNum > priceNum
         ? Math.round(((originalPriceNum - priceNum) / originalPriceNum) * 100)
         : undefined,
-      images: Array.isArray(images) ? images.filter((img: string) => img && img.trim() !== '') : [],
+      images: imageValidation.value,
       category: String(category).trim(),
       categoryId: categoryId ? String(categoryId).trim() : undefined,
       subcategory: subcategory ? String(subcategory).trim() : undefined,

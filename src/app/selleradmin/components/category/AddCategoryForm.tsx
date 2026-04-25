@@ -5,6 +5,7 @@ import { Plus, ImagePlus, Trash2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
 import { Category } from '@/types';
+import { uploadImageClient } from '@/lib/uploadImageClient';
 
 interface AddCategoryFormProps {
   onCancel?: () => void;
@@ -25,6 +26,7 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // Generate slug from category name
   const generateSlug = (name: string): string => {
@@ -69,23 +71,13 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
     };
   }, []);
 
-  // Upload image to server
-  const uploadImage = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    const response = await fetch('/api/upload-image', {
-      method: 'POST',
-      body: formData,
-    });
-    
-    const result = await response.json();
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to upload image');
-    }
-    
-    return result.data.url;
-  };
+  useEffect(() => {
+    return () => {
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   const handleChoose = () => fileRef.current?.click();
 
@@ -94,18 +86,21 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
     const file = files[0];
     
     try {
-      // Show preview immediately
-      const reader = new FileReader();
-      reader.onload = () => setImage(String(reader.result));
-      reader.readAsDataURL(file);
+      // Show preview immediately (without base64 conversion)
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      const localPreview = URL.createObjectURL(file);
+      setPreviewUrl(localPreview);
       
       // Upload image to server
-      const uploadedUrl = await uploadImage(file);
+      const uploadedUrl = await uploadImageClient(file, { folder: 'categories' });
       setImage(uploadedUrl);
     } catch (error) {
       console.error('Error uploading image:', error);
       alert('Failed to upload image. Please try again.');
       setImage(null);
+      setPreviewUrl(null);
     }
   };
 
@@ -154,6 +149,7 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
         setCategory('');
         setChildCategory('');
         setImage(null);
+        setPreviewUrl(null);
       } catch (error) {
         console.error('Error saving category:', error);
         setError(error instanceof Error ? error.message : 'Failed to save category');
@@ -259,9 +255,9 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
               </div>
             </div>
 
-            {image ? (
+            {image || previewUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={image} alt="Preview" className="w-full max-w-md h-40 object-contain rounded" />
+              <img src={image || previewUrl || ''} alt="Preview" className="w-full max-w-md h-40 object-contain rounded" />
             ) : (
               <p className="text-center text-zinc-600 text-base font-normal font-['Poppins']">
                 Drag and drop image here, or click add image

@@ -11,6 +11,7 @@ import SearchableMultiSelect from '../ui/SearchableMultiSelect';
 import { Color, Category } from '@/types';
 import { fetchCategories as loadCategoriesFromApi } from '@/lib/categories';
 import { getApiUrl } from '@/lib/apiConfig';
+import { uploadImageClient } from '@/lib/uploadImageClient';
 
 // Zod schema for validation
 const productSchema = z.object({
@@ -61,6 +62,8 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
   const [categoryOptions, setCategoryOptions] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
+  const [uploadingIndexes, setUploadingIndexes] = useState<number[]>([]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -176,20 +179,26 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
   const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     if (!files.length || selectedImageIndex === null) return;
-    
+
+    const targetIndex = selectedImageIndex;
     const file = files[0];
-    const reader = new FileReader();
-    
-    reader.onload = () => {
-      const imageData = String(reader.result);
-      const newImages = [...images];
-      newImages[selectedImageIndex] = imageData;
-      setImages(newImages);
-    };
-    
-    reader.readAsDataURL(file);
-    e.target.value = '';
-    setSelectedImageIndex(null);
+    setUploadError(null);
+    setUploadingIndexes((prev) => [...prev, targetIndex]);
+
+    try {
+      const uploadedUrl = await uploadImageClient(file, { folder: 'products' });
+      setImages((prev) => {
+        const next = [...prev];
+        next[targetIndex] = uploadedUrl;
+        return next;
+      });
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Failed to upload image');
+    } finally {
+      setUploadingIndexes((prev) => prev.filter((idx) => idx !== targetIndex));
+      e.target.value = '';
+      setSelectedImageIndex(null);
+    }
   };
 
   const addSize = () => {
@@ -698,6 +707,11 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img src={images[i]} alt={`image ${i + 1}`} className="w-full h-full object-cover rounded" />
                               </>
+                            ) : uploadingIndexes.includes(i) ? (
+                              <svg className="animate-spin h-6 w-6 text-zinc-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                              </svg>
                             ) : (
                               <ImagePlus className="w-8 h-8 text-zinc-400" />
                             )}
@@ -742,6 +756,9 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
                 {errors.images && (
                   <p className="text-red-500 text-sm">{errors.images.message}</p>
                 )}
+                {uploadError && (
+                  <p className="text-red-500 text-sm">{uploadError}</p>
+                )}
               </div>
             </div>
           </div>
@@ -750,11 +767,11 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
             <button
               type="submit"
               className={cn(
-                'text-white text-sm font-medium font-["Poppins"] leading-4 transition-all duration-300',
-                (!isValid || isSaving) && 'opacity-60 cursor-not-allowed',
+              'text-white text-sm font-medium font-["Poppins"] leading-4 transition-all duration-300',
+                (!isValid || isSaving || uploadingIndexes.length > 0) && 'opacity-60 cursor-not-allowed',
                 isSaving && 'animate-pulse'
               )}
-              disabled={!isValid || isSaving}
+              disabled={!isValid || isSaving || uploadingIndexes.length > 0}
             >
               {isSaving ? (
                 <span className="flex items-center gap-2">
@@ -764,6 +781,8 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
                   </svg>
                   Saving...
                 </span>
+              ) : uploadingIndexes.length > 0 ? (
+                'Uploading images...'
               ) : (
                 'Save'
               )}

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { deleteFestivalBanner, getFestivalBannerById, saveFestivalBanner } from '@backend/lib/db';
 import { mockApiDelay } from '@/lib/dummyData';
 import { FestivalBanner } from '@/types';
+import { validateImageField } from '@backend/lib/imageValidation';
 
 type FestivalPayload = Partial<FestivalBanner> & {
   coupons?: Array<{ code?: string; amount?: string }>;
@@ -74,6 +75,19 @@ export async function PUT(
     }
 
     const body = (await request.json()) as FestivalPayload;
+    if (body.image !== undefined) {
+      const imageValidation = validateImageField(body.image, { fieldName: 'image' });
+      if (!imageValidation.valid) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: imageValidation.error,
+          },
+          { status: 400 }
+        );
+      }
+      body.image = imageValidation.value;
+    }
     const couponUpdate = normalizeCoupons(body.coupons);
 
     const updated = await saveFestivalBanner({

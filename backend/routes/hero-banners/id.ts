@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getHeroBannerById, saveHeroBanner, deleteHeroBanner } from '@backend/lib/db';
 import { mockApiDelay } from '@/lib/dummyData';
 import { HeroBanner } from '@/types';
+import { validateImageField, validateImageList } from '@backend/lib/imageValidation';
 
 export async function GET(
   request: NextRequest,
@@ -66,11 +67,62 @@ export async function PUT(
       );
     }
 
+    let sanitizedSliderImages = existingBanner.sliderImages;
+    if (sliderImages !== undefined) {
+      const sliderValidation = validateImageList(sliderImages, 'sliderImages');
+      if (!sliderValidation.valid) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: sliderValidation.error,
+          },
+          { status: 400 }
+        );
+      }
+      sanitizedSliderImages = sliderValidation.value;
+    }
+
+    let sanitizedRightBanners = existingBanner.rightBanners;
+    if (rightBanners !== undefined) {
+      if (!Array.isArray(rightBanners)) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'rightBanners must be an array',
+          },
+          { status: 400 }
+        );
+      }
+      const normalized: string[] = [];
+      for (let i = 0; i < 3; i++) {
+        const value = String(rightBanners[i] || '').trim();
+        if (!value) {
+          normalized.push('');
+          continue;
+        }
+        const imageValidation = validateImageField(value, {
+          fieldName: `rightBanners[${i}]`,
+          allowEmpty: true,
+        });
+        if (!imageValidation.valid) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: imageValidation.error,
+            },
+            { status: 400 }
+          );
+        }
+        normalized.push(imageValidation.value);
+      }
+      sanitizedRightBanners = normalized;
+    }
+
     // Update banner
     const updatedBanner: HeroBanner = {
       ...existingBanner,
-      sliderImages: sliderImages !== undefined ? sliderImages : existingBanner.sliderImages,
-      rightBanners: rightBanners !== undefined ? rightBanners.slice(0, 2) : existingBanner.rightBanners,
+      sliderImages: sanitizedSliderImages,
+      rightBanners: sanitizedRightBanners,
       isActive: isActive !== undefined ? isActive : existingBanner.isActive,
       updatedAt: new Date().toISOString(),
     };

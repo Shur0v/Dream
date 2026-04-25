@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFestivalBanners, saveFestivalBanner } from '@backend/lib/db';
 import { mockApiDelay } from '@/lib/dummyData';
 import { FestivalBanner } from '@/types';
+import { validateImageField } from '@backend/lib/imageValidation';
 
 type FestivalPayload = Partial<FestivalBanner> & {
   coupons?: Array<{ code?: string; amount?: string }>;
@@ -62,6 +63,16 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+    const imageValidation = validateImageField(image, { fieldName: 'image' });
+    if (!imageValidation.valid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: imageValidation.error,
+        },
+        { status: 400 }
+      );
+    }
 
     const normalizedCoupons = normalizeCoupons(coupons);
     if (normalizedCoupons.length === 0) {
@@ -80,7 +91,7 @@ export async function POST(request: NextRequest) {
       subtitle: subtitle ? String(subtitle).trim() : '',
       discount: String(discount).trim(),
       emi: String(emi).trim(),
-      image: String(image).trim(),
+      image: imageValidation.value,
       coupons: normalizedCoupons,
       order: Number.isFinite(order) ? Number(order) : 0,
       isActive: isActive !== undefined ? Boolean(isActive) : true,

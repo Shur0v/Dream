@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getProductById, saveProduct, deleteProduct, getColors } from '@backend/lib/db';
 import { mockApiDelay } from '@/lib/dummyData';
 import { Product, Color } from '@/types';
+import { validateImageList } from '@backend/lib/imageValidation';
 
 export async function GET(
   request: NextRequest,
@@ -96,11 +97,22 @@ export async function PUT(
     } = body;
 
     const hasImagesField = Object.prototype.hasOwnProperty.call(body, 'images');
-    const sanitizedImages = hasImagesField
+    const rawImages = hasImagesField
       ? Array.isArray(images)
         ? images.filter((img): img is string => typeof img === 'string' && img.length > 0)
         : []
       : undefined;
+    let sanitizedImages = rawImages;
+    if (hasImagesField) {
+      const imageValidation = validateImageList(rawImages ?? [], 'images');
+      if (!imageValidation.valid) {
+        return NextResponse.json(
+          { success: false, error: imageValidation.error },
+          { status: 400 }
+        );
+      }
+      sanitizedImages = imageValidation.value;
+    }
 
     if (price !== undefined && price <= 0) {
       return NextResponse.json(

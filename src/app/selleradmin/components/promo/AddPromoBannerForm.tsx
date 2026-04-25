@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
 import { PromoBanner, PromoBannerVariant } from '@/types';
+import { uploadImageClient } from '@/lib/uploadImageClient';
 
 interface AddPromoBannerFormProps {
   onBack?: () => void;
@@ -32,6 +33,7 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
   const [banners, setBanners] = useState<PromoBanner[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchBanners = useCallback(async () => {
@@ -60,17 +62,25 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
 
   const handleChooseFile = () => fileRef.current?.click();
 
-  const handleFiles = (files: FileList | null) => {
+  const handleFiles = async (files: FileList | null) => {
     if (!files || !files.length) return;
-    const reader = new FileReader();
-    reader.onload = () => setImage(String(reader.result));
-    reader.readAsDataURL(files[0]);
+    setUploading(true);
+    setError(null);
+    try {
+      const uploadedUrl = await uploadImageClient(files[0], { folder: 'promo-banners' });
+      setImage(uploadedUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload image');
+      setImage(null);
+    } finally {
+      setUploading(false);
+    }
   };
 
-  const handleDrop: React.DragEventHandler<HTMLDivElement> = (e) => {
+  const handleDrop: React.DragEventHandler<HTMLDivElement> = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    handleFiles(e.dataTransfer.files);
+    await handleFiles(e.dataTransfer.files);
   };
 
   const handleVisibilityToggle = async () => {
@@ -357,10 +367,12 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) => handleFiles(e.target.files)}
-            />
-          </div>
+            onChange={(e) => {
+              void handleFiles(e.target.files);
+            }}
+          />
         </div>
+      </div>
       </div>
 
       {/* Footer buttons */}
@@ -375,13 +387,13 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
         <button
           type="button"
           onClick={handleConfirm}
-          disabled={!canConfirm || saving}
+          disabled={!canConfirm || saving || uploading}
           className={cn(
             'h-12 px-6 py-3 rounded bg-fuchsia-500 text-white font-medium transition-opacity',
-            (!canConfirm || saving) && 'opacity-60 cursor-not-allowed'
+            (!canConfirm || saving || uploading) && 'opacity-60 cursor-not-allowed'
           )}
         >
-          {saving ? 'Saving...' : 'Confirm'}
+          {uploading ? 'Uploading...' : saving ? 'Saving...' : 'Confirm'}
         </button>
       </div>
 

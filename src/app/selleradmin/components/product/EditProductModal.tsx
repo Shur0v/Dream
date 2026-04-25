@@ -8,6 +8,7 @@ import SearchableMultiSelect from '../ui/SearchableMultiSelect';
 import { Color, Category } from '@/types';
 import { getApiUrl } from '@/lib/apiConfig';
 import { fetchCategories as loadCategoriesFromApi } from '@/lib/categories';
+import { uploadImageClient } from '@/lib/uploadImageClient';
 
 interface EditableProduct {
   id: string;
@@ -79,6 +80,8 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
   const [categoryOptions, setCategoryOptions] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -201,25 +204,28 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
   const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     if (!files.length) return;
-    const toRead = files.slice(0, Math.max(0, 12 - images.length));
-    const readers = await Promise.all(
-      toRead.map(
-        (file) =>
-          new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(String(reader.result));
-            reader.readAsDataURL(file);
-          })
-      )
-    );
-    setImages((prev) => {
-      const next = [...prev, ...readers];
-      if (next.length > 0) {
-        syncPrimaryImage(next);
-      }
-      return next;
-    });
-    e.target.value = '';
+    const toUpload = files.slice(0, Math.max(0, 12 - images.length));
+    if (!toUpload.length) return;
+
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const uploaded = await Promise.all(
+        toUpload.map((file) => uploadImageClient(file, { folder: 'products' }))
+      );
+      setImages((prev) => {
+        const next = [...prev, ...uploaded];
+        if (next.length > 0) {
+          syncPrimaryImage(next);
+        }
+        return next;
+      });
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Failed to upload image');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
   };
 
   const handleDeleteImage = async (index: number) => {
@@ -852,6 +858,12 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
                   );
                 })}
               </div>
+              {uploadError && (
+                <p className="text-red-500 text-sm font-['Poppins']">{uploadError}</p>
+              )}
+              {uploading && (
+                <p className="text-zinc-500 text-sm font-['Poppins']">Uploading images...</p>
+              )}
             </div>
             <input
               ref={fileInputRef}

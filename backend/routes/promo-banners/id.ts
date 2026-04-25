@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { deletePromoBanner, getPromoBannerById, savePromoBanner } from '@backend/lib/db';
 import { mockApiDelay } from '@/lib/dummyData';
 import { PromoBannerVariant } from '@/types';
+import { validateImageField } from '@backend/lib/imageValidation';
 
 const isVariant = (value: unknown): value is PromoBannerVariant =>
   value === 'slider' || value === 'card';
@@ -69,6 +70,32 @@ export async function PUT(
     }
 
     const body = await request.json();
+    if (body.image !== undefined) {
+      const imageValidation = validateImageField(body.image, { fieldName: 'image' });
+      if (!imageValidation.valid) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: imageValidation.error,
+          },
+          { status: 400 }
+        );
+      }
+      body.image = imageValidation.value;
+    }
+    if (body.backgroundImage !== undefined && body.backgroundImage !== null && String(body.backgroundImage).trim() !== '') {
+      const backgroundValidation = validateImageField(body.backgroundImage, { fieldName: 'backgroundImage' });
+      if (!backgroundValidation.valid) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: backgroundValidation.error,
+          },
+          { status: 400 }
+        );
+      }
+      body.backgroundImage = backgroundValidation.value;
+    }
     const updated = await savePromoBanner({
       ...existing,
       ...(body.title && { title: String(body.title).trim() }),

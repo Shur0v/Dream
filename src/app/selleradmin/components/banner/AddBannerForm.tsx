@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Upload, X, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { HeroBanner } from '@/types';
+import { uploadImageClient } from '@/lib/uploadImageClient';
 
 interface AddBannerFormProps {
   onBack?: () => void;
@@ -82,24 +83,6 @@ export default function AddBannerForm({ onBack, onSave }: AddBannerFormProps) {
     fileInputRef.current?.click();
   };
 
-  // Upload image to server
-  const uploadImage = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    const response = await fetch('/api/upload-image', {
-      method: 'POST',
-      body: formData,
-    });
-    
-    const result = await response.json();
-    if (!result.success) {
-      throw new Error(result.error || 'Failed to upload image');
-    }
-    
-    return result.data.url;
-  };
-
   const handleFileChange: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -114,8 +97,7 @@ export default function AddBannerForm({ onBack, onSave }: AddBannerFormProps) {
     if (!previewImage || !previewFile) return;
     
     try {
-      // Upload image to server
-      const uploadedUrl = await uploadImage(previewFile);
+      const uploadedUrl = await uploadImageClient(previewFile, { folder: 'hero-banners' });
       setSliderImages((prev) => [...prev, uploadedUrl]);
       setPreviewImage(null);
       setPreviewFile(null);
@@ -132,8 +114,7 @@ export default function AddBannerForm({ onBack, onSave }: AddBannerFormProps) {
     if (!file) return;
     
     try {
-      // Upload image to server
-      const uploadedUrl = await uploadImage(file);
+      const uploadedUrl = await uploadImageClient(file, { folder: 'hero-banners' });
       setSliderImages((prev) => {
         const next = [...prev, uploadedUrl];
         setCurrentIndex(next.length - 1);
@@ -156,8 +137,7 @@ export default function AddBannerForm({ onBack, onSave }: AddBannerFormProps) {
     if (!file) return;
     
     try {
-      // Upload image to server immediately
-      const uploadedUrl = await uploadImage(file);
+      const uploadedUrl = await uploadImageClient(file, { folder: 'hero-banners' });
       setRightBannerPreviews((prev) => prev.map((v, idx) => (idx === i ? uploadedUrl : v)));
     } catch (error) {
       console.error('Error uploading image:', error);

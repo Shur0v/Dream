@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCategories, saveCategory } from '@backend/lib/db';
 import { mockApiDelay } from '@/lib/dummyData';
 import { Category } from '@/types';
+import { validateImageField } from '@backend/lib/imageValidation';
 
 export async function GET(request: NextRequest) {
   try {
@@ -62,12 +63,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (image !== undefined && image !== null && String(image).trim() !== '') {
+      const imageValidation = validateImageField(image, { fieldName: 'image' });
+      if (!imageValidation.valid) {
+        return NextResponse.json(
+          { success: false, error: imageValidation.error },
+          { status: 400 }
+        );
+      }
+    }
+
     const newCategory: Category = {
       id: `cat-${Date.now()}`,
       name,
       slug,
       description: description || undefined,
-      image: image || undefined,
+      image: image ? String(image).trim() : undefined,
       parentId: parentId || undefined,
       isActive: true,
       createdAt: new Date().toISOString(),
