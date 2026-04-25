@@ -9,6 +9,7 @@ const DB_NAME = 'DreamAPICache';
 const DB_VERSION = 1;
 const API_STORE = 'apiResponses';
 const IMAGE_STORE = 'images'; // Reuse existing image store
+const DISABLE_CLIENT_CACHE = true;
 
 interface CachedAPIResponse {
   url: string;
@@ -328,6 +329,15 @@ export async function fetchWithCache(
   options: RequestInit = {},
   ttl: number = 60 * 60 * 1000 // 1 hour
 ): Promise<Response> {
+  if (DISABLE_CLIENT_CACHE) {
+    const response = await fetch(url, {
+      ...options,
+      cache: 'no-store',
+      next: { revalidate: 0 },
+    });
+    return response;
+  }
+
   const isClientSide = isClientSideURL(url);
   
   // For client-side URLs, don't check cache - always fetch fresh
@@ -409,6 +419,10 @@ function isClientSideURL(url: string): boolean {
  * Returns null for client-side URLs (no caching)
  */
 export async function getCachedResponse(url: string): Promise<any | null> {
+  if (DISABLE_CLIENT_CACHE) {
+    return null;
+  }
+
   // Disable caching for client-side URLs
   if (isClientSideURL(url)) {
     return null;
@@ -421,6 +435,9 @@ export async function getCachedResponse(url: string): Promise<any | null> {
  * Clear API cache
  */
 export async function clearAPICache(): Promise<void> {
+  if (DISABLE_CLIENT_CACHE) {
+    return;
+  }
   return apiCacheDB.clearAll();
 }
 
@@ -428,6 +445,9 @@ export async function clearAPICache(): Promise<void> {
  * Clear client-side API cache only (keep admin cache)
  */
 export async function clearClientAPICache(): Promise<void> {
+  if (DISABLE_CLIENT_CACHE) {
+    return;
+  }
   try {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);

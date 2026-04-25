@@ -12,8 +12,6 @@
  */
 
 import { configureStore } from '@reduxjs/toolkit';
-import { persistStore, persistReducer } from 'redux-persist';
-import storage from 'redux-persist/lib/storage';
 import { combineReducers } from '@reduxjs/toolkit';
 
 // Import feature slices
@@ -23,20 +21,6 @@ import productsSlice from '../features/products/productsSlice';
 import userSlice from '../features/user/userSlice';
 import wishlistSlice from '../features/wishlist/wishlistSlice';
 import ordersSlice from '../features/orders/ordersSlice';
-
-/**
- * Redux Persist configuration
- * Defines which parts of the state should be persisted to localStorage
- * 
- * @description Persists user authentication and cart data for better UX
- * Excludes sensitive data and temporary states from persistence
- */
-const persistConfig = {
-  key: 'root',
-  storage,
-  whitelist: ['auth', 'cart', 'wishlist'], // Only persist these slices
-  blacklist: ['products'], // Don't persist products (always fetch fresh)
-};
 
 /**
  * Root reducer combining all feature slices
@@ -54,14 +38,6 @@ const rootReducer = combineReducers({
 });
 
 /**
- * Persisted reducer wrapper
- * 
- * @description Wraps the root reducer with persistence logic
- * Automatically saves/restores state to/from localStorage
- */
-const persistedReducer = persistReducer(persistConfig, rootReducer);
-
-/**
  * Configure and create the Redux store
  * 
  * @description Sets up the store with:
@@ -72,24 +48,25 @@ const persistedReducer = persistReducer(persistConfig, rootReducer);
  * @returns Configured Redux store instance
  */
 export const store = configureStore({
-  reducer: persistedReducer,
+  reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        // Ignore redux-persist actions for serialization check
-        ignoredActions: ['persist/PERSIST', 'persist/REHYDRATE'],
+        ignoredActions: [],
       },
     }),
   devTools: process.env.NODE_ENV !== 'production',
 });
 
-/**
- * Persistor for Redux Persist
- * 
- * @description Handles the persistence of state to storage
- * Used by PersistGate component to restore state on app load
- */
-export const persistor = persistStore(store);
+export const persistor = {
+  purge: async () => undefined,
+  flush: async () => undefined,
+  pause: () => undefined,
+  persist: () => undefined,
+  dispatch: () => undefined,
+  subscribe: () => () => undefined,
+  getState: () => ({}),
+};
 
 // Export types for TypeScript
 export type RootState = ReturnType<typeof store.getState>;

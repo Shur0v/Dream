@@ -1,11 +1,12 @@
 'use client';
 
 import React from 'react';
+import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { XCircle, ArrowLeft, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
 
-export default function PaymentCancelPage() {
+function PaymentCancelContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderId = searchParams?.get('orderId') || null;
@@ -46,6 +47,14 @@ export default function PaymentCancelPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PaymentCancelPage() {
+  return (
+    <Suspense fallback={<div className="w-full min-h-screen bg-gray-50"></div>}>
+      <PaymentCancelContent />
+    </Suspense>
   );
 }
 

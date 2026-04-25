@@ -79,5 +79,3 @@ export type {
   OrdersState,
 } from './types';
 
-// Dummy Data
-export { sampleProducts, sampleUsers, sampleCartItems, sampleWishlistItems, sampleOrders, categories } from './lib/dummyData';

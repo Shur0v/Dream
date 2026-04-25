@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
+    "@neondatabase/serverless": "^1.0.0",
     "@reduxjs/toolkit": "^2.0.1",
     "@upstash/redis": "^1.35.6",
     "@vercel/blob": "^2.0.0",

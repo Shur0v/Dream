@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckoutModal } from '@/components/cart/CheckoutModal';
 import { stateFirstPaymentService } from '@/services/payment';
 import { apiService } from '@/services/api';
 
-export default function PaymentCheckoutPage() {
+function PaymentCheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(true);
@@ -136,6 +137,14 @@ export default function PaymentCheckoutPage() {
         isSubmitting={isSubmitting}
       />
     </div>
+  );
+}
+
+export default function PaymentCheckoutPage() {
+  return (
+    <Suspense fallback={<div className="w-full min-h-screen bg-gray-50"></div>}>
+      <PaymentCheckoutContent />
+    </Suspense>
   );
 }
 

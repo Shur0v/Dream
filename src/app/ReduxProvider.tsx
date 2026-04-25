@@ -15,8 +15,7 @@
 
 import React from 'react';
 import { Provider } from 'react-redux';
-import { PersistGate } from 'redux-persist/integration/react';
-import { store, persistor } from './store';
+import { store } from './store';
 
 /**
  * Props interface for ReduxProvider component
@@ -24,23 +23,6 @@ import { store, persistor } from './store';
 interface ReduxProviderProps {
   children: React.ReactNode;
 }
-
-/**
- * Loading component shown while Redux state is being rehydrated
- * 
- * @description Simple loading spinner to improve UX during state restoration
- * Prevents flash of unstyled content while persisted state loads
- * 
- * @returns JSX element with loading indicator
- */
-const LoadingComponent: React.FC = () => (
-  <div className="flex items-center justify-center min-h-screen bg-gray-50">
-    <div className="flex flex-col items-center space-y-4">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      <p className="text-gray-600 font-medium">Loading your shopping experience...</p>
-    </div>
-  </div>
-);
 
 /**
  * Redux Provider wrapper component
@@ -61,12 +43,7 @@ const LoadingComponent: React.FC = () => (
 export const ReduxProvider: React.FC<ReduxProviderProps> = ({ children }) => {
   return (
     <Provider store={store}>
-      <PersistGate 
-        loading={<LoadingComponent />} 
-        persistor={persistor}
-      >
-        {children}
-      </PersistGate>
+      {children}
     </Provider>
   );
 };

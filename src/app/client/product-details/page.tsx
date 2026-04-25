@@ -5,7 +5,6 @@ import MainLayout from '@/components/layout/MainLayout';
 import TopPart from './components/toppart';
 import Reviews from './components/Reviews';
 import DeliveryInfo from './components/toppart/DeliveryInfo';
-import { sampleUsers } from '@/lib/dummyData';
 import ShopInstagram from './components/ShopInstagram';
 
 /**
@@ -62,7 +61,7 @@ export default function ProductDetails() {
 
   return (
     <MainLayout
-      user={sampleUsers[0]} // Using sample user for demo
+      user={null}
       cartCount={2}
       wishlistCount={3}
       onSearch={handleSearch}

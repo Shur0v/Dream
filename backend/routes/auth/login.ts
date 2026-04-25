@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sampleUsers, mockApiDelay } from '@/lib/dummyData';
+import { mockApiDelay } from '@/lib/dummyData';
+import { getUserByEmail, getUserById } from '@backend/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,16 +16,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = sampleUsers.find(u => u.email === email);
-
-    if (!user || password !== 'password123') {
+    const user = await getUserByEmail(String(email).trim().toLowerCase());
+    const storedPassword = user ? (user as any).password : undefined;
+    if (!user || !storedPassword || storedPassword !== password) {
       return NextResponse.json(
         { success: false, error: 'Invalid credentials' },
         { status: 401 }
       );
     }
 
-    const token = `mock-jwt-token-${user.id}-${Date.now()}`;
+    const token = `token-${user.id}-${Date.now()}`;
     const refreshToken = `mock-refresh-token-${user.id}-${Date.now()}`;
 
     return NextResponse.json({
@@ -69,15 +70,16 @@ export async function GET(request: NextRequest) {
 
     const token = authHeader.substring(7);
 
-    if (!token.startsWith('mock-jwt-token-')) {
+    if (!token.startsWith('token-')) {
       return NextResponse.json(
         { success: false, error: 'Invalid token' },
         { status: 401 }
       );
     }
 
-    const userId = token.split('-')[3];
-    const user = sampleUsers.find(u => u.id === userId);
+    const parts = token.split('-');
+    const userId = parts.length >= 3 ? parts.slice(1, -1).join('-') : '';
+    const user = userId ? await getUserById(userId) : undefined;
 
     if (!user) {
       return NextResponse.json(

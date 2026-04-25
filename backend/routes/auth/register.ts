@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sampleUsers, mockApiDelay } from '@/lib/dummyData';
+import { mockApiDelay } from '@/lib/dummyData';
+import { getUserByEmail, saveUser } from '@backend/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existingUser = sampleUsers.find(u => u.email === email);
+    const existingUser = await getUserByEmail(String(email).trim().toLowerCase());
     if (existingUser) {
       return NextResponse.json(
         { success: false, error: 'User with this email already exists' },
@@ -46,19 +47,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newUser = {
+    const newUser = await saveUser({
       id: `user-${Date.now()}`,
-      email,
-      firstName,
-      lastName,
+      email: String(email).trim().toLowerCase(),
+      firstName: String(firstName).trim(),
+      lastName: String(lastName).trim(),
       role,
       phone: phone || undefined,
+      password,
       avatar: undefined,
       address: undefined,
       isEmailVerified: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    };
+    } as any);
 
     const token = `mock-jwt-token-${newUser.id}-${Date.now()}`;
     const refreshToken = `mock-refresh-token-${newUser.id}-${Date.now()}`;

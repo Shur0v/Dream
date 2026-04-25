@@ -9,7 +9,6 @@ import PromoBanners from './home/components/DiscountPromo';
 import BestSelling from './home/components/BestSelling';
 import DiscountPromo from './home/components/PromoBanners';
 import ForYou from './home/components/ForYou';
-import { sampleUsers } from '@/lib/dummyData';
 
 /**
  * Client Landing Page Component
@@ -65,7 +64,7 @@ export default function ClientLandingPage() {
 
   return (
     <MainLayout
-      user={sampleUsers[0]} // Using sample user for demo
+      user={null}
       cartCount={2}
       wishlistCount={3}
       onSearch={handleSearch}

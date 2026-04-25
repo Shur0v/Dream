@@ -3,7 +3,6 @@
 import React from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import ProductList from './components/ProductList';
-import { sampleUsers } from '@/lib/dummyData';
 
 /**
  * Products page component
@@ -59,7 +58,7 @@ export default function Products() {
 
   return (
     <MainLayout
-      user={sampleUsers[0]} // Using sample user for demo
+      user={null}
       cartCount={2}
       wishlistCount={3}
       onSearch={handleSearch}

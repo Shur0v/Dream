@@ -7,7 +7,6 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import mongoose from 'mongoose';
 import { connectToDatabase } from './config/database';
 
 // Load environment variables from root .env
@@ -31,16 +30,13 @@ import reviewsRoutes from './express-routes/reviews';
 const app: Express = express();
 const PORT = Number.parseInt(process.env.BACKEND_PORT || '5000', 10);
 
-// Middleware - CORS with proper headers
-// PERMISSIVE CORS: Allow all origins for maximum compatibility
-// This removes all CORS restrictions to ensure API works from any domain
 app.use(cors({
-  origin: true, // Allow all origins
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
   allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
+    'Content-Type',
+    'Authorization',
     'X-Requested-With',
     'Accept',
     'Origin',
@@ -48,42 +44,30 @@ app.use(cors({
     'Access-Control-Request-Headers',
   ],
   exposedHeaders: ['Content-Length', 'Content-Type'],
-  maxAge: 86400, // 24 hours
+  maxAge: 86400,
   preflightContinue: false,
   optionsSuccessStatus: 204,
 }));
 
-// Log CORS configuration
-console.log(`🌐 CORS enabled: ALL ORIGINS ALLOWED (permissive mode)`);
-console.log(`   Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD`);
-console.log(`   Credentials: enabled`);
-
-// Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Static file serving for images
-// Serve uploaded images from public/uploads directory
 const publicUploadsPath = path.join(process.cwd(), 'public', 'uploads');
 app.use('/uploads', express.static(publicUploadsPath));
-console.log(`📁 Static files serving from: ${publicUploadsPath}`);
 
-// Request logging middleware
 app.use((req: Request, res: Response, next: NextFunction) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   next();
 });
 
-// Health check endpoint
-app.get('/health', (req: Request, res: Response) => {
-  res.json({ 
-    status: 'ok', 
+app.get('/health', (_req: Request, res: Response) => {
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
   });
 });
 
-// API Routes
 app.use('/api/products', productsRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/colors', colorsRoutes);
@@ -98,60 +82,39 @@ app.use('/api', bestSellingRoutes);
 app.use('/api', uploadRoutes);
 app.use('/api', reviewsRoutes);
 
-// 404 handler
-app.use((req: Request, res: Response) => {
-  res.status(404).json({ 
-    success: false, 
-    error: 'Route not found' 
+app.use((_req: Request, res: Response) => {
+  res.status(404).json({
+    success: false,
+    error: 'Route not found',
   });
 });
 
-// Error handling middleware
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error('Error:', err);
-  res.status(500).json({ 
-    success: false, 
+  res.status(500).json({
+    success: false,
     error: 'Internal server error',
     message: process.env.NODE_ENV === 'development' ? err.message : undefined,
   });
 });
 
-// Initialize MongoDB connection before starting server
 async function startServer() {
   try {
-    // Connect to MongoDB first
-    console.log('🔄 Connecting to MongoDB...');
+    console.log('Connecting to Neon database...');
     await connectToDatabase();
-    
-    // Wait for connection to be fully ready (readyState === 1)
-    let attempts = 0;
-    while (mongoose.connection.readyState !== 1 && attempts < 50) {
-      await new Promise(resolve => setTimeout(resolve, 200));
-      attempts++;
-    }
-    
-    if (mongoose.connection.readyState !== 1) {
-      throw new Error('MongoDB connection not ready after waiting. ReadyState: ' + mongoose.connection.readyState);
-    }
-    
-    console.log('✅ MongoDB connection established and ready');
-    console.log(`📦 Database: ${mongoose.connection.db?.databaseName || 'unknown'}`);
-    
-    // Start Express server
+    console.log('Neon database ready');
+
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 Express server running on http://0.0.0.0:${PORT}`);
-      console.log(`📁 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`✅ Server is ready to accept connections`);
+      console.log(`Express server running on http://0.0.0.0:${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     });
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
-    console.error('💡 Please check your MongoDB connection string in .env file');
+    console.error('Failed to start server:', error);
+    console.error('Please check your NEON_DATABASE_URL / DATABASE_URL in .env');
     process.exit(1);
   }
 }
 
-// Start the server
 startServer();
 
 export default app;
-
