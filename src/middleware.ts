@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 type RateState = { count: number; windowStart: number };
 
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const RATE_LIMIT_MAX = 120;
+const RATE_LIMIT_MAX_READ = 600;
+const RATE_LIMIT_MAX_WRITE = 120;
 
 const rateStore: Map<string, RateState> =
   (globalThis as any).__dreamshopRateStore || new Map<string, RateState>();
@@ -34,7 +35,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (current.count >= RATE_LIMIT_MAX) {
+  const method = request.method.toUpperCase();
+  const isReadRequest = method === 'GET' || method === 'HEAD' || method === 'OPTIONS';
+  const maxPerWindow = isReadRequest ? RATE_LIMIT_MAX_READ : RATE_LIMIT_MAX_WRITE;
+
+  if (current.count >= maxPerWindow) {
     return NextResponse.json(
       {
         success: false,
@@ -57,4 +62,3 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: ['/api/:path*'],
 };
-

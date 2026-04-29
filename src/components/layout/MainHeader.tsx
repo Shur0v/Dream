@@ -24,6 +24,7 @@ import { CartDropdown } from '../cart/CartDropdown';
 import { WishlistDropdown } from '../wishlist/WishlistDropdown';
 import { Category, Product } from '@/types';
 import { getCartCount, getWishlistCount, getCurrentUser, syncCartFromApi, syncWishlistFromApi } from '@/lib/userStorage';
+import { fetchWithCache } from '@/lib/indexeddb/apiCache';
 
 // User data interface
 interface UserData {
@@ -206,16 +207,7 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
     const fetchCategories = async () => {
       try {
         setCategoriesLoading(true);
-        // Clear all category caches
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('categories_cache');
-          localStorage.removeItem('categories_cache_timestamp');
-          localStorage.removeItem('categories_cache_hash');
-        }
-        // Use same API endpoint as BrowseCategories
-        const response = await fetch(`/api/categories?limit=80&forceRefresh=true`, {
-          cache: 'no-store',
-        });
+        const response = await fetchWithCache(`/api/categories?limit=80`, {}, 2 * 60 * 1000);
         const result = await response.json();
         
         if (result.success && result.data) {

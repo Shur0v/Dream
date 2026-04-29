@@ -9,7 +9,8 @@ const DB_NAME = 'DreamAPICache';
 const DB_VERSION = 1;
 const API_STORE = 'apiResponses';
 const IMAGE_STORE = 'images'; // Reuse existing image store
-const DISABLE_CLIENT_CACHE = true;
+const DISABLE_CLIENT_CACHE = false;
+const inFlightRequests = new Map<string, Promise<Response>>();
 
 interface CachedAPIResponse {
   url: string;
@@ -339,14 +340,14 @@ export async function fetchWithCache(
   }
 
   const isClientSide = isClientSideURL(url);
-  
-  // For client-side URLs, don't check cache - always fetch fresh
-  if (!isClientSide) {
-    // Check cache first (only for admin URLs)
-    const cachedData = await apiCacheDB.getResponse(url);
+  const effectiveTtl = isClientSide ? Math.min(ttl, 2 * 60 * 1000) : ttl;
+  const method = (options.method || 'GET').toUpperCase();
+  const cacheableMethod = method === 'GET';
+  const requestKey = `${method}:${url}`;
 
+  if (cacheableMethod) {
+    const cachedData = await apiCacheDB.getResponse(url);
     if (cachedData) {
-      // Return cached data as Response
       return new Response(JSON.stringify(cachedData), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
@@ -354,40 +355,70 @@ export async function fetchWithCache(
     }
   }
 
+  if (cacheableMethod) {
+    const existing = inFlightRequests.get(requestKey);
+    if (existing) {
+      return existing.then((response) => response.clone());
+    }
+  }
+
   // Fetch from network (always fresh for client-side)
-  const response = await fetch(url, {
-    ...options,
-    cache: isClientSide ? 'no-store' : 'force-cache',
-    ...(isClientSide ? {} : { next: { revalidate: 60 } }),
-  });
-
-  if (!response.ok) {
-    return response;
-  }
-
-  // Parse response
-  const data = await response.json();
-
-  // Extract image URLs
-  const imageUrls = extractImageUrls(data.data || data);
-
-  // Only cache admin URLs (not client-side)
-  if (!isClientSide) {
-    await apiCacheDB.setResponse(url, data, imageUrls, ttl);
-  }
-
-  // Preload images in background (for both client and admin)
-  if (imageUrls.length > 0) {
-    import('@/lib/indexeddb/imageCache').then(({ preloadImages }) => {
-      preloadImages(imageUrls).catch(() => {});
+  const networkPromise = (async () => {
+    const response = await fetch(url, {
+      ...options,
+      cache: 'no-store',
+      next: { revalidate: 0 },
     });
+
+    if (!response.ok) {
+      if (response.status === 429 && cacheableMethod) {
+        const staleData = await apiCacheDB.getResponse(url);
+        if (staleData) {
+          return new Response(JSON.stringify(staleData), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        }
+      }
+      return response;
+    }
+
+    // Parse response
+    const data = await response.json();
+
+    // Extract image URLs
+    const imageUrls = extractImageUrls(data.data || data);
+
+    if (cacheableMethod) {
+      await apiCacheDB.setResponse(url, data, imageUrls, effectiveTtl);
+    }
+
+    // Preload images in background (for both client and admin)
+    if (imageUrls.length > 0) {
+      import('@/lib/indexeddb/imageCache').then(({ preloadImages }) => {
+        preloadImages(imageUrls).catch(() => {});
+      });
+    }
+
+    // Return response
+    return new Response(JSON.stringify(data), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  })();
+
+  if (cacheableMethod) {
+    inFlightRequests.set(requestKey, networkPromise);
   }
 
-  // Return response
-  return new Response(JSON.stringify(data), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  try {
+    const response = await networkPromise;
+    return response;
+  } finally {
+    if (cacheableMethod) {
+      inFlightRequests.delete(requestKey);
+    }
+  }
 }
 
 /**
@@ -416,15 +447,9 @@ function isClientSideURL(url: string): boolean {
 
 /**
  * Get cached API response (synchronous check)
- * Returns null for client-side URLs (no caching)
  */
 export async function getCachedResponse(url: string): Promise<any | null> {
   if (DISABLE_CLIENT_CACHE) {
-    return null;
-  }
-
-  // Disable caching for client-side URLs
-  if (isClientSideURL(url)) {
     return null;
   }
   

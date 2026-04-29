@@ -77,7 +77,6 @@ export const syncCartFromApi = async (): Promise<CartItem[]> => {
     color: item.color,
     size: item.size,
   }));
-  dispatchStateUpdate();
   return cartCache;
 };
 
@@ -90,13 +89,13 @@ export const syncWishlistFromApi = async (): Promise<WishlistItem[]> => {
     price: Number(item.price ?? 0),
     image: item.image || '/placeholder-image.png',
   }));
-  dispatchStateUpdate();
   return wishlistCache;
 };
 
 export const addToCart = async (item: CartItem): Promise<void> => {
   await apiService.addToCart(item.productId, item.quantity || 1);
   await syncCartFromApi();
+  dispatchStateUpdate();
 };
 
 export const removeFromCart = async (itemId: string): Promise<void> => {
@@ -104,6 +103,7 @@ export const removeFromCart = async (itemId: string): Promise<void> => {
   if (!found) return;
   await apiService.removeFromCart(found.productId);
   await syncCartFromApi();
+  dispatchStateUpdate();
 };
 
 export const updateCartQuantity = async (itemId: string, quantity: number): Promise<void> => {
@@ -111,25 +111,32 @@ export const updateCartQuantity = async (itemId: string, quantity: number): Prom
   if (!found) return;
   await apiService.updateCartItem(found.productId, Math.max(0, quantity));
   await syncCartFromApi();
+  dispatchStateUpdate();
 };
 
-export const saveCartItems = async (_items: CartItem[]): Promise<void> => {
+export const saveCartItems = async (items: CartItem[]): Promise<void> => {
   // Deprecated: cart is API-backed. Kept for compatibility.
+  if (items.length === 0) {
+    await apiService.clearCart();
+  }
   await syncCartFromApi();
+  dispatchStateUpdate();
 };
 
 export const addToWishlist = async (item: WishlistItem): Promise<void> => {
   await apiService.addToWishlist(item.productId);
   await syncWishlistFromApi();
+  dispatchStateUpdate();
 };
 
 export const removeFromWishlist = async (productId: string): Promise<void> => {
   await apiService.removeFromWishlist(productId);
   await syncWishlistFromApi();
+  dispatchStateUpdate();
 };
 
 export const saveWishlistItems = async (_items: WishlistItem[]): Promise<void> => {
   // Deprecated: wishlist is API-backed. Kept for compatibility.
   await syncWishlistFromApi();
+  dispatchStateUpdate();
 };
-
