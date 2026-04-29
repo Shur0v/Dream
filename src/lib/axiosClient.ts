@@ -8,20 +8,24 @@ import axios, { AxiosInstance } from 'axios';
 let authToken: string | null = null;
 
 const resolveBaseUrl = (): string => {
-  const explicitInternal = process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL;
-  if (explicitInternal) {
-    return explicitInternal;
+  if (typeof window !== 'undefined') {
+    return '/api';
   }
 
-  if (typeof window === 'undefined') {
-    const vercelUrl = process.env.VERCEL_URL;
-    if (vercelUrl) {
-      return `https://${vercelUrl}/api`;
-    }
-    return 'http://localhost:3000/api';
+  if (process.env.INTERNAL_API_URL) {
+    return process.env.INTERNAL_API_URL;
   }
 
-  return '/api';
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return `${process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '')}/api`;
+  }
+
+  const vercelUrl = process.env.VERCEL_URL;
+  if (vercelUrl) {
+    return `https://${vercelUrl}/api`;
+  }
+
+  return 'http://127.0.0.1:3001/api';
 };
 
 const client: AxiosInstance = axios.create({
@@ -37,6 +41,23 @@ client.interceptors.request.use((config) => {
     config.headers = config.headers ?? {};
     config.headers.Authorization = `Bearer ${authToken}`;
   }
+
+  if (typeof window !== 'undefined') {
+    const userData = window.localStorage.getItem('userData');
+    if (userData) {
+      try {
+        const parsed = JSON.parse(userData);
+        const email = parsed?.email ? String(parsed.email).trim().toLowerCase() : '';
+        if (email) {
+          config.headers = config.headers ?? {};
+          config.headers['x-user-id'] = `user-${email}`;
+        }
+      } catch {
+        // Ignore invalid local session data and let the API use its fallback user.
+      }
+    }
+  }
+
   return config;
 });
 

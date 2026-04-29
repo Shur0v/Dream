@@ -359,9 +359,6 @@ export default function FilteringSystem() {
           console.log('[FilteringSystem] Cache older than 2 minutes, fetching fresh data to get latest products/images...');
         }
         
-        // Fetch categories and products in parallel (only if cache expired or data changed)
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        
         const fetchPromises: Promise<void>[] = [];
         
         // Always fetch categories if cache is missing/invalid (PRIORITY - load first)

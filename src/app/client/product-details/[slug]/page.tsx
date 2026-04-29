@@ -7,30 +7,37 @@ import ShopInstagram from "../components/ShopInstagram";
 import ForYou from "../../home/components/ForYou";
 import DeliveryInfo from "../components/toppart/DeliveryInfo";
 import StructuredData from "@/components/SEO/StructuredData";
-import { getReviewsByProduct } from '@backend/lib/db';
+import { getColors, getProductById, getProducts, getReviewsByProduct } from '@backend/lib/db';
 
 // Force dynamic rendering to prevent caching issues
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dreamshopltd.com';
+
+async function findProduct(identifier: string): Promise<any | null> {
+  const exact = await getProductById(identifier);
+  if (exact) return exact;
+
+  const withoutTrailingIndex = identifier.replace(/-\d+$/, '');
+  if (withoutTrailingIndex !== identifier) {
+    const baseProduct = await getProductById(withoutTrailingIndex);
+    if (baseProduct) return baseProduct;
+  }
+
+  const products = await getProducts();
+  return products.find((item: any) => item.slug === identifier || item.sku === identifier) || null;
+}
+
 // Generate metadata for product pages
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const { slug } = await params;
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://dreamshoptld.com';
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const { slug } = params;
   
   try {
-    const response = await fetch(`${apiUrl}/products/${slug}`, {
-      cache: 'no-store',
-      next: { revalidate: 0 },
-    });
-    
-    if (response.ok) {
-      const result = await response.json();
-      if (result.success && result.data) {
-        const product = result.data;
+    const product = await findProduct(slug);
+    if (product) {
         const productName = product.name || 'Product';
-        const productDescription = product.description || `Buy ${productName} at Dreamshop. Best prices, fast delivery, secure shopping.`;
+        const productDescription = product.description || `Buy ${productName} online in Bangladesh from Dreamshop. Fast delivery, fair price, secure shopping.`;
         const productImage = product.images && product.images.length > 0 
           ? product.images[0] 
           : `${baseUrl}/placeholder-image.png`;
@@ -42,6 +49,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
           keywords: [
             productName.toLowerCase(),
             'dreamshop',
+            'dreamshop bd',
+            'dream shop bangladesh',
+            'bangladesh online shopping',
+            'online shopping bd',
+            'দাম',
+            'অনলাইন শপিং',
+            'বাংলাদেশ অনলাইন শপিং',
+            'ঢাকা অনলাইন শপিং',
+            'ক্যাশ অন ডেলিভারি',
+            'হোম ডেলিভারি বাংলাদেশ',
             'buy online',
             'online shopping',
             product.category?.toLowerCase() || '',
@@ -75,7 +92,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
             'product:price:currency': 'BDT',
           },
         };
-      }
     }
   } catch (error) {
     console.error('Error generating metadata:', error);
@@ -88,79 +104,16 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-export default async function ProductDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  
-  // Fetch product data from Express backend API
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+export default async function ProductDetailsPage({ params }: { params: { slug: string } }) {
+  const { slug } = params;
   
   let product = null;
   let lastError: string | null = null;
-  
-  // Try exact match first with retry logic
-  const fetchProduct = async (productId: string, retries = 3): Promise<any> => {
-    for (let attempt = 1; attempt <= retries; attempt++) {
-      try {
-        const response = await fetch(`${apiUrl}/products/${productId}`, {
-          cache: 'no-store',
-          next: { revalidate: 0 },
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-          },
-        });
-        
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
-            return result.data;
-          }
-        } else if (response.status === 404) {
-          return null; // Product not found, don't retry
-        }
-      } catch (error) {
-        lastError = error instanceof Error ? error.message : 'Unknown error';
-        if (attempt < retries) {
-          // Wait a bit before retrying
-          await new Promise(resolve => setTimeout(resolve, 100 * attempt));
-        }
-      }
-    }
-    return null;
-  };
-  
-  // Try exact match first
-  product = await fetchProduct(slug);
-  
-  // If not found, try removing trailing suffix pattern (e.g., "product-123-0" -> "product-123")
-  if (!product && slug.includes('-')) {
-    const baseId = slug.replace(/-\d+$/, ''); // Remove trailing "-number" pattern
-    if (baseId !== slug) {
-      product = await fetchProduct(baseId);
-    }
-  }
-  
-  // If still not found, try using Next.js API route as fallback
-  if (!product) {
-    try {
-      const nextApiUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3000';
-      const response = await fetch(`${nextApiUrl}/api/products/${slug}`, {
-        cache: 'no-store',
-        next: { revalidate: 0 },
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-        },
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          product = result.data;
-        }
-      }
-    } catch (error) {
-      console.error('Fallback API fetch failed:', error);
-    }
+
+  try {
+    product = await findProduct(slug);
+  } catch (error) {
+    lastError = error instanceof Error ? error.message : 'Unknown error';
   }
 
   // If product not found, show error or redirect
@@ -202,18 +155,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
   }
   
   if (productColors.length > 0) {
-    // Fetch all colors from Express backend API
-    const colorsResponse = await fetch(`${apiUrl}/colors`, {
-      cache: 'no-store',
-    }).catch(() => null);
-    
-    let allColors: Array<{ id: string; name: string; hexCode: string }> = [];
-    if (colorsResponse && colorsResponse.ok) {
-      const colorsResult = await colorsResponse.json();
-      if (colorsResult.success && colorsResult.data) {
-        allColors = colorsResult.data;
-      }
-    }
+    const allColors: Array<{ id: string; name: string; hexCode: string }> = await getColors();
     
     const colorMap = new Map(allColors.map(c => [c.id, c]));
     
@@ -304,7 +246,7 @@ export default async function ProductDetailsPage({ params }: { params: Promise<{
     },
     offers: {
       '@type': 'Offer',
-      url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dreamshoptld.com'}/client/product-details/${slug}`,
+      url: `${baseUrl}/client/product-details/${slug}`,
       priceCurrency: 'BDT',
       price: productData.price.toString(),
       availability: productData.inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',

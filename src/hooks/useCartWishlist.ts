@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { addToCart, addToWishlist, isInWishlist, removeFromWishlist, CartItem, WishlistItem } from '@/lib/userStorage';
+import { addToCart, addToWishlist, isInWishlist, removeFromWishlist, CartItem, WishlistItem, syncWishlistFromApi } from '@/lib/userStorage';
 
 interface Product {
   id: string;
@@ -18,10 +18,10 @@ export const useCartWishlist = (product: Product) => {
   const [isWishlisted, setIsWishlisted] = useState(false);
 
   useEffect(() => {
-    setIsWishlisted(isInWishlist(product.id));
+    void syncWishlistFromApi().finally(() => setIsWishlisted(isInWishlist(product.id)));
   }, [product.id]);
 
-  const handleAddToCart = (options?: { quantity?: number; color?: string; size?: string }) => {
+  const handleAddToCart = async (options?: { quantity?: number; color?: string; size?: string }) => {
     const cartItem: CartItem = {
       id: `cart-${product.id}-${Date.now()}`,
       productId: product.id,
@@ -33,17 +33,14 @@ export const useCartWishlist = (product: Product) => {
       size: options?.size,
     };
     
-    addToCart(cartItem);
-    
-    // Trigger storage event to update header counts
-    window.dispatchEvent(new Event('storage'));
+    await addToCart(cartItem);
     
     return true;
   };
 
-  const handleToggleWishlist = () => {
+  const handleToggleWishlist = async () => {
     if (isWishlisted) {
-      removeFromWishlist(product.id);
+      await removeFromWishlist(product.id);
       setIsWishlisted(false);
     } else {
       const wishlistItem: WishlistItem = {
@@ -54,12 +51,9 @@ export const useCartWishlist = (product: Product) => {
         image: product.images?.[0] || product.image || '/placeholder-image.png',
       };
       
-      addToWishlist(wishlistItem);
+      await addToWishlist(wishlistItem);
       setIsWishlisted(true);
     }
-    
-    // Trigger storage event to update header counts
-    window.dispatchEvent(new Event('storage'));
   };
 
   return {

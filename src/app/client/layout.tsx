@@ -9,7 +9,18 @@ export const metadata: Metadata = {
     default: 'Dreamshop - Your Trusted Online Shopping Destination',
     template: '%s | Dreamshop',
   },
-  description: 'Dreamshop - Bangladesh\'s leading online shopping platform. Shop for electronics, fashion, home & living, beauty products and more.',
+  description: 'Dreamshop - Bangladesh online shopping website for local buyers. Shop fashion, electronics, beauty, home products and daily essentials with cash on delivery and fast delivery.',
+  keywords: [
+    'dreamshop bd',
+    'online shopping bangladesh',
+    'online shopping bd',
+    'cash on delivery bangladesh',
+    'home delivery bangladesh',
+    'অনলাইন শপিং',
+    'বাংলাদেশ অনলাইন শপিং',
+    'ক্যাশ অন ডেলিভারি',
+    'হোম ডেলিভারি বাংলাদেশ',
+  ],
 };
 
 /**

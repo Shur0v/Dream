@@ -4,12 +4,29 @@ import StructuredData from '@/components/SEO/StructuredData';
 
 export const metadata: Metadata = {
   title: 'Dreamshop - Your Trusted Online Shopping Destination',
-  description: 'Dreamshop - Bangladesh\'s leading online shopping platform. Shop for electronics, fashion, home & living, beauty products and more. Fast delivery, secure payments, best prices. Join thousands of happy customers at Dreamshop.',
+  description: 'Dreamshop - Bangladesh online shopping website for local buyers. Shop fashion, electronics, beauty, home products and daily essentials with cash on delivery, fast delivery and fair prices.',
   keywords: [
     'dreamshop',
+    'dreamshop bd',
+    'dream shop bangladesh',
     'online shopping bangladesh',
+    'online shopping bd',
     'e-commerce bangladesh',
     'buy online bangladesh',
+    'cash on delivery bangladesh',
+    'cod shopping bd',
+    'home delivery bangladesh',
+    'dhaka online shopping',
+    'bd online shop',
+    'bangladesh online shop',
+    'অনলাইন শপিং',
+    'বাংলাদেশ অনলাইন শপিং',
+    'অনলাইন বাজার',
+    'ক্যাশ অন ডেলিভারি',
+    'হোম ডেলিভারি বাংলাদেশ',
+    'কম দামে পণ্য',
+    'সেরা দাম',
+    'বাংলাদেশে অনলাইনে কেনাকাটা',
     'online store',
     'shopping website',
     'electronics',
@@ -23,7 +40,7 @@ export const metadata: Metadata = {
   ],
   openGraph: {
     title: 'Dreamshop - Your Trusted Online Shopping Destination',
-    description: 'Bangladesh\'s leading online shopping platform. Shop for electronics, fashion, home & living, beauty products and more.',
+    description: 'Bangladesh online shopping website with cash on delivery, fast delivery and fair prices.',
     url: '/',
     siteName: 'Dreamshop',
     images: [
@@ -40,7 +57,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Dreamshop - Your Trusted Online Shopping Destination',
-    description: 'Bangladesh\'s leading online shopping platform. Shop for electronics, fashion, home & living, beauty products and more.',
+    description: 'Bangladesh online shopping website with cash on delivery, fast delivery and fair prices.',
     images: ['/og-image.jpg'],
   },
   alternates: {

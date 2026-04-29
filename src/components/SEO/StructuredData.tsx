@@ -21,9 +21,9 @@ export default function StructuredData({ type = 'Organization', data }: Structur
         structuredData = {
           ...baseData,
           name: 'Dreamshop',
-          url: process.env.NEXT_PUBLIC_SITE_URL || 'https://dreamshoptld.com',
-          logo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dreamshoptld.com'}/logo.png`,
-          description: 'Dreamshop - Bangladesh\'s leading online shopping platform',
+          url: process.env.NEXT_PUBLIC_SITE_URL || 'https://dreamshopltd.com',
+          logo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dreamshopltd.com'}/common/logo.svg`,
+          description: 'Dreamshop - Bangladesh online shopping website with cash on delivery and fast delivery',
           contactPoint: {
             '@type': 'ContactPoint',
             telephone: '+880-XXX-XXXXXX',
@@ -43,12 +43,12 @@ export default function StructuredData({ type = 'Organization', data }: Structur
         structuredData = {
           ...baseData,
           name: 'Dreamshop',
-          url: process.env.NEXT_PUBLIC_SITE_URL || 'https://dreamshoptld.com',
+          url: process.env.NEXT_PUBLIC_SITE_URL || 'https://dreamshopltd.com',
           potentialAction: {
             '@type': 'SearchAction',
             target: {
               '@type': 'EntryPoint',
-              urlTemplate: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dreamshoptld.com'}/client/products?search={search_term_string}`,
+              urlTemplate: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://dreamshopltd.com'}/client/products?search={search_term_string}`,
             },
             'query-input': 'required name=search_term_string',
           },

@@ -23,7 +23,7 @@ import { ShoppingCart, Search, Menu, X } from 'lucide-react';
 import { CartDropdown } from '../cart/CartDropdown';
 import { WishlistDropdown } from '../wishlist/WishlistDropdown';
 import { Category, Product } from '@/types';
-import { getCartCount, getWishlistCount, getCurrentUser } from '@/lib/userStorage';
+import { getCartCount, getWishlistCount, getCurrentUser, syncCartFromApi, syncWishlistFromApi } from '@/lib/userStorage';
 
 // User data interface
 interface UserData {
@@ -93,11 +93,11 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
   const [wishlistCount, setWishlistCount] = useState(0);
 
   useEffect(() => {
-    // Function to load user data and counts
-    const loadUserData = () => {
+    const loadUserData = async () => {
       const user = getCurrentUser();
       if (user) {
         setUserData(user);
+        await Promise.allSettled([syncCartFromApi(), syncWishlistFromApi()]);
         setCartCount(getCartCount());
         setWishlistCount(getWishlistCount());
       } else {
@@ -111,10 +111,10 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
     loadUserData();
 
     // Listen for storage changes (when user logs in from another tab or cart/wishlist updates)
-    window.addEventListener('storage', loadUserData);
+    window.addEventListener('cart-wishlist-updated', loadUserData);
 
     return () => {
-      window.removeEventListener('storage', loadUserData);
+      window.removeEventListener('cart-wishlist-updated', loadUserData);
     };
   }, []);
   const router = useRouter();
@@ -243,9 +243,8 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
       }
 
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
         const response = await fetch(
-          `${apiUrl}/products?search=${encodeURIComponent(searchQuery)}&limit=5&sortBy=createdAt&sortOrder=desc`
+          `/api/products?search=${encodeURIComponent(searchQuery)}&limit=5&sortBy=createdAt&sortOrder=desc`
         );
         
         if (response.ok) {

@@ -214,8 +214,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
       };
 
       // Create order directly via Express backend API (same as products)
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiUrl}/orders`, {
+      const response = await fetch(`/api/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

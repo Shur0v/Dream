@@ -8,7 +8,7 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { X, Trash2 } from 'lucide-react';
-import { getWishlistItems, removeFromWishlist, WishlistItem as StorageWishlistItem } from '@/lib/userStorage';
+import { getWishlistItems, removeFromWishlist, WishlistItem as StorageWishlistItem, syncWishlistFromApi } from '@/lib/userStorage';
 
 // Use WishlistItem from userStorage
 type WishlistItem = StorageWishlistItem;
@@ -31,7 +31,8 @@ export const WishlistDropdown: React.FC<WishlistDropdownProps> = ({
 
   // Load wishlist items from localStorage on mount and when modal opens
   useEffect(() => {
-    const loadWishlistItems = () => {
+    const loadWishlistItems = async () => {
+      await syncWishlistFromApi();
       const wishlistItems = getWishlistItems();
       setLocalItems(wishlistItems);
     };
@@ -43,10 +44,10 @@ export const WishlistDropdown: React.FC<WishlistDropdownProps> = ({
       loadWishlistItems();
     };
     
-    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('cart-wishlist-updated', handleStorageChange);
     
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('cart-wishlist-updated', handleStorageChange);
     };
   }, [isOpen]);
 
@@ -59,9 +60,9 @@ export const WishlistDropdown: React.FC<WishlistDropdownProps> = ({
 
   const wishlistItems = localItems;
 
-  const handleRemoveItem = (productId: string) => {
+  const handleRemoveItem = async (productId: string) => {
     // Remove from localStorage
-    removeFromWishlist(productId);
+    await removeFromWishlist(productId);
     
     // Update local state
     const updatedItems = getWishlistItems();

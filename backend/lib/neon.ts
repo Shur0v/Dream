@@ -104,6 +104,12 @@ const createStatements = [
     data JSONB NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
+  `CREATE TABLE IF NOT EXISTS wishlists (
+    id TEXT PRIMARY KEY,
+    user_id TEXT UNIQUE NOT NULL,
+    data JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
   `CREATE INDEX IF NOT EXISTS idx_products_active ON products(is_active)`,
   `CREATE INDEX IF NOT EXISTS idx_categories_active ON categories(is_active)`,
   `CREATE INDEX IF NOT EXISTS idx_colors_active ON colors(is_active)`,
@@ -112,6 +118,7 @@ const createStatements = [
   `CREATE INDEX IF NOT EXISTS idx_users_email ON users((data->>'email'))`,
   `CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON product_reviews((data->>'productId'))`,
   `CREATE INDEX IF NOT EXISTS idx_carts_user_id ON carts(user_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_wishlists_user_id ON wishlists(user_id)`,
 ];
 
 export async function ensureDatabaseReady(): Promise<void> {

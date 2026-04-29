@@ -10,7 +10,7 @@ import Image from 'next/image';
 import { Plus, Minus, X, Trash2 } from 'lucide-react';
 import { CheckoutModal } from './CheckoutModal';
 import { SuccessModal } from '@/components/ui/SuccessModal';
-import { getCartItems, saveCartItems, removeFromCart, updateCartQuantity, CartItem as StorageCartItem, getUserEmail } from '@/lib/userStorage';
+import { getCartItems, saveCartItems, removeFromCart, updateCartQuantity, CartItem as StorageCartItem, getUserEmail, syncCartFromApi } from '@/lib/userStorage';
 import { getApiUrl } from '@/lib/apiConfig';
 
 // Use CartItem from userStorage
@@ -46,7 +46,8 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
 
   // Load cart items from localStorage on mount and when modal opens
   useEffect(() => {
-    const loadCartItems = () => {
+    const loadCartItems = async () => {
+      await syncCartFromApi();
       const cartItems = getCartItems();
       setLocalItems(cartItems);
     };
@@ -58,10 +59,10 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
       loadCartItems();
     };
     
-    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('cart-wishlist-updated', handleStorageChange);
     
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('cart-wishlist-updated', handleStorageChange);
     };
   }, [isOpen]);
 
@@ -69,7 +70,7 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
   useEffect(() => {
     if (items.length > 0) {
       setLocalItems(items);
-      saveCartItems(items);
+      void saveCartItems(items);
     }
   }, [items]);
 
@@ -78,11 +79,11 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
   // Calculate total price
   const totalPrice = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
 
-  const handleQuantityChange = (itemId: string, newQuantity: number) => {
+  const handleQuantityChange = async (itemId: string, newQuantity: number) => {
     if (newQuantity < 0) return; // Allow 0 quantity
     
     // Update in localStorage
-    updateCartQuantity(itemId, newQuantity);
+    await updateCartQuantity(itemId, newQuantity);
     
     // Update local state
     const updatedItems = getCartItems();
@@ -96,10 +97,10 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
     setItemToDelete(itemId);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (itemToDelete) {
       // Remove from localStorage
-      removeFromCart(itemToDelete);
+      await removeFromCart(itemToDelete);
       
       // Update local state
       const updatedItems = getCartItems();
@@ -210,7 +211,7 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
         setOrderId(result.data.id);
         
         // Clear all cart items
-        saveCartItems([]);
+        await saveCartItems([]);
         setLocalItems([]);
         
         // Close checkout modal
@@ -226,7 +227,7 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
         onCheckout?.();
         
         // Trigger storage event to update header cart count
-        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new Event('cart-wishlist-updated'));
       } else {
         throw new Error(result.error || 'Failed to create order');
       }

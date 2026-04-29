@@ -68,8 +68,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     
     try {
       // Save user to MongoDB via API
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-      const response = await fetch(`${apiUrl}/users`, {
+      const response = await fetch(`/api/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -98,43 +97,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         email: formData.email,
         password: formData.password || null,
         loginTime: new Date().toISOString(),
-        cart: [],
-        wishlist: [],
       };
-
-      // Check if user exists in localStorage
-      const existingUsers = JSON.parse(localStorage.getItem('allUsers') || '[]');
-      const existingUserIndex = existingUsers.findIndex((u: any) => u.email === formData.email);
-      
-      if (existingUserIndex >= 0) {
-        // Update existing user in localStorage
-        if (formData.password && existingUsers[existingUserIndex].password === formData.password) {
-          // Password matches - restore cart and wishlist
-          userData.cart = existingUsers[existingUserIndex].cart || [];
-          userData.wishlist = existingUsers[existingUserIndex].wishlist || [];
-        }
-        existingUsers[existingUserIndex] = userData;
-      } else {
-        // Add new user to localStorage
-        existingUsers.push(userData);
-      }
-      
-      localStorage.setItem('allUsers', JSON.stringify(existingUsers));
       localStorage.setItem('userData', JSON.stringify(userData));
-      
-      // Initialize empty cart and wishlist for this user if not exists
-      if (!localStorage.getItem(`cart_${formData.email}`)) {
-        localStorage.setItem(`cart_${formData.email}`, JSON.stringify(userData.cart || []));
-      }
-      if (!localStorage.getItem(`wishlist_${formData.email}`)) {
-        localStorage.setItem(`wishlist_${formData.email}`, JSON.stringify(userData.wishlist || []));
-      }
       
       // Call success callback and close modal
       onLoginSuccess?.();
       onClose();
       
       // Trigger storage event to update header (works across components)
+      window.dispatchEvent(new Event('cart-wishlist-updated'));
       window.dispatchEvent(new Event('storage'));
       
       // Small delay then reload to ensure localStorage is updated

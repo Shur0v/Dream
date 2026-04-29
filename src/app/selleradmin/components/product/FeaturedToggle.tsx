@@ -29,8 +29,7 @@ export default function FeaturedToggle({
   useEffect(() => {
     const checkFeatured = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        const response = await fetch(`${apiUrl}/featured`);
+        const response = await fetch(`/api/featured-products`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch featured products');
@@ -57,11 +56,9 @@ export default function FeaturedToggle({
     setError(null);
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-
       if (isFeatured) {
         // Remove from featured
-        const response = await fetch(`${apiUrl}/admin/feature/${productId}`, {
+        const response = await fetch(`/api/featured-products/${productId}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -77,7 +74,7 @@ export default function FeaturedToggle({
         setIsFeatured(false);
       } else {
         // Add to featured
-        const response = await fetch(`${apiUrl}/admin/feature`, {
+        const response = await fetch(`/api/featured-products`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

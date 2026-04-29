@@ -5,11 +5,6 @@
 
 // Use Express backend URL - automatically detect production or development
 const getApiBaseUrl = (): string => {
-  // If explicitly set, use that (highest priority)
-  if (process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
-  }
-
   // In browser (client-side)
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
@@ -25,18 +20,26 @@ const getApiBaseUrl = (): string => {
       !hostname.endsWith('.local');
     
     if (isProduction) {
-      // Production: Use same domain /api (reverse proxy setup)
-      // This is the most common VPS setup - backend proxied through Nginx
       const baseHost = hostname.replace('www.', '');
       return `${protocol}//${baseHost}/api`;
     }
+
+    if (process.env.NEXT_PUBLIC_API_URL && !process.env.NEXT_PUBLIC_API_URL.includes('localhost')) {
+      return process.env.NEXT_PUBLIC_API_URL;
+    }
     
-    // Development: use localhost
-    return 'http://localhost:5000/api';
+    return '/api';
   }
 
-  // Server-side: default to localhost
-  return 'http://localhost:5000/api';
+  if (process.env.INTERNAL_API_URL) {
+    return process.env.INTERNAL_API_URL;
+  }
+
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return `${process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '')}/api`;
+  }
+
+  return 'http://127.0.0.1:3001/api';
 };
 
 export const API_BASE_URL = getApiBaseUrl();
