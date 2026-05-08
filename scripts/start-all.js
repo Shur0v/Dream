@@ -1,10 +1,20 @@
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 
 const isProduction = process.env.NODE_ENV === 'production';
 const frontendPort = process.env.PORT || '3001';
 const backendPort = process.env.BACKEND_PORT || '5000';
 process.env.PORT = frontendPort;
 process.env.BACKEND_PORT = backendPort;
+
+if (isProduction) {
+  const backendDist = path.join(process.cwd(), 'src', 'backend', 'dist', 'server.js');
+  if (!fs.existsSync(backendDist)) {
+    console.log('[start:all] backend dist missing. Running backend build...');
+    execSync('npm run backend:build', { stdio: 'inherit', env: process.env });
+  }
+}
 
 const commands = isProduction
   ? [

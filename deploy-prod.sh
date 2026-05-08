@@ -61,11 +61,7 @@ PORT="$(grep -E '^PORT=' "$ENV_FILE" | tail -n1 | cut -d '=' -f2- | tr -d '"' | 
 PORT="${PORT:-3001}"
 
 log "Restarting PM2 app '$APP_NAME' on port $PORT (frontend) + backend on BACKEND_PORT"
-pm2 delete "dreamshop-frontend" >/dev/null 2>&1 || true
-pm2 delete "dreamshop-backend" >/dev/null 2>&1 || true
-pm2 delete "$APP_NAME" >/dev/null 2>&1 || true
-PORT="$PORT" NODE_ENV=production pm2 start ecosystem.config.js --only "$APP_NAME"
-pm2 save
+APP_NAME="$APP_NAME" PORT="$PORT" NODE_ENV=production npm run pm2:start
 
 log "Waiting for app to become healthy"
 for i in {1..20}; do
