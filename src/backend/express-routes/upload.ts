@@ -140,7 +140,7 @@ router.post('/upload-image', async (req: Request, res: Response) => {
 
     console.log(`[UploadImage] Original image size: ${(file.buffer.length / 1024).toFixed(2)}KB`);
 
-    // Compress image to max 200KB using sharp
+    // Compress image to max 200KB and force WebP output
     const maxSizeBytes = 200 * 1024; // 200KB
     let quality = 85;
     let compressedBuffer: Buffer;
@@ -148,7 +148,7 @@ router.post('/upload-image', async (req: Request, res: Response) => {
     do {
       compressedBuffer = await sharp(file.buffer)
         .resize(1920, 1920, { fit: 'inside', withoutEnlargement: true })
-        .jpeg({ quality, progressive: true })
+        .webp({ quality })
         .toBuffer();
 
       if (compressedBuffer.length <= maxSizeBytes || quality <= 50) {
@@ -160,7 +160,7 @@ router.post('/upload-image', async (req: Request, res: Response) => {
     console.log(`[UploadImage] Compressed image size: ${(compressedBuffer.length / 1024).toFixed(2)}KB`);
 
     // Generate filename
-    const extension = '.jpg';
+    const extension = '.webp';
     const sanitizedBase = path
       .basename(file.originalname, path.extname(file.originalname))
       .replace(/\s+/g, '-')
@@ -181,7 +181,7 @@ router.post('/upload-image', async (req: Request, res: Response) => {
         url,
         pathname: url,
       },
-      message: 'Image uploaded and compressed successfully',
+      message: 'Image uploaded and converted to WebP successfully',
     });
   } catch (error) {
     console.error('Image upload failed:', error);

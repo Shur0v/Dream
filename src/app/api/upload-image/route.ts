@@ -4,7 +4,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import { compressImage } from '@/lib/imageCompression';
 import sharp from 'sharp';
-import { v2 as cloudinary } from 'cloudinary';
+import { hasR2Config, uploadWebpToR2 } from '@/lib/r2';
 
 export const runtime = 'nodejs';
 
@@ -18,22 +18,6 @@ async function saveLocally(buffer: Buffer, filename: string) {
   await fs.writeFile(targetPath, buffer);
   return `/uploads/${filename}`;
 }
-
-const hasCloudinaryConfig = () =>
-  Boolean(
-    process.env.CLOUDINARY_CLOUD_NAME &&
-      process.env.CLOUDINARY_API_KEY &&
-      process.env.CLOUDINARY_API_SECRET
-  );
-
-const configureCloudinary = () => {
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-    secure: true,
-  });
-};
 
 export async function POST(request: NextRequest) {
   try {
@@ -92,24 +76,18 @@ export async function POST(request: NextRequest) {
       .toString(36)
       .slice(2)}-${finalFileName}`;
 
-    if (hasCloudinaryConfig()) {
-      configureCloudinary();
-      const dataUri = `data:image/webp;base64,${webpBuffer.toString('base64')}`;
-      const uploaded = await cloudinary.uploader.upload(dataUri, {
-        folder: `dreamshop/${folder}`,
-        resource_type: 'image',
-        format: 'webp',
-        overwrite: false,
-      });
+    if (hasR2Config()) {
+      const r2Key = `dreamshop/${objectName}`;
+      const r2Url = await uploadWebpToR2(r2Key, webpBuffer);
 
       return NextResponse.json({
         success: true,
         data: {
-          url: uploaded.secure_url,
-          pathname: uploaded.public_id,
-          provider: 'cloudinary',
+          url: r2Url,
+          pathname: r2Key,
+          provider: 'cloudflare-r2',
         },
-        message: 'Image uploaded and converted to WebP via Cloudinary',
+        message: 'Image uploaded and converted to WebP via Cloudflare R2',
       });
     }
 

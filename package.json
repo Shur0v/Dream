@@ -12,6 +12,9 @@
     "dev:all": "concurrently \"pnpm backend:dev\" \"pnpm dev\"",
     "start:all": "node scripts/start-all.js",
     "build:all": "npm run backend:build && npm run build",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs -f postgres",
     "pm2:start": "pm2 start ecosystem.config.js",
     "pm2:stop": "pm2 stop ecosystem.config.js",
     "pm2:restart": "pm2 restart ecosystem.config.js",
@@ -27,6 +30,7 @@
     "verify:images": "ts-node src/backend/scripts/verify-all-images-cdn.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1045.0",
     "@hookform/resolvers": "^5.2.2",
     "@neondatabase/serverless": "^1.0.0",
     "@reduxjs/toolkit": "^2.0.1",

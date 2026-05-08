@@ -11,6 +11,8 @@ APP_NAME="${APP_NAME:-dreamshop}"
 APP_DIR="${APP_DIR:-$(pwd)}"
 DEPLOY_BRANCH="${DEPLOY_BRANCH:-}"
 ENV_FILE="${ENV_FILE:-$APP_DIR/.env}"
+NGINX_DOMAIN="${NGINX_DOMAIN:-}"
+NGINX_CONF_NAME="${NGINX_CONF_NAME:-dreamshop}"
 
 log() { printf "\n[%s] %s\n" "$(date '+%F %T')" "$*"; }
 warn() { printf "\n[WARN] %s\n" "$*" >&2; }
@@ -80,8 +82,13 @@ done
 log "PM2 status"
 pm2 status
 
-log "Listening ports (3000/3001)"
-ss -ltnp | grep -E ':3000|:3001' || true
+if [[ -n "$NGINX_DOMAIN" ]]; then
+  log "Applying nginx config for domain: $NGINX_DOMAIN"
+  bash "$APP_DIR/scripts/setup-nginx.sh" "$NGINX_DOMAIN" "$NGINX_CONF_NAME"
+fi
+
+log "Listening ports (3001/5000)"
+ss -ltnp | grep -E ':3001|:5000' || true
 
 log "Recent logs for $APP_NAME"
 pm2 logs "$APP_NAME" --lines 40 --nostream || true

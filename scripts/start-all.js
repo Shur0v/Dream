@@ -1,15 +1,19 @@
 const { spawn } = require('child_process');
 
 const isProduction = process.env.NODE_ENV === 'production';
+const frontendPort = process.env.PORT || '3001';
+const backendPort = process.env.BACKEND_PORT || '5000';
+process.env.PORT = frontendPort;
+process.env.BACKEND_PORT = backendPort;
 
 const commands = isProduction
   ? [
       { name: 'backend', cmd: 'npm', args: ['run', 'backend:start'] },
-      { name: 'frontend', cmd: 'npm', args: ['run', 'start'] },
+      { name: 'frontend', cmd: 'npm', args: ['run', 'start', '--', '-p', frontendPort] },
     ]
   : [
       { name: 'backend', cmd: 'npm', args: ['run', 'backend:dev'] },
-      { name: 'frontend', cmd: 'npm', args: ['run', 'dev'] },
+      { name: 'frontend', cmd: 'npm', args: ['run', 'dev', '--', '-p', frontendPort] },
     ];
 
 const children = [];
