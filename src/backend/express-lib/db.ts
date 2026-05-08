@@ -5,10 +5,10 @@
 
 import { promises as fs } from 'fs';
 import path from 'path';
-import { Product, Order, Category, Color, User } from '../../src/types';
+import { Product, Order, Category, Color, User } from '../../types';
 
 // Database file paths
-const DB_DIR = path.join(process.cwd(), 'backend', 'database');
+const DB_DIR = path.join(process.cwd(), 'src', 'backend', 'database');
 const PRODUCTS_DB = path.join(DB_DIR, 'products.json');
 const ORDERS_DB = path.join(DB_DIR, 'orders.json');
 const CATEGORIES_DB = path.join(DB_DIR, 'categories.json');

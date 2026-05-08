@@ -4,14 +4,14 @@ const nextConfig: NextConfig = {
   // Performance optimizations
   compress: true,
   
-  // Exclude backend directory from Next.js build (it's a separate Express server)
+  // Keep backend-only modules server-side
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.resolve.alias = {
         ...config.resolve.alias,
       };
     }
-    // Exclude backend directory
+    // Keep backend modules out of client bundle
     config.externals = config.externals || [];
     if (typeof config.externals === 'function') {
       const originalExternals = config.externals;
@@ -33,7 +33,7 @@ const nextConfig: NextConfig = {
       'node_modules/@swc/core-linux-x64-gnu',
       'node_modules/@swc/core-linux-x64-musl',
       'node_modules/@esbuild/linux-x64',
-      'backend/**/*',
+      'src/backend/**/*',
     ],
   },
   

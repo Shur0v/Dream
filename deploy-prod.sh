@@ -58,9 +58,11 @@ npm run build
 PORT="$(grep -E '^PORT=' "$ENV_FILE" | tail -n1 | cut -d '=' -f2- | tr -d '"' | tr -d "'" | xargs || true)"
 PORT="${PORT:-3001}"
 
-log "Restarting PM2 app '$APP_NAME' on port $PORT"
+log "Restarting PM2 app '$APP_NAME' on port $PORT (frontend) + backend on BACKEND_PORT"
+pm2 delete "dreamshop-frontend" >/dev/null 2>&1 || true
+pm2 delete "dreamshop-backend" >/dev/null 2>&1 || true
 pm2 delete "$APP_NAME" >/dev/null 2>&1 || true
-pm2 start npm --name "$APP_NAME" --cwd "$APP_DIR" -- start -- -p "$PORT"
+PORT="$PORT" NODE_ENV=production pm2 start ecosystem.config.js --only "$APP_NAME"
 pm2 save
 
 log "Waiting for app to become healthy"
@@ -85,4 +87,3 @@ log "Recent logs for $APP_NAME"
 pm2 logs "$APP_NAME" --lines 40 --nostream || true
 
 log "Deploy finished"
-

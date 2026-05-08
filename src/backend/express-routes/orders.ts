@@ -8,7 +8,7 @@ import {
   getOrderById as getOrderByIdFromMongo,
   saveOrder as saveOrderToMongo,
 } from '../lib/db';
-import { OrderStatus } from '../../src/types';
+import { OrderStatus } from '../../types';
 
 // Alias for easier use in the file
 const getOrderById = getOrderByIdFromMongo;

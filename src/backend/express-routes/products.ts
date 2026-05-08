@@ -11,7 +11,7 @@ import {
   invalidateProductsCache,
   getColors,
 } from '../lib/db';
-import { Product } from '../../src/types';
+import { Product } from '../../types';
 
 const router = Router();
 

@@ -13,7 +13,7 @@ import {
   savePromoBanner,
   saveFestivalBanner,
 } from '../lib/db';
-import { HeroBanner, PromoBanner, PromoBannerVariant, FestivalBanner } from '../../src/types';
+import { HeroBanner, PromoBanner, PromoBannerVariant, FestivalBanner } from '../../types';
 
 const router = Router();
 

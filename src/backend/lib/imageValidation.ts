@@ -42,10 +42,11 @@ export const validateImageList = (
   const sanitized: string[] = [];
   for (const item of values) {
     const result = validateImageField(item, { fieldName });
-    if (!result.valid) return result;
+    if (!result.valid) {
+      return { valid: false, error: 'error' in result ? result.error : `${fieldName} is invalid` };
+    }
     sanitized.push(result.value);
   }
 
   return { valid: true, value: sanitized };
 };
-

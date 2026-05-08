@@ -4,7 +4,7 @@
  * This utility provides a resilient persistence layer that reads/writes JSON blobs
  * to Upstash Redis when the credentials are available. When Redis is not configured
  * (local dev, CI, etc.), it gracefully falls back to the filesystem based stores in
- * `backend/database/*.json`, and finally to an in-memory Map so writes never explode
+ * `src/backend/database/*.json`, and finally to an in-memory Map so writes never explode
  * even in read-only environments (e.g. preview deployments).
  */
 
@@ -21,7 +21,7 @@ interface JsonStoreOptions {
    */
   fileName?: string;
   /**
-   * Directory for filesystem persistence. Defaults to backend/database.
+   * Directory for filesystem persistence. Defaults to src/backend/database.
    */
   directory?: string;
   /**
@@ -41,7 +41,7 @@ const redisClient =
     : null;
 
 const memoryStore = new Map<string, string>();
-const DEFAULT_DIRECTORY = path.join(process.cwd(), 'backend', 'database');
+const DEFAULT_DIRECTORY = path.join(process.cwd(), 'src', 'backend', 'database');
 
 function resolveFilePath(store: string, options?: JsonStoreOptions): string {
   const dir = options?.directory ?? DEFAULT_DIRECTORY;

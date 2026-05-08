@@ -4,7 +4,7 @@ import path from 'path';
 import { DatabaseSchema } from '@backend/schemas/database';
 import { writeJsonStore } from '@backend/lib/jsonStore';
 
-const LOCAL_DB_PATH = path.join(process.cwd(), 'backend', 'database', 'database.json');
+const LOCAL_DB_PATH = path.join(process.cwd(), 'src', 'backend', 'database', 'database.json');
 
 function unauthorized(message: string) {
   return NextResponse.json({ success: false, error: message }, { status: 401 });
