@@ -8,23 +8,35 @@ const backendPort = process.env.BACKEND_PORT || '5000';
 process.env.PORT = frontendPort;
 process.env.BACKEND_PORT = backendPort;
 
-if (isProduction) {
-  const backendDist = path.join(process.cwd(), 'src', 'backend', 'dist', 'server.js');
+const hasDatabaseUrl = Boolean(
+  process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL
+);
+const runBackendInProduction = process.env.RUN_BACKEND_IN_PRODUCTION === 'true';
+const shouldRunBackend = !isProduction || runBackendInProduction;
+
+if (isProduction && shouldRunBackend) {
+  const backendDist = path.join(process.cwd(), 'src', 'backend', 'dist', 'backend', 'server.js');
   if (!fs.existsSync(backendDist)) {
     console.log('[start:all] backend dist missing. Running backend build...');
     execSync('npm run backend:build', { stdio: 'inherit', env: process.env });
   }
 }
 
-const commands = isProduction
-  ? [
-      { name: 'backend', cmd: 'npm', args: ['run', 'backend:start'] },
-      { name: 'frontend', cmd: 'npm', args: ['run', 'start', '--', '-p', frontendPort] },
-    ]
-  : [
-      { name: 'backend', cmd: 'npm', args: ['run', 'backend:dev'] },
-      { name: 'frontend', cmd: 'npm', args: ['run', 'dev', '--', '-p', frontendPort] },
-    ];
+const commands = [];
+
+if (isProduction) {
+  if (shouldRunBackend) {
+    if (!hasDatabaseUrl) {
+      console.warn('[start:all] Skipping backend in production because DATABASE_URL/NEON_DATABASE_URL is missing.');
+    } else {
+      commands.push({ name: 'backend', cmd: 'npm', args: ['run', 'backend:start'] });
+    }
+  }
+  commands.push({ name: 'frontend', cmd: 'npm', args: ['run', 'start', '--', '-p', frontendPort] });
+} else {
+  commands.push({ name: 'backend', cmd: 'npm', args: ['run', 'backend:dev'] });
+  commands.push({ name: 'frontend', cmd: 'npm', args: ['run', 'dev', '--', '-p', frontendPort] });
+}
 
 const children = [];
 let shuttingDown = false;
