@@ -31,8 +31,7 @@ function CachedCategoryImage({
 
 /**
  * Browse Categories Component
- * Displays circular category icons for easy navigation
- * Cards loop within 8000rem width container
+ * Displays category cards for easy navigation
  */
 export default function BrowseCategories() {
   const router = useRouter();
@@ -101,12 +100,11 @@ export default function BrowseCategories() {
     };
   }, []);
 
-  // Calculate how many times to loop categories to fill 8000rem
-  // Approximate: each card with gap ~15rem on large screen, so ~533 sets needed
-  // But we'll loop enough times to ensure smooth scrolling
+  // Keep a small repeated set for smooth horizontal scroll without huge DOM cost.
   const loopedCategories: Category[] = [];
   if (categories.length > 0) {
-    const setsNeeded = Math.ceil(8000 / 15); // Approximate calculation
+    const minVisibleCards = 12;
+    const setsNeeded = Math.max(3, Math.ceil(minVisibleCards / categories.length) + 1);
     for (let i = 0; i < setsNeeded; i++) {
       loopedCategories.push(...categories.map(cat => ({ ...cat })));
     }
@@ -220,7 +218,7 @@ export default function BrowseCategories() {
               Browse Categories
             </div>
             
-            {/* Horizontal Scrollable Container - 8000rem width with looping cards */}
+            {/* Horizontal scrollable category row */}
             <div 
               ref={scrollContainerRef}
               className="layer-4 w-full overflow-x-auto scrollbar-hide horizontal-scroll" 
@@ -238,11 +236,8 @@ export default function BrowseCategories() {
                   <div className="text-neutral-500">No categories available</div>
                 </div>
               ) : (
-                <div 
-                  className="inline-flex justify-start items-center gap-4 md:gap-6 select-none"
-                  style={{ width: '8000rem', userSelect: 'none' }}
-                >
-                  {/* Inner flex container for cards - 8000rem width with looping categories */}
+                <div className="inline-flex justify-start items-center gap-4 md:gap-6 select-none" style={{ userSelect: 'none' }}>
+                  {/* Inner flex container for repeated categories */}
                   
                   {loopedCategories.map((category, index) => (
                     <button 

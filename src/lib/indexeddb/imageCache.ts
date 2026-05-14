@@ -9,6 +9,18 @@ const DB_NAME = 'DreamImageCache';
 const DB_VERSION = 1;
 const STORE_NAME = 'images';
 
+function isCrossOriginUrl(url: string): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+  try {
+    const parsed = new URL(url, window.location.origin);
+    return parsed.origin !== window.location.origin;
+  } catch {
+    return false;
+  }
+}
+
 interface CachedImage {
   url: string;
   blob: Blob;
@@ -292,6 +304,13 @@ export async function getCachedImageUrl(imageUrl: string): Promise<string> {
     return imageUrl;
   }
 
+  // Avoid cross-origin fetch() for image caching because many CDNs/R2 URLs
+  // are renderable in <img> but block JS fetch without explicit CORS headers.
+  // Returning original URL removes noisy console errors and duplicate requests.
+  if (isCrossOriginUrl(imageUrl)) {
+    return imageUrl;
+  }
+
   try {
     // Check if image exists in cache
     const cachedBlob = await imageCacheDB.getImage(imageUrl);
@@ -331,7 +350,11 @@ export async function getCachedImageUrl(imageUrl: string): Promise<string> {
  */
 export async function preloadImages(imageUrls: string[]): Promise<void> {
   const validUrls = imageUrls.filter(
-    (url) => url && !url.startsWith('data:') && !url.startsWith('/placeholder')
+    (url) =>
+      url &&
+      !url.startsWith('data:') &&
+      !url.startsWith('/placeholder') &&
+      !isCrossOriginUrl(url)
   );
 
   // Load images in parallel (limit to 5 concurrent requests)
