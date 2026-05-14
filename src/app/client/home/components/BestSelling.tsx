@@ -19,6 +19,8 @@ export default function BestSelling() {
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<'cart' | 'wishlist' | null>(null);
   const [pendingProduct, setPendingProduct] = useState<BestSellingProduct | null>(null);
+  const resolveProductId = (product: BestSellingProduct): string =>
+    (product as any).productId || product.id;
 
   // Fetch best selling products from API with caching
   useEffect(() => {
@@ -164,7 +166,7 @@ export default function BestSelling() {
                       } else {
                         const wishlistItem: WishlistItem = {
                           id: `wishlist-${product.id}-${Date.now()}`,
-                          productId: product.id,
+                          productId: resolveProductId(product),
                           name: product.name,
                           price: product.price,
                           image: product.images && product.images.length > 0 ? product.images[0] : '/placeholder-image.png',
@@ -303,7 +305,7 @@ export default function BestSelling() {
                       } else {
                         const cartItem: CartItem = {
                           id: `cart-${product.id}-${Date.now()}`,
-                          productId: product.id,
+                          productId: resolveProductId(product),
                           name: product.name,
                           price: product.price,
                           quantity: 1,

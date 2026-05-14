@@ -143,6 +143,7 @@ export function useForm<T extends Record<string, any>>(
 
   return {
     values,
+    setValues,
     errors,
     touched,
     handleChange,

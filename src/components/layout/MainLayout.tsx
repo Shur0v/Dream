@@ -13,11 +13,9 @@
  * @version 1.0.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Header from './Header';
 import Footer from './Footer';
-import LoginModal from '@/components/modals/LoginModal';
-import RegisterModal from '@/components/modals/RegisterModal';
 import FeaturesSection from '@/app/client/home/components/FeaturesSection';
 
 /**
@@ -127,73 +125,12 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   showFooter = true,
   className,
 }) => {
-  // Modal state management
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-
-  // Listen for custom event to open login modal
-  useEffect(() => {
-    const handleOpenLoginModalEvent = (event: CustomEvent) => {
-      const userType = event.detail?.userType || 'client';
-      handleOpenLoginModal(userType);
-    };
-
-    window.addEventListener('openLoginModal' as any, handleOpenLoginModalEvent as EventListener);
-    return () => {
-      window.removeEventListener('openLoginModal' as any, handleOpenLoginModalEvent as EventListener);
-    };
-  }, []);
-  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
-  const [currentUserType, setCurrentUserType] = useState<'client' | 'seller' | 'reseller'>('client');
-
-  // Handle opening login modal
   const handleOpenLoginModal = (userType: 'client' | 'seller' | 'reseller' = 'client') => {
-    setCurrentUserType(userType);
-    setIsLoginModalOpen(true);
+    window.dispatchEvent(new CustomEvent('openLoginModal', { detail: { userType } }));
   };
 
-  // Handle opening register modal
   const handleOpenRegisterModal = (userType: 'client' | 'seller' | 'reseller' = 'client') => {
-    setCurrentUserType(userType);
-    setIsRegisterModalOpen(true);
-  };
-
-  // Handle closing modals
-  const handleCloseLoginModal = () => {
-    setIsLoginModalOpen(false);
-  };
-
-  const handleCloseRegisterModal = () => {
-    setIsRegisterModalOpen(false);
-  };
-
-  // Handle switching user types
-  const handleSwitchUserType = (userType: 'client' | 'seller' | 'reseller') => {
-    setCurrentUserType(userType);
-  };
-
-  // Handle opening register modal from login modal
-  const handleOpenRegisterFromLogin = (userType: 'client' | 'seller' | 'reseller') => {
-    setIsLoginModalOpen(false);
-    setCurrentUserType(userType);
-    setIsRegisterModalOpen(true);
-  };
-
-  // Handle opening login modal from register modal
-  const handleOpenLoginFromRegister = (userType: 'client' | 'seller' | 'reseller') => {
-    setIsRegisterModalOpen(false);
-    setCurrentUserType(userType);
-    setIsLoginModalOpen(true);
-  };
-
-  // Handle successful login/registration
-  const handleLoginSuccess = () => {
-    console.log('Login successful');
-    // TODO: Update user state, show success message, etc.
-  };
-
-  const handleRegisterSuccess = () => {
-    console.log('Registration successful');
-    // TODO: Update user state, show success message, etc.
+    window.dispatchEvent(new CustomEvent('openRegisterModal', { detail: { userType } }));
   };
 
   return (
@@ -230,26 +167,6 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           onOpenRegisterModal={handleOpenRegisterModal}
         />
       )}
-
-      {/* Login Modal */}
-      <LoginModal
-        isOpen={isLoginModalOpen}
-        onClose={handleCloseLoginModal}
-        userType={currentUserType}
-        onLoginSuccess={handleLoginSuccess}
-        onSwitchUserType={handleSwitchUserType}
-        onOpenRegisterModal={handleOpenRegisterFromLogin}
-      />
-
-      {/* Register Modal */}
-      <RegisterModal
-        isOpen={isRegisterModalOpen}
-        onClose={handleCloseRegisterModal}
-        userType={currentUserType}
-        onRegisterSuccess={handleRegisterSuccess}
-        onSwitchUserType={handleSwitchUserType}
-        onOpenLoginModal={handleOpenLoginFromRegister}
-      />
     </div>
   );
 };

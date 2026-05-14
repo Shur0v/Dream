@@ -26,6 +26,19 @@ export const WishlistDropdown: React.FC<WishlistDropdownProps> = ({
   items = [],
   onRemoveItem,
 }) => {
+  const normalizeImageSrc = (raw: string): string => {
+    if (!raw) return '/placeholder-image.png';
+    if (raw.startsWith('/_next/image?')) {
+      try {
+        const url = new URL(raw, 'https://dreamshopltd.com');
+        const encoded = url.searchParams.get('url');
+        if (encoded) return decodeURIComponent(encoded);
+      } catch {
+        return '/placeholder-image.png';
+      }
+    }
+    return raw;
+  };
   // Load wishlist items from localStorage
   const [localItems, setLocalItems] = useState<WishlistItem[]>([]);
 
@@ -126,14 +139,24 @@ export const WishlistDropdown: React.FC<WishlistDropdownProps> = ({
                     {/* Product Image */}
                     <div className="layer-10 w-16 h-16 bg-fuchsia-500/10 rounded-lg relative overflow-hidden flex-shrink-0" data-layer="10">
                       {/* layer-10 = product image container */}
+                      {(() => {
+                        const imageSrc = normalizeImageSrc(item.image);
+                        const unoptimized =
+                          imageSrc.startsWith('http://') ||
+                          imageSrc.startsWith('https://') ||
+                          imageSrc.startsWith('blob:');
+                        return (
                       <Image
-                        src={item.image}
+                        src={imageSrc}
                         alt={item.name}
                         width={100}
                         height={100}
+                        unoptimized={unoptimized}
                         className="w-full h-full object-cover"
                         loading="lazy"
                       />
+                        );
+                      })()}
                     </div>
                     
                     {/* Product Info */}

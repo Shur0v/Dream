@@ -236,3 +236,21 @@ For support, email support@dreamstore.com or join our Discord community.
 
 **Built with ❤️ by the Dream Store Team**
 # Dream
+
+## VPS PostgreSQL Notes
+
+- The project supports custom VPS PostgreSQL through `DATABASE_URL` (preferred).
+- User addresses are stored in the `users` table JSON `data.address`.
+- Buy Now flow now saves address once for logged-in users and reuses it for next orders.
+- If user is not signed in, Buy Now prompts sign in first.
+
+## SteadFast Integration Notes
+
+- Orders endpoint (`POST /api/orders`) now supports optional SteadFast create-order call.
+- Set these env vars on VPS:
+  - `STEADFAST_ENABLED=true`
+  - `STEADFAST_BASE_URL=https://portal.packzy.com/api/v1`
+  - `STEADFAST_CREATE_ORDER_PATH=/create_order`
+  - `STEADFAST_API_KEY=...`
+  - `STEADFAST_SECRET_KEY=...`
+- If SteadFast returns a `paymentUrl`, frontend checkout/buy-now redirects user to that URL.

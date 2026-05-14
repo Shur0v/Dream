@@ -21,6 +21,19 @@ export default function RelatedProduct({ currentProduct }: RelatedProductProps) 
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const normalizeImageSrc = (raw: string): string => {
+    if (!raw) return '/placeholder-product.png';
+    if (raw.startsWith('/_next/image?')) {
+      try {
+        const url = new URL(raw, 'https://dreamshopltd.com');
+        const encoded = url.searchParams.get('url');
+        if (encoded) return decodeURIComponent(encoded);
+      } catch {
+        return '/placeholder-product.png';
+      }
+    }
+    return raw;
+  };
 
   // Fetch related products based on tags - Always ensure 4 products are shown
   useEffect(() => {
@@ -170,6 +183,13 @@ export default function RelatedProduct({ currentProduct }: RelatedProductProps) 
             products.map((product, index) => {
               // Ensure consistent product ID format
               const productId = (product as any).productId || product.id;
+              const resolvedImage = normalizeImageSrc(
+                product.images && product.images.length > 0 ? product.images[0] : '/placeholder-product.png'
+              );
+              const unoptimized =
+                resolvedImage.startsWith('http://') ||
+                resolvedImage.startsWith('https://') ||
+                resolvedImage.startsWith('blob:');
               return (
              <Link 
                key={`${product.id}-${index}`} 
@@ -231,9 +251,10 @@ export default function RelatedProduct({ currentProduct }: RelatedProductProps) 
                 {/* layer-12 = product image container */}
                 
                 <Image
-                  src={product.images && product.images.length > 0 ? product.images[0] : '/placeholder-product.png'}
+                  src={resolvedImage}
                   alt={`${product.name} product image`}
                   fill
+                  unoptimized={unoptimized}
                   className="object-cover transform md:group-hover:scale-105 transition-transform duration-500 ease-out select-none pointer-events-none"
                   draggable={false}
                   onDragStart={(e) => e.preventDefault()}

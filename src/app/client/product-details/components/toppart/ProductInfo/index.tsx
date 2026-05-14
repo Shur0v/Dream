@@ -30,9 +30,25 @@ interface ProductInfoProps {
   className?: string;
 }
 
+interface SavedUserAddress {
+  street: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+}
+
+interface SavedUserProfile {
+  id: string;
+  email: string;
+  firstName?: string;
+  phone?: string;
+  address?: SavedUserAddress;
+}
+
 const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], className }) => {
   const router = useRouter();
-  const [quantity, setQuantity] = useState(2);
+  const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState<string | null>(
     product.colors && product.colors.length > 0 ? product.colors[0] : null
   );
@@ -43,7 +59,102 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
   const [orderId, setOrderId] = useState<string | null>(null);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [showSignInModal, setShowSignInModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<'cart' | 'wishlist' | null>(null);
+  const [pendingAction, setPendingAction] = useState<'cart' | 'wishlist' | 'buyNow' | null>(null);
+  const [checkoutInitialValues, setCheckoutInitialValues] = useState<{
+    name: string;
+    phoneNumber: string;
+    email: string;
+    district: string;
+    upazila: string;
+    thana: string;
+    postOffice: string;
+  } | undefined>(undefined);
+
+  const getCurrentUserProfile = async (): Promise<SavedUserProfile | null> => {
+    const currentUser = JSON.parse(localStorage.getItem('userData') || 'null');
+    const email = currentUser?.email;
+    if (!email) return null;
+
+    const response = await fetch(`/api/users?email=${encodeURIComponent(email)}`);
+    if (!response.ok) return null;
+    const result = await response.json();
+    if (!result?.success || !result?.data) return null;
+    return result.data as SavedUserProfile;
+  };
+
+  const createOrder = async (input: {
+    userId: string;
+    shippingAddress: SavedUserAddress;
+    customerName: string;
+    phoneNumber: string;
+    email: string;
+    district: string;
+    upazila: string;
+    thana: string;
+    postOffice: string;
+  }) => {
+    const orderItem = {
+      id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      productId: product.id,
+      product: {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        category: product.category,
+        sellerId: product.seller,
+        images: images.length > 0 ? images : ['/placeholder-image.png'],
+      },
+      quantity,
+      price: product.price,
+      color: selectedColor || undefined,
+      size: selectedSize || undefined,
+    };
+
+    const orderData = {
+      userId: input.userId,
+      items: [orderItem],
+      shippingAddress: input.shippingAddress,
+      billingAddress: input.shippingAddress,
+      paymentMethod: 'Cash on Delivery',
+      notes: JSON.stringify({
+        customerName: input.customerName,
+        phoneNumber: input.phoneNumber,
+        email: input.email,
+        district: input.district,
+        upazila: input.upazila,
+        thana: input.thana,
+        postOffice: input.postOffice,
+      }),
+    };
+
+    const response = await fetch(`/api/orders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(orderData),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { error: errorText || 'Failed to create order' };
+      }
+      throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    if (!result.success || !result.data) {
+      throw new Error(result.error || 'Failed to create order');
+    }
+    return {
+      order: result.data,
+      paymentUrl: result.paymentUrl || result.steadfast?.paymentUrl || result?.data?.steadfast?.paymentUrl,
+    };
+  };
 
   // Check if product is in wishlist
   useEffect(() => {
@@ -79,6 +190,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
           addToWishlist(wishlistItem);
           setIsWishlisted(true);
           window.dispatchEvent(new Event('storage'));
+        } else if (pendingAction === 'buyNow') {
+          setIsCheckoutOpen(true);
         }
         setShowSignInModal(false);
         setPendingAction(null);
@@ -96,8 +209,76 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
   };
 
   const handleBuyNow = () => {
-    // Open checkout modal instead of redirecting
-    setIsCheckoutOpen(true);
+    if (!isUserLoggedIn()) {
+      setPendingAction('buyNow');
+      setShowSignInModal(true);
+      return;
+    }
+
+    (async () => {
+      try {
+        const userFromStorage = JSON.parse(localStorage.getItem('userData') || 'null');
+        const profile = await getCurrentUserProfile();
+
+        if (!profile?.id || !userFromStorage?.email) {
+          setPendingAction('buyNow');
+          setShowSignInModal(true);
+          return;
+        }
+
+        const hasSavedAddress =
+          !!profile.address?.street &&
+          !!profile.address?.city &&
+          !!profile.address?.zipCode;
+
+        if (hasSavedAddress) {
+          setIsSubmitting(true);
+          const savedAddress = profile.address as SavedUserAddress;
+          const savedDistrict = savedAddress.city || '';
+          const parts = (savedAddress.street || '').split(',').map((part) => part.trim());
+          const savedThana = parts[0] || '';
+          const savedUpazila = parts[1] || '';
+          const savedPostOffice = savedAddress.zipCode || '';
+
+          const created = await createOrder({
+            userId: profile.id,
+            shippingAddress: savedAddress,
+            customerName: profile.firstName || userFromStorage.username || 'Customer',
+            phoneNumber: profile.phone || userFromStorage.mobile || '',
+            email: userFromStorage.email,
+            district: savedDistrict,
+            upazila: savedUpazila,
+            thana: savedThana,
+            postOffice: savedPostOffice,
+          });
+
+          if (created.paymentUrl) {
+            window.location.href = created.paymentUrl;
+            return;
+          }
+          setOrderId(created.order.id);
+          setIsSuccessModalOpen(true);
+          alert('Order placed using your saved address.');
+          return;
+        }
+
+        setCheckoutInitialValues({
+          name: userFromStorage.username || '',
+          phoneNumber: userFromStorage.mobile || '',
+          email: userFromStorage.email || '',
+          district: '',
+          upazila: '',
+          thana: '',
+          postOffice: '',
+        });
+        setIsCheckoutOpen(true);
+      } catch (error: any) {
+        console.error('Error in Buy Now flow:', error);
+        alert('Failed to process Buy Now. Please try again. Error: ' + (error.message || 'Unknown error'));
+      } finally {
+        setIsSubmitting(false);
+      }
+    })();
   };
 
   const handleAddToCart = () => {
@@ -159,34 +340,20 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
     setIsSubmitting(true);
     
     try {
-      // Get or create a temporary userId (in production, this would come from auth)
-      const tempUserId = `user-${Date.now()}`;
-      
-      // Calculate total amount
-      const totalAmount = product.price * quantity;
-      
-      // Get product image (first image or placeholder)
-      const productImage = images && images.length > 0 ? images[0] : '/placeholder-image.png';
-      
-      // Create order item with product snapshot
-      const orderItem = {
-        id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        productId: product.id,
-        product: {
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          category: product.category,
-          sellerId: product.seller,
-          images: images.length > 0 ? images : ['/placeholder-image.png'],
-        },
-        quantity: quantity,
-        price: product.price,
-        color: selectedColor || undefined,
-        size: selectedSize || undefined,
-      };
-      
-      // Create shipping address from form data
+      const userFromStorage = JSON.parse(localStorage.getItem('userData') || 'null');
+      if (!userFromStorage?.email) {
+        setPendingAction('buyNow');
+        setShowSignInModal(true);
+        return;
+      }
+
+      const profile = await getCurrentUserProfile();
+      if (!profile?.id) {
+        setPendingAction('buyNow');
+        setShowSignInModal(true);
+        return;
+      }
+
       const shippingAddress = {
         street: `${formData.thana}, ${formData.upazila}`,
         city: formData.district,
@@ -194,55 +361,38 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
         zipCode: formData.postOffice,
         country: 'Bangladesh',
       };
-      
-      // Prepare order data
-      const orderData = {
-        userId: tempUserId,
-        items: [orderItem],
-        shippingAddress: shippingAddress,
-        billingAddress: shippingAddress, // Use same address for billing
-        paymentMethod: 'Cash on Delivery', // No payment system, direct order
-        notes: JSON.stringify({
-          customerName: formData.name,
-          phoneNumber: formData.phoneNumber,
-          email: formData.email,
-          district: formData.district,
-          upazila: formData.upazila,
-          thana: formData.thana,
-          postOffice: formData.postOffice,
-        }),
-      };
 
-      // Create order directly via Express backend API (same as products)
-      const response = await fetch(`/api/orders`, {
+      // Save one-time address to user account for future instant Buy Now
+      await fetch('/api/users', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: formData.name || userFromStorage.username,
+          mobile: formData.phoneNumber || userFromStorage.mobile,
+          email: userFromStorage.email,
+          address: shippingAddress,
+        }),
+      });
+      const created = await createOrder({
+        userId: profile.id,
+        shippingAddress,
+        customerName: formData.name || userFromStorage.username || '',
+        phoneNumber: formData.phoneNumber || userFromStorage.mobile || '',
+        email: userFromStorage.email,
+        district: formData.district,
+        upazila: formData.upazila,
+        thana: formData.thana,
+        postOffice: formData.postOffice,
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { error: errorText || 'Failed to create order' };
-        }
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      if (created.paymentUrl) {
+        window.location.href = created.paymentUrl;
+        return;
       }
-
-      const result = await response.json();
-      
-      if (result.success && result.data) {
-        // Order created successfully
-        setOrderId(result.data.id);
-        setIsCheckoutOpen(false);
-        setIsSuccessModalOpen(true);
-      } else {
-        throw new Error(result.error || 'Failed to create order');
-      }
+      setOrderId(created.order.id);
+      setIsCheckoutOpen(false);
+      setIsSuccessModalOpen(true);
+      alert('Address saved successfully. Next Buy Now will use this address automatically.');
     } catch (error: any) {
       console.error('Error creating order:', error);
       alert('Failed to create order. Please try again. Error: ' + (error.message || 'Unknown error'));
@@ -468,6 +618,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
         onClose={() => setIsCheckoutOpen(false)}
         onSubmit={handleCheckoutSubmit}
         isSubmitting={isSubmitting}
+        initialValues={checkoutInitialValues}
+        hideContactFields={isUserLoggedIn()}
       />
 
       {/* Success Modal */}
@@ -491,9 +643,13 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
           window.dispatchEvent(new CustomEvent('openLoginModal', { detail: { userType: 'client' } }));
           // The storage event listener will handle retry after login
         }}
-        message={pendingAction === 'cart' 
-          ? 'Please sign in to add items to your cart.' 
-          : 'Please sign in to add items to your wishlist.'}
+        message={
+          pendingAction === 'cart'
+            ? 'Please sign in to add items to your cart.'
+            : pendingAction === 'buyNow'
+              ? 'Please sign in first to place your order.'
+              : 'Please sign in to add items to your wishlist.'
+        }
       />
     </div>
   );

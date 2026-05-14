@@ -129,14 +129,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${isOpen ? '' : 'hidden'}`}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
     >
       {/* Background overlay */}
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
       
       {/* Modal content - compact and centered */}
       <div

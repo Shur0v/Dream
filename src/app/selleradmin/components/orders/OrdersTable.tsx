@@ -412,6 +412,7 @@ export default function OrdersTable() {
                               src={item.image}
                               alt={item.name}
                               fill
+                              unoptimized={item.image.startsWith('http://') || item.image.startsWith('https://') || item.image.startsWith('blob:')}
                               className="object-cover"
                             />
                           </div>

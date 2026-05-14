@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getOrders, saveOrder } from '@backend/lib/db';
 import { OrderStatus } from '@/types';
+import { buildSteadfastRecipientAddress, createSteadfastOrder, isSteadfastEnabled } from '@backend/lib/steadfast';
 
 const shortDelay = async () => {
   if (process.env.NODE_ENV !== 'production') {
@@ -70,11 +71,57 @@ export async function POST(request: NextRequest) {
       isActive: true,
     };
 
-    const savedOrder = await saveOrder(newOrder as any);
+    let savedOrder = await saveOrder(newOrder as any);
+
+    let steadfast: any = null;
+    if (isSteadfastEnabled()) {
+      let recipientName = 'Customer';
+      let recipientPhone = '';
+      let noteText = '';
+      try {
+        const parsedNotes = typeof notes === 'string' ? JSON.parse(notes) : notes;
+        recipientName = parsedNotes?.customerName || parsedNotes?.name || recipientName;
+        recipientPhone = parsedNotes?.phoneNumber || parsedNotes?.mobile || parsedNotes?.phone || recipientPhone;
+        noteText = parsedNotes?.note || parsedNotes?.remarks || '';
+      } catch {
+        // Ignore parse errors
+      }
+
+      const steadFastResult = await createSteadfastOrder({
+        invoice: savedOrder.id,
+        recipient_name: recipientName,
+        recipient_phone: recipientPhone || '8801000000000',
+        recipient_address: buildSteadfastRecipientAddress(shippingAddress || {}),
+        cod_amount: Number(totalAmount) || 0,
+        note: noteText || `Order ${savedOrder.id}`,
+      });
+
+      steadfast = steadFastResult;
+
+      if (steadFastResult.success) {
+        const enrichedOrder = {
+          ...savedOrder,
+          trackingNumber: steadFastResult.trackingCode || savedOrder.trackingNumber,
+          notes: JSON.stringify({
+            ...(typeof notes === 'string' ? (() => { try { return JSON.parse(notes); } catch { return {}; } })() : (notes || {})),
+            steadfast: {
+              consignmentId: steadFastResult.consignmentId,
+              trackingCode: steadFastResult.trackingCode,
+              paymentUrl: steadFastResult.paymentUrl,
+              statusCode: steadFastResult.statusCode,
+            },
+          }),
+        };
+        savedOrder = await saveOrder(enrichedOrder as any);
+      }
+    }
+
     return NextResponse.json(
       {
         success: true,
         data: savedOrder,
+        steadfast,
+        paymentUrl: steadfast?.paymentUrl,
         message: 'Order created successfully',
       },
       { status: 201 }
@@ -87,4 +134,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

@@ -388,12 +388,17 @@ function CachedMainImage({
   alt: string;
 }) {
   const cachedSrc = useCachedImageUrl(src);
+  const isExternalOrBlob =
+    cachedSrc.startsWith('http://') ||
+    cachedSrc.startsWith('https://') ||
+    cachedSrc.startsWith('blob:');
   return (
     <div className="absolute inset-0">
       <Image
         src={cachedSrc}
         alt={alt}
         fill
+        unoptimized={isExternalOrBlob}
         className="object-cover rounded-[20px]"
         sizes="(max-width: 768px) 100vw, 471px"
         loading="lazy"
@@ -412,11 +417,16 @@ function CachedThumbnailImage({
   alt: string;
 }) {
   const cachedSrc = useCachedImageUrl(src);
+  const isExternalOrBlob =
+    cachedSrc.startsWith('http://') ||
+    cachedSrc.startsWith('https://') ||
+    cachedSrc.startsWith('blob:');
   return (
     <Image
       src={cachedSrc}
       alt={alt}
       fill
+      unoptimized={isExternalOrBlob}
       className="object-cover rounded-[20px]"
       sizes="(max-width: 768px) 25vw, 146px"
       loading="lazy"

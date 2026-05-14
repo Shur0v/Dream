@@ -24,6 +24,8 @@ export default function FeaturedProducts() {
   const [pendingProduct, setPendingProduct] = useState<FeaturedProduct | null>(null);
 
   const filters = ['Man', 'Woman', 'Kids'];
+  const resolveProductId = (product: FeaturedProduct): string =>
+    (product as any).productId || product.id;
 
   const filterData = {
     Man: ['T-Shirts', 'Shirts', 'Jeans', 'Shoes', 'Watches', 'Accessories'],
@@ -210,7 +212,7 @@ export default function FeaturedProducts() {
           ) : (
             products.map((product, index) => {
               return (
-             <Link key={product.id} href={`/client/product-details/${product.productId || product.id}`} className="block h-full md:flex md:items-center">
+             <Link key={product.id} href={`/client/product-details/${resolveProductId(product)}`} className="block h-full md:flex md:items-center">
                <div
                  className="layer-14 w-full md:w-[312px] h-full md:h-auto p-3 md:p-4 bg-sky-50 rounded-xl border border-black/10 flex flex-col justify-start items-start group md:hover:shadow-md md:hover:scale-[1.01] transition-all duration-300 ease-in-out cursor-pointer flex-shrink-0 select-none"
                  style={{ transformOrigin: 'center', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', msUserSelect: 'none' }}
@@ -263,7 +265,7 @@ export default function FeaturedProducts() {
                       } else {
                         const wishlistItem: WishlistItem = {
                           id: `wishlist-${product.id}-${Date.now()}`,
-                          productId: product.id,
+                          productId: resolveProductId(product),
                           name: product.name,
                           price: product.price,
                           image: product.images && product.images.length > 0 ? product.images[0] : '/placeholder-image.png',
@@ -402,7 +404,7 @@ export default function FeaturedProducts() {
                       } else {
                         const cartItem: CartItem = {
                           id: `cart-${product.id}-${Date.now()}`,
-                          productId: product.id,
+                          productId: resolveProductId(product),
                           name: product.name,
                           price: product.price,
                           quantity: 1,
@@ -487,7 +489,7 @@ export default function FeaturedProducts() {
               if (pendingAction === 'cart') {
                 const cartItem: CartItem = {
                   id: `cart-${pendingProduct.id}-${Date.now()}`,
-                  productId: pendingProduct.id,
+                  productId: resolveProductId(pendingProduct as FeaturedProduct),
                   name: pendingProduct.name,
                   price: pendingProduct.price,
                   quantity: 1,
@@ -498,7 +500,7 @@ export default function FeaturedProducts() {
               } else if (pendingAction === 'wishlist') {
                 const wishlistItem: WishlistItem = {
                   id: `wishlist-${pendingProduct.id}-${Date.now()}`,
-                  productId: pendingProduct.id,
+                  productId: resolveProductId(pendingProduct as FeaturedProduct),
                   name: pendingProduct.name,
                   price: pendingProduct.price,
                   image: pendingProduct.images && pendingProduct.images.length > 0 ? pendingProduct.images[0] : '/placeholder-image.png',

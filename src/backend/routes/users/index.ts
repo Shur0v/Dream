@@ -10,6 +10,22 @@ const shortDelay = async () => {
 export async function GET(_request: NextRequest) {
   try {
     await shortDelay();
+    const { searchParams } = new URL(_request.url);
+    const email = searchParams.get('email');
+
+    if (email) {
+      const user = await getUserByEmail(email);
+      if (!user) {
+        return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: user,
+        message: 'User retrieved successfully',
+      });
+    }
+
     const users = await getUsers();
     return NextResponse.json({
       success: true,
@@ -26,7 +42,7 @@ export async function POST(request: NextRequest) {
   try {
     await shortDelay();
     const body = await request.json();
-    const { username, mobile, email, password } = body;
+    const { username, mobile, email, password, address } = body;
 
     if (!email) {
       return NextResponse.json({ success: false, error: 'Email is required' }, { status: 400 });
@@ -41,6 +57,7 @@ export async function POST(request: NextRequest) {
           firstName: username || existingUser.firstName || email.split('@')[0],
           lastName: existingUser.lastName || '',
           phone: mobile || existingUser.phone,
+          address: address || existingUser.address,
           role: existingUser.role || 'client',
           password: password || (existingUser as any).password,
         }
@@ -50,6 +67,7 @@ export async function POST(request: NextRequest) {
           lastName: '',
           role: 'client' as const,
           phone: mobile || undefined,
+          address: address || undefined,
           isEmailVerified: false,
           password,
         };
@@ -72,4 +90,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

@@ -5,6 +5,7 @@ import ReduxProvider from "./ReduxProvider";
 import ClientCacheHandler from "./ClientCacheHandler";
 import StructuredData from "@/components/SEO/StructuredData";
 import ThemeBootstrap from "@/components/theme/ThemeBootstrap";
+import GlobalAuthModals from "@/components/modals/GlobalAuthModals";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -156,6 +157,7 @@ export default function RootLayout({
         <ThemeBootstrap />
         <ReduxProvider>
           {children}
+          <GlobalAuthModals />
         </ReduxProvider>
       </body>
     </html>

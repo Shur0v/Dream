@@ -33,6 +33,19 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
   onRemoveItem,
   onCheckout,
 }) => {
+  const normalizeImageSrc = (raw: string): string => {
+    if (!raw) return '/placeholder-image.png';
+    if (raw.startsWith('/_next/image?')) {
+      try {
+        const url = new URL(raw, 'https://dreamshopltd.com');
+        const encoded = url.searchParams.get('url');
+        if (encoded) return decodeURIComponent(encoded);
+      } catch {
+        return '/placeholder-image.png';
+      }
+    }
+    return raw;
+  };
   // Load cart items from localStorage
   const [localItems, setLocalItems] = useState<CartItem[]>([]);
   // State for delete confirmation modal
@@ -207,6 +220,16 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
       const result = await response.json();
       
       if (result.success && result.data) {
+        const paymentUrl: string | undefined =
+          result.paymentUrl ||
+          result.steadfast?.paymentUrl ||
+          result?.data?.steadfast?.paymentUrl;
+
+        if (paymentUrl) {
+          window.location.href = paymentUrl;
+          return;
+        }
+
         // Order created successfully
         setOrderId(result.data.id);
         
@@ -357,15 +380,24 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
                     {/* Item Image */}
                     <div className="layer-22 w-28 h-28 flex-shrink-0 relative" data-layer="22">
                       {/* layer-22 = item image container */}
-                      
+                      {(() => {
+                        const imageSrc = normalizeImageSrc(item.image);
+                        const unoptimized =
+                          imageSrc.startsWith('http://') ||
+                          imageSrc.startsWith('https://') ||
+                          imageSrc.startsWith('blob:');
+                        return (
                       <Image
-                        src={item.image}
+                        src={imageSrc}
                         alt={item.name}
                         width={112}
                         height={112}
+                        unoptimized={unoptimized}
                         className="w-full h-full object-cover rounded"
                         loading="lazy"
                       />
+                        );
+                      })()}
                       
                       {/* Delete Button - Top Right Corner with Glassy Background */}
                       <button

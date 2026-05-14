@@ -88,6 +88,22 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
   onOpenLoginModal,
   onOpenRegisterModal,
 }) => {
+  const openLoginModal = (userType: 'client' | 'seller' | 'reseller' = 'client') => {
+    if (onOpenLoginModal) {
+      onOpenLoginModal(userType);
+      return;
+    }
+    window.dispatchEvent(new CustomEvent('openLoginModal', { detail: { userType } }));
+  };
+
+  const openRegisterModal = (userType: 'client' | 'seller' | 'reseller' = 'client') => {
+    if (onOpenRegisterModal) {
+      onOpenRegisterModal(userType);
+      return;
+    }
+    window.dispatchEvent(new CustomEvent('openRegisterModal', { detail: { userType } }));
+  };
+
   // Get user data from localStorage
   const [userData, setUserData] = useState<UserData | null>(null);
   const [cartCount, setCartCount] = useState(0);
@@ -299,8 +315,8 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
   const navigationLinks = [
     { text: "Home", href: "/" },
     { text: "All Products", href: "/client/categories" },
-    { text: "Become a Seller", href: "#", onClick: () => { onOpenRegisterModal?.('seller'); setIsMobileMenuOpen(false); } },
-    { text: "Re seller", href: "#", onClick: () => { onOpenRegisterModal?.('reseller'); setIsMobileMenuOpen(false); } },
+    { text: "Become a Seller", href: "#", onClick: () => { openRegisterModal('seller'); setIsMobileMenuOpen(false); } },
+    { text: "Re seller", href: "#", onClick: () => { openRegisterModal('reseller'); setIsMobileMenuOpen(false); } },
   ];
   
   return (
@@ -686,7 +702,7 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
                 </button>
               ) : (
                 <button
-                  onClick={() => onOpenLoginModal?.('client')}
+                  onClick={() => openLoginModal('client')}
                   className="layer-27 h-[52px] px-6 sm:px-8 py-4 bg-fuchsia-500 rounded-[10px] flex justify-center items-center gap-2 hover:opacity-90 transition-opacity cursor-pointer"
                   aria-label="Sign in to your account"
                   data-layer="27"
@@ -833,7 +849,7 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
               ) : (
                 <button
                   onClick={() => {
-                    onOpenLoginModal?.('client');
+                    openLoginModal('client');
                     setIsMobileMenuOpen(false);
                   }}
                   className="w-full mt-4 px-4 py-3 bg-fuchsia-500 text-white rounded-lg font-semibold hover:opacity-90 transition-opacity cursor-pointer"

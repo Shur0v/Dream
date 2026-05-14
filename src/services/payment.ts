@@ -40,9 +40,10 @@ class StateFirstPaymentService {
   private baseUrl: string = 'https://api.statefirst.com'; // Update with actual State First API URL
 
   constructor() {
-    // Get API keys from environment variables or use provided keys
-    this.apiKey = process.env.NEXT_PUBLIC_STATEFIRST_API_KEY || 'yjksy1y0x15x9ysaiuw1eoelqpqbgtii';
-    this.secretKey = process.env.NEXT_PUBLIC_STATEFIRST_SECRET_KEY || 'nymohxctr2gbuwk1urpdqxqq';
+    // Client-side payment keys should never be hardcoded.
+    // Keep blank defaults and prefer server-side integration.
+    this.apiKey = process.env.NEXT_PUBLIC_STATEFIRST_API_KEY || '';
+    this.secretKey = process.env.NEXT_PUBLIC_STATEFIRST_SECRET_KEY || '';
     
     // Override base URL if provided in env
     if (process.env.NEXT_PUBLIC_STATEFIRST_API_URL) {

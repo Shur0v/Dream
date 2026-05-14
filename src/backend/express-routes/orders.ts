@@ -8,6 +8,7 @@ import {
   getOrderById as getOrderByIdFromMongo,
   saveOrder as saveOrderToMongo,
 } from '../lib/db';
+import { buildSteadfastRecipientAddress, createSteadfastOrder, isSteadfastEnabled } from '../lib/steadfast';
 import { OrderStatus } from '../../types';
 
 // Alias for easier use in the file
@@ -153,12 +154,58 @@ router.post('/', async (req: Request, res: Response) => {
     });
 
     // Save order to MongoDB
-    const savedOrder = await saveOrderToMongo(newOrder);
+    let savedOrder = await saveOrderToMongo(newOrder as any);
     console.log('[POST /api/orders] Order saved successfully:', savedOrder.id);
+
+    // Optional SteadFast payment/consignment integration
+    let steadfast: any = null;
+    if (isSteadfastEnabled()) {
+      let recipientName = 'Customer';
+      let recipientPhone = '';
+      let noteText = '';
+      try {
+        const parsedNotes = typeof notes === 'string' ? JSON.parse(notes) : notes;
+        recipientName = parsedNotes?.customerName || parsedNotes?.name || recipientName;
+        recipientPhone = parsedNotes?.phoneNumber || parsedNotes?.mobile || parsedNotes?.phone || recipientPhone;
+        noteText = parsedNotes?.note || parsedNotes?.remarks || '';
+      } catch {
+        // Ignore parse errors; fall back to safe defaults
+      }
+
+      const steadFastResult = await createSteadfastOrder({
+        invoice: savedOrder.id,
+        recipient_name: recipientName,
+        recipient_phone: recipientPhone || '8801000000000',
+        recipient_address: buildSteadfastRecipientAddress(shippingAddress || {}),
+        cod_amount: Number(totalAmount) || 0,
+        note: noteText || `Order ${savedOrder.id}`,
+      });
+
+      steadfast = steadFastResult;
+
+      if (steadFastResult.success) {
+        const enrichedOrder = {
+          ...savedOrder,
+          trackingNumber: steadFastResult.trackingCode || savedOrder.trackingNumber,
+          notes: JSON.stringify({
+            ...(typeof notes === 'string' ? (() => { try { return JSON.parse(notes); } catch { return {}; } })() : (notes || {})),
+            steadfast: {
+              consignmentId: steadFastResult.consignmentId,
+              trackingCode: steadFastResult.trackingCode,
+              paymentUrl: steadFastResult.paymentUrl,
+              statusCode: steadFastResult.statusCode,
+            },
+          }),
+        };
+        savedOrder = await saveOrderToMongo(enrichedOrder as any);
+      }
+    }
 
     res.status(201).json({
       success: true,
       data: savedOrder,
+      steadfast,
+      paymentUrl: steadfast?.paymentUrl,
       message: 'Order created successfully',
     });
   } catch (error) {

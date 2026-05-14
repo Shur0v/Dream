@@ -49,6 +49,66 @@ const CACHE_TTL = 5 * 60 * 1000;
 const nowIso = () => new Date().toISOString();
 const makeId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
+const decodeNextImageUrl = (value: string): string => {
+  if (!value) return value;
+  let normalized = value.trim();
+
+  for (let i = 0; i < 3; i += 1) {
+    if (normalized.startsWith('/_next/image?')) {
+      try {
+        const parsed = new URL(normalized, 'https://dreamshopltd.com');
+        const nested = parsed.searchParams.get('url');
+        if (nested) {
+          normalized = decodeURIComponent(nested);
+          continue;
+        }
+      } catch {
+        return value;
+      }
+    }
+
+    const decoded = decodeURIComponent(normalized);
+    if (decoded === normalized) break;
+    normalized = decoded;
+  }
+
+  if (normalized.startsWith('https://https://')) {
+    normalized = normalized.replace('https://https://', 'https://');
+  }
+  if (normalized.startsWith('http://http://')) {
+    normalized = normalized.replace('http://http://', 'http://');
+  }
+
+  return normalized;
+};
+
+const normalizeImageFields = <T>(input: T): T => {
+  if (Array.isArray(input)) {
+    return input.map((item) => normalizeImageFields(item)) as T;
+  }
+
+  if (!input || typeof input !== 'object') return input;
+
+  const obj = input as Record<string, unknown>;
+  const normalized: Record<string, unknown> = {};
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (typeof value === 'string' && (key === 'image' || key === 'avatar')) {
+      normalized[key] = decodeNextImageUrl(value);
+      continue;
+    }
+
+    if (Array.isArray(value) && (key === 'images' || key === 'sliderImages' || key === 'rightBanners')) {
+      normalized[key] = value.map((item) => (typeof item === 'string' ? decodeNextImageUrl(item) : normalizeImageFields(item)));
+      continue;
+    }
+
+    normalized[key] = normalizeImageFields(value as any);
+  }
+
+  return normalized as T;
+};
+
 const withTimestamps = <T extends { createdAt?: string; updatedAt?: string }>(entity: T): T => {
   const now = nowIso();
   return {
@@ -71,7 +131,12 @@ async function getRows<T>(table: EntityTable, includeInactive = false): Promise<
 async function getRowById<T>(table: EntityTable, id: string): Promise<StoredRow<T> | null> {
   await ensureDatabaseReady();
   const rows = await sql.query(`SELECT id, data, is_active, created_at, updated_at FROM ${table} WHERE id = $1 LIMIT 1`, [id]);
-  return (rows[0] as StoredRow<T>) || null;
+  const row = (rows[0] as StoredRow<T>) || null;
+  if (!row) return null;
+  return {
+    ...row,
+    data: normalizeImageFields(row.data),
+  };
 }
 
 async function upsertRow<T extends { id: string; isActive?: boolean; createdAt?: string; updatedAt?: string }>(
@@ -113,7 +178,7 @@ async function softDeleteById<T extends { isActive?: boolean; updatedAt?: string
 
 function rowsToEntities<T extends { id?: string; isActive?: boolean }>(rows: StoredRow<T>[]): T[] {
   return rows.map((row) => ({
-    ...(row.data as any),
+    ...(normalizeImageFields(row.data) as any),
     id: row.data?.id || row.id,
     isActive: row.data?.isActive ?? row.is_active,
   })) as T[];
@@ -269,7 +334,7 @@ export async function getUserByEmail(email: string): Promise<User | undefined> {
     [email]
   );
   const row = rows[0] as StoredRow<User> | undefined;
-  return row ? ({ ...(row.data as any), id: row.id } as User) : undefined;
+  return row ? ({ ...(normalizeImageFields(row.data) as any), id: row.id } as User) : undefined;
 }
 
 export async function saveUser(user: Partial<User> & { email: string }): Promise<User> {

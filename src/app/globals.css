@@ -38,12 +38,40 @@ body {
   background-color: var(--theme-primary) !important;
 }
 
+.bg-fuchsia-600 {
+  background-color: var(--theme-primary-dark) !important;
+}
+
+.bg-fuchsia-100 {
+  background-color: color-mix(in srgb, var(--theme-primary) 12%, white) !important;
+}
+
+.bg-fuchsia-50 {
+  background-color: color-mix(in srgb, var(--theme-primary) 7%, white) !important;
+}
+
+.bg-fuchsia-500\/5 {
+  background-color: color-mix(in srgb, var(--theme-primary) 5%, transparent) !important;
+}
+
+.bg-fuchsia-500\/10 {
+  background-color: color-mix(in srgb, var(--theme-primary) 10%, transparent) !important;
+}
+
 .hover\:bg-fuchsia-600:hover {
   background-color: var(--theme-primary-dark) !important;
 }
 
+.hover\:bg-fuchsia-50:hover {
+  background-color: color-mix(in srgb, var(--theme-primary) 7%, white) !important;
+}
+
 .text-fuchsia-500 {
   color: var(--theme-primary) !important;
+}
+
+.text-fuchsia-600 {
+  color: var(--theme-primary-dark) !important;
 }
 
 .text-fuchsia-900 {
@@ -54,14 +82,102 @@ body {
   border-color: var(--theme-primary) !important;
 }
 
+.border-fuchsia-300 {
+  border-color: color-mix(in srgb, var(--theme-primary) 45%, white) !important;
+}
+
+.border-fuchsia-200 {
+  border-color: color-mix(in srgb, var(--theme-primary) 30%, white) !important;
+}
+
+.ring-fuchsia-500 {
+  --tw-ring-color: var(--theme-primary) !important;
+}
+
+.ring-fuchsia-500\/30 {
+  --tw-ring-color: color-mix(in srgb, var(--theme-primary) 30%, transparent) !important;
+}
+
+.ring-fuchsia-300 {
+  --tw-ring-color: color-mix(in srgb, var(--theme-primary) 45%, white) !important;
+}
+
+.ring-fuchsia-200 {
+  --tw-ring-color: color-mix(in srgb, var(--theme-primary) 30%, white) !important;
+}
+
+.focus\:ring-fuchsia-500:focus {
+  --tw-ring-color: var(--theme-primary) !important;
+}
+
+.focus\:outline-fuchsia-500:focus {
+  outline-color: var(--theme-primary) !important;
+}
+
 .from-purple-500 {
   --tw-gradient-from: var(--theme-secondary) var(--tw-gradient-from-position) !important;
   --tw-gradient-to: color-mix(in srgb, var(--theme-secondary) 0%, transparent) var(--tw-gradient-to-position) !important;
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
 }
 
+.from-fuchsia-500 {
+  --tw-gradient-from: var(--theme-primary) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: color-mix(in srgb, var(--theme-primary) 0%, transparent) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.to-fuchsia-500 {
+  --tw-gradient-to: var(--theme-primary) var(--tw-gradient-to-position) !important;
+}
+
 .to-pink-500 {
   --tw-gradient-to: var(--theme-accent) var(--tw-gradient-to-position) !important;
+}
+
+.from-purple-600 {
+  --tw-gradient-from: color-mix(in srgb, var(--theme-secondary) 90%, black) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: color-mix(in srgb, var(--theme-secondary) 0%, transparent) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.to-pink-600 {
+  --tw-gradient-to: color-mix(in srgb, var(--theme-accent) 88%, black) var(--tw-gradient-to-position) !important;
+}
+
+.bg-purple-500 {
+  background-color: var(--theme-secondary) !important;
+}
+
+.bg-purple-600 {
+  background-color: color-mix(in srgb, var(--theme-secondary) 90%, black) !important;
+}
+
+.bg-purple-100 {
+  background-color: color-mix(in srgb, var(--theme-secondary) 16%, white) !important;
+}
+
+.text-purple-500 {
+  color: var(--theme-secondary) !important;
+}
+
+.text-purple-600 {
+  color: color-mix(in srgb, var(--theme-secondary) 90%, black) !important;
+}
+
+.border-purple-600 {
+  border-color: color-mix(in srgb, var(--theme-secondary) 90%, black) !important;
+}
+
+.hover\:bg-purple-700:hover {
+  background-color: color-mix(in srgb, var(--theme-secondary) 78%, black) !important;
+}
+
+.hover\:text-purple-700:hover {
+  color: color-mix(in srgb, var(--theme-secondary) 78%, black) !important;
+}
+
+.focus\:ring-purple-500:focus {
+  --tw-ring-color: var(--theme-secondary) !important;
 }
 
 .desktop-fluid-shell {
