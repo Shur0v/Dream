@@ -345,7 +345,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       type="text"
                       name="name"
                       value={values.name}
-                      onChange={handleChange}
+                      onChange={(e) => updateField('name', e.target.value)}
                       onBlur={handleBlur}
                       placeholder="Type name here..."
                       className="w-full h-12 p-3 rounded-lg border border-zinc-300 text-base font-normal font-['Poppins'] leading-5 text-zinc-700 placeholder:text-zinc-400 focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-200 transition-all"
@@ -364,7 +364,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       type="tel"
                       name="phoneNumber"
                       value={values.phoneNumber}
-                      onChange={handleChange}
+                      onChange={(e) => updateField('phoneNumber', e.target.value)}
                       onBlur={handleBlur}
                       placeholder="Type phone number here..."
                       className="w-full h-12 p-3 rounded-lg border border-zinc-300 text-base font-normal font-['Poppins'] leading-5 text-zinc-700 placeholder:text-zinc-400 focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-200 transition-all"
@@ -383,7 +383,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       type="email"
                       name="email"
                       value={values.email}
-                      onChange={handleChange}
+                      onChange={(e) => updateField('email', e.target.value)}
                       onBlur={handleBlur}
                       placeholder="Type email here..."
                       className="w-full h-12 p-3 rounded-lg border border-zinc-300 text-base font-normal font-['Poppins'] leading-5 text-zinc-700 placeholder:text-zinc-400 focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-200 transition-all"
