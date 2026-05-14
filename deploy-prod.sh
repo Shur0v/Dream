@@ -51,7 +51,10 @@ git checkout "$DEPLOY_BRANCH"
 git reset --hard "origin/$DEPLOY_BRANCH"
 
 log "Installing dependencies"
-npm ci
+if ! npm ci; then
+  warn "npm ci failed (lockfile mismatch). Falling back to npm install"
+  npm install
+fi
 
 if command -v docker >/dev/null 2>&1; then
   if [[ -f "$APP_DIR/docker-compose.yml" ]]; then
