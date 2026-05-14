@@ -14,6 +14,7 @@ import {
   User,
 } from '@/types';
 import { ensureDatabaseReady, sql } from './neon';
+import { DEFAULT_SITE_THEME, getThemePresetById, SiteThemeId } from '@/lib/themePresets';
 
 type EntityTable =
   | 'products'
@@ -34,6 +35,11 @@ type StoredRow<T> = {
   is_active: boolean;
   created_at?: string;
   updated_at?: string;
+};
+
+export type SiteThemeSettings = {
+  id: SiteThemeId;
+  updatedAt: string;
 };
 
 let productsCache: { data: Product[]; timestamp: number } | null = null;
@@ -575,4 +581,33 @@ export async function saveReview(review: Partial<ProductReview> & { productId: s
 
 export async function deleteReview(id: string): Promise<ProductReview | null> {
   return hardDeleteById<ProductReview>('product_reviews', id);
+}
+
+export async function getSiteThemeSettings(): Promise<SiteThemeSettings> {
+  await ensureDatabaseReady();
+  const rows = await sql.query(`SELECT data, updated_at FROM site_settings WHERE key = 'theme' LIMIT 1`);
+  const row = rows[0] as { data?: { id?: string }; updated_at?: string } | undefined;
+  const preset = getThemePresetById(row?.data?.id);
+  return {
+    id: preset.id,
+    updatedAt: row?.updated_at || nowIso(),
+  };
+}
+
+export async function saveSiteThemeSettings(id: SiteThemeId): Promise<SiteThemeSettings> {
+  const preset = getThemePresetById(id);
+  await ensureDatabaseReady();
+  await sql.query(
+    `INSERT INTO site_settings (key, data, updated_at)
+     VALUES ('theme', $1::jsonb, NOW())
+     ON CONFLICT (key) DO UPDATE SET
+       data = EXCLUDED.data,
+       updated_at = NOW()`,
+    [JSON.stringify({ id: preset.id })]
+  );
+
+  return {
+    id: preset.id,
+    updatedAt: nowIso(),
+  };
 }

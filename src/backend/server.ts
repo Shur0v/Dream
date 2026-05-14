@@ -100,9 +100,9 @@ app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
 
 async function startServer() {
   try {
-    console.log('Connecting to Neon database...');
+    console.log('Connecting to PostgreSQL database...');
     await connectToDatabase();
-    console.log('Neon database ready');
+    console.log('PostgreSQL database ready');
 
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`Express server running on http://0.0.0.0:${PORT}`);
@@ -110,7 +110,7 @@ async function startServer() {
     });
   } catch (error) {
     console.error('Failed to start server:', error);
-    console.error('Please check your NEON_DATABASE_URL / DATABASE_URL in .env');
+    console.error('Please check your DATABASE_URL / POSTGRES_URL in .env');
     process.exit(1);
   }
 }

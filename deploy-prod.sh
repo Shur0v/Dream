@@ -53,8 +53,15 @@ git reset --hard "origin/$DEPLOY_BRANCH"
 log "Installing dependencies"
 npm ci
 
-log "Building project"
-npm run build
+if command -v docker >/dev/null 2>&1; then
+  if [[ -f "$APP_DIR/docker-compose.yml" ]]; then
+    log "Starting project database container (postgres)"
+    docker compose up -d postgres || warn "Could not start postgres container automatically"
+  fi
+fi
+
+log "Building full project (frontend + backend)"
+npm run build:all
 
 # Read PORT from .env (fallback to 3001)
 PORT="$(grep -E '^PORT=' "$ENV_FILE" | tail -n1 | cut -d '=' -f2- | tr -d '"' | tr -d "'" | xargs || true)"
@@ -83,8 +90,8 @@ if [[ -n "$NGINX_DOMAIN" ]]; then
   bash "$APP_DIR/scripts/setup-nginx.sh" "$NGINX_DOMAIN" "$NGINX_CONF_NAME"
 fi
 
-log "Listening ports (3001/5000)"
-ss -ltnp | grep -E ':3001|:5000' || true
+log "Listening ports (3001/5000/5001/5432/5433)"
+ss -ltnp | grep -E ':3001|:5000|:5001|:5432|:5433' || true
 
 log "Recent logs for $APP_NAME"
 pm2 logs "$APP_NAME" --lines 40 --nostream || true

@@ -106,6 +106,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isCollapsed = false
       href: '/selleradmin/users',
       icon: <Users className="w-6 h-6" />
     },
+    { 
+      label: 'Theme Control', 
+      href: '/selleradmin/theme-control',
+      icon: <Palette className="w-6 h-6" />
+    },
   ];
 
   const isActive = (href: string) => {

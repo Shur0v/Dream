@@ -3,6 +3,12 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --theme-bg: #ffffff;
+  --theme-text: #171717;
+  --theme-primary: #d946ef;
+  --theme-primary-dark: #c026d3;
+  --theme-secondary: #a855f7;
+  --theme-accent: #ec4899;
   --desktop-max-width: 1320px;
   --desktop-fluid-padding: 8px;
   --desktop-scale: 1;
@@ -22,9 +28,40 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--theme-bg, var(--background));
+  color: var(--theme-text, var(--foreground));
   font-family: var(--font-poppins), sans-serif;
+}
+
+/* Theme-driven utility overrides */
+.bg-fuchsia-500 {
+  background-color: var(--theme-primary) !important;
+}
+
+.hover\:bg-fuchsia-600:hover {
+  background-color: var(--theme-primary-dark) !important;
+}
+
+.text-fuchsia-500 {
+  color: var(--theme-primary) !important;
+}
+
+.text-fuchsia-900 {
+  color: var(--theme-primary-dark) !important;
+}
+
+.border-fuchsia-500 {
+  border-color: var(--theme-primary) !important;
+}
+
+.from-purple-500 {
+  --tw-gradient-from: var(--theme-secondary) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: color-mix(in srgb, var(--theme-secondary) 0%, transparent) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.to-pink-500 {
+  --tw-gradient-to: var(--theme-accent) var(--tw-gradient-to-position) !important;
 }
 
 .desktop-fluid-shell {

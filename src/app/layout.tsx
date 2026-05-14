@@ -4,6 +4,7 @@ import "./globals.css";
 import ReduxProvider from "./ReduxProvider";
 import ClientCacheHandler from "./ClientCacheHandler";
 import StructuredData from "@/components/SEO/StructuredData";
+import ThemeBootstrap from "@/components/theme/ThemeBootstrap";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -152,6 +153,7 @@ export default function RootLayout({
         <StructuredData type="Organization" />
         <StructuredData type="WebSite" />
         <ClientCacheHandler />
+        <ThemeBootstrap />
         <ReduxProvider>
           {children}
         </ReduxProvider>

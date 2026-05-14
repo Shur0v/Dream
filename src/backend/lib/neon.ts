@@ -1,20 +1,39 @@
-import { neon } from '@neondatabase/serverless';
+import { Pool } from 'pg';
 
 const getConnectionString = () =>
-  process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
+  process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.NEON_DATABASE_URL || '';
 
-const getSql = () => {
+let pool: Pool | null = null;
+
+const getPool = () => {
+  if (pool) return pool;
+
   const connectionString = getConnectionString();
   if (!connectionString) {
-    throw new Error('Neon connection string is missing. Set NEON_DATABASE_URL (or DATABASE_URL).');
+    throw new Error('PostgreSQL connection string is missing. Set DATABASE_URL (or POSTGRES_URL).');
   }
-  return neon(connectionString);
+
+  const isLocal =
+    connectionString.includes('@127.0.0.1:') ||
+    connectionString.includes('@localhost:') ||
+    connectionString.includes('sslmode=disable');
+
+  pool = new Pool({
+    connectionString,
+    ssl: isLocal ? false : { rejectUnauthorized: false },
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+  });
+
+  return pool;
 };
 
 export const sql = {
   query: async (queryText: string, params?: any[]) => {
-    const client = getSql();
-    return client.query(queryText, params);
+    const client = getPool();
+    const result = await client.query(queryText, params || []);
+    return result.rows;
   },
 };
 
@@ -107,6 +126,11 @@ const createStatements = [
   `CREATE TABLE IF NOT EXISTS wishlists (
     id TEXT PRIMARY KEY,
     user_id TEXT UNIQUE NOT NULL,
+    data JSONB NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE TABLE IF NOT EXISTS site_settings (
+    key TEXT PRIMARY KEY,
     data JSONB NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
