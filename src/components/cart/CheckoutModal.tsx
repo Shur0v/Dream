@@ -86,6 +86,9 @@ type DistrictDetailApiItem = {
   post_office?: string;
 };
 
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim().length > 0;
+
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   isOpen,
   onClose,
@@ -148,10 +151,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       if (!response.ok) throw new Error(`District API failed: ${response.status}`);
       const result = await response.json();
       const rows = Array.isArray(result?.data) ? result.data : Array.isArray(result) ? result : [];
-      const districts = rows
+      const districts: string[] = rows
         .map((item: DistrictApiItem) => normalizeDistrictValue(item))
-        .filter(Boolean);
-      setDistrictOptions(Array.from(new Set(districts)).sort((a, b) => a.localeCompare(b)));
+        .filter(isNonEmptyString);
+      setDistrictOptions(Array.from(new Set<string>(districts)).sort((a, b) => a.localeCompare(b)));
     } catch (error: any) {
       console.error('Failed to load district list:', error);
       setDistrictErrorFallback();
