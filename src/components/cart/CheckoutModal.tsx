@@ -124,6 +124,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [districtDetails, setDistrictDetails] = useState<DistrictDetailApiItem[]>([]);
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState('');
+  const hasValidDistrictSelection = districtOptions.includes(values.district.trim());
 
   const upazilaOptions = useMemo(() => {
     const set = new Set<string>();
@@ -300,18 +301,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       alert('Please select a valid district from the dropdown list.');
       return;
     }
-    if (!isValidSelection(values.upazila, upazilaOptions)) {
-      alert('Please select a valid upazila from the dropdown list.');
-      return;
-    }
-    if (!isValidSelection(values.thana, thanaOptions)) {
-      alert('Please select a valid thana from the dropdown list.');
-      return;
-    }
-    if (!isValidSelection(values.postOffice, postOfficeOptions)) {
-      alert('Please select a valid post office from the dropdown list.');
-      return;
-    }
 
     handleSubmit((formData) => {
       // Log all form data
@@ -398,7 +387,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     <label className="text-neutral-800 text-base font-medium font-['Poppins'] leading-5">
                       Name
                     </label>
-                    <input
+                  <input
                       type="text"
                       name="name"
                       value={values.name}
@@ -486,19 +475,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <label className="text-neutral-800 text-base font-medium font-['Poppins'] leading-5">
                   Upazila
                 </label>
-                    <input
+                  <input
                       type="text"
                       name="upazila"
                       value={values.upazila}
                       autoComplete="off"
                       onChange={(e) => handleUpazilaInput(e.target.value)}
-                  onBlur={(e) => {
-                    handleBlur(e as any);
-                    enforceSelectionOrClear('upazila', upazilaOptions);
-                  }}
-                  placeholder="Search upazila and select..."
+                  onBlur={handleBlur}
+                  placeholder="Type upazila here..."
                   list="upazila-options"
-                  disabled={!values.district || !districtOptions.includes(values.district)}
+                  disabled={!hasValidDistrictSelection}
                   className="w-full h-12 p-3 rounded-lg border border-zinc-300 text-base font-normal font-['Poppins'] leading-5 text-zinc-700 placeholder:text-zinc-400 focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-200 transition-all disabled:bg-zinc-100 disabled:text-zinc-400"
                 />
                 <datalist id="upazila-options">
@@ -516,19 +502,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <label className="text-neutral-800 text-base font-medium font-['Poppins'] leading-5">
                   Thana
                 </label>
-                    <input
+                  <input
                       type="text"
                       name="thana"
                       value={values.thana}
                       autoComplete="off"
                       onChange={(e) => handleThanaInput(e.target.value)}
-                  onBlur={(e) => {
-                    handleBlur(e as any);
-                    enforceSelectionOrClear('thana', thanaOptions);
-                  }}
-                  placeholder="Search thana and select..."
+                  onBlur={handleBlur}
+                  placeholder="Type thana here..."
                   list="thana-options"
-                  disabled={!values.upazila || !upazilaOptions.includes(values.upazila)}
+                  disabled={!hasValidDistrictSelection}
                   className="w-full h-12 p-3 rounded-lg border border-zinc-300 text-base font-normal font-['Poppins'] leading-5 text-zinc-700 placeholder:text-zinc-400 focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-200 transition-all disabled:bg-zinc-100 disabled:text-zinc-400"
                 />
                 <datalist id="thana-options">
@@ -546,19 +529,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <label className="text-neutral-800 text-base font-medium font-['Poppins'] leading-5">
                   Post office
                 </label>
-                    <input
+                  <input
                       type="text"
                       name="postOffice"
                       value={values.postOffice}
                       autoComplete="off"
                       onChange={(e) => updateField('postOffice', e.target.value)}
-                  onBlur={(e) => {
-                    handleBlur(e as any);
-                    enforceSelectionOrClear('postOffice', postOfficeOptions);
-                  }}
-                  placeholder="Search post office and select..."
+                  onBlur={handleBlur}
+                  placeholder="Type post office here..."
                   list="post-office-options"
-                  disabled={!values.thana || !thanaOptions.includes(values.thana)}
+                  disabled={!hasValidDistrictSelection}
                   className="w-full h-12 p-3 rounded-lg border border-zinc-300 text-base font-normal font-['Poppins'] leading-5 text-zinc-700 placeholder:text-zinc-400 focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-200 transition-all disabled:bg-zinc-100 disabled:text-zinc-400"
                 />
                 <datalist id="post-office-options">
