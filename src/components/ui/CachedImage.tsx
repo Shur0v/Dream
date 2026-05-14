@@ -56,6 +56,8 @@ export default function CachedImage({
   });
 
   const [hasError, setHasError] = useState(false);
+  // Use fallback if error occurred
+  const imageSrc = hasError ? fallback : (isBase64 ? src : cachedSrc);
   const isExternalOrBlob =
     imageSrc?.startsWith('http://') ||
     imageSrc?.startsWith('https://') ||
@@ -67,9 +69,6 @@ export default function CachedImage({
       onError(e);
     }
   };
-
-  // Use fallback if error occurred
-  const imageSrc = hasError ? fallback : (isBase64 ? src : cachedSrc);
 
   // For Base64 images, use regular img tag (Next.js Image doesn't support Base64)
   if (isBase64) {
