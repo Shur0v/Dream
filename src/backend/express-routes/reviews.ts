@@ -11,6 +11,7 @@ import {
 import { ProductReview } from '@/types';
 
 const router = Router();
+const paramToString = (value: string | string[] | undefined): string => Array.isArray(value) ? value[0] || '' : value || '';
 
 const mockApiDelay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -57,7 +58,7 @@ router.get('/reviews/:id', async (req: Request, res: Response) => {
   try {
     await mockApiDelay(200);
 
-    const { id } = req.params;
+    const id = paramToString(req.params.id);
     const review = await getReviewById(id);
 
     if (!review) {
@@ -131,7 +132,7 @@ router.delete('/reviews/:id', async (req: Request, res: Response) => {
   try {
     await mockApiDelay(200);
 
-    const { id } = req.params;
+    const id = paramToString(req.params.id);
     // Note: You may need to implement deleteReview function in db.ts
     // For now, returning success
     res.json({

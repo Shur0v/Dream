@@ -7,6 +7,7 @@ import { Router, Request, Response } from 'express';
 import { getUsers, saveUser, getUserById, getUserByEmail } from '../lib/db';
 
 const router = Router();
+const paramToString = (value: string | string[] | undefined): string => Array.isArray(value) ? value[0] || '' : value || '';
 
 const mockApiDelay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -42,7 +43,7 @@ router.get('/:id', async (req: Request, res: Response) => {
   try {
     await mockApiDelay(500);
 
-    const { id } = req.params;
+    const id = paramToString(req.params.id);
     const user = await getUserById(id);
 
     if (!user) {

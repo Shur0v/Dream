@@ -11,6 +11,7 @@ import {
 } from '../express-lib/db';
 
 const router = Router();
+const paramToString = (value: string | string[] | undefined): string => Array.isArray(value) ? value[0] || '' : value || '';
 
 const mockApiDelay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -52,7 +53,7 @@ router.get('/:id', async (req: Request, res: Response) => {
   try {
     await mockApiDelay(300);
 
-    const { id } = req.params;
+    const id = paramToString(req.params.id);
     const color = await getColorById(id);
 
     if (!color) {
@@ -137,7 +138,7 @@ router.put('/:id', async (req: Request, res: Response) => {
   try {
     await mockApiDelay(600);
 
-    const { id } = req.params;
+    const id = paramToString(req.params.id);
     const existingColor = await getColorById(id);
 
     if (!existingColor) {
@@ -193,7 +194,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
   try {
     await mockApiDelay(600);
 
-    const { id } = req.params;
+    const id = paramToString(req.params.id);
     const deletedColor = await deleteColor(id);
 
     if (!deletedColor) {

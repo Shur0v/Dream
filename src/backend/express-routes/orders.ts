@@ -16,6 +16,7 @@ const getOrderById = getOrderByIdFromMongo;
 const saveOrder = saveOrderToMongo;
 
 const router = Router();
+const paramToString = (value: string | string[] | undefined): string => Array.isArray(value) ? value[0] || '' : value || '';
 
 const mockApiDelay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -62,7 +63,7 @@ router.get('/:id', async (req: Request, res: Response) => {
   try {
     await mockApiDelay(300);
 
-    const { id } = req.params;
+    const id = paramToString(req.params.id);
     const order = await getOrderByIdFromMongo(id);
 
     if (!order) {
@@ -225,7 +226,7 @@ router.put('/:id', async (req: Request, res: Response) => {
   try {
     await mockApiDelay(1000);
 
-    const { id } = req.params;
+    const id = paramToString(req.params.id);
     const existingOrder = await getOrderByIdFromMongo(id);
 
     if (!existingOrder) {

@@ -14,6 +14,7 @@ import {
 import { Product } from '../../types';
 
 const router = Router();
+const paramToString = (value: string | string[] | undefined): string => Array.isArray(value) ? value[0] || '' : value || '';
 
 // Mock API delay helper
 const mockApiDelay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -188,7 +189,7 @@ router.get('/:id', async (req: Request, res: Response) => {
   try {
     await mockApiDelay(300);
 
-    const { id } = req.params;
+    const id = paramToString(req.params.id);
     const product = await getProductById(id);
 
     if (!product) {
@@ -331,7 +332,7 @@ router.put('/:id', async (req: Request, res: Response) => {
   try {
     await mockApiDelay(1000);
 
-    const { id } = req.params;
+    const id = paramToString(req.params.id);
     const existingProduct = await getProductById(id);
 
     if (!existingProduct) {
@@ -388,7 +389,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
   try {
     await mockApiDelay(600);
 
-    const { id } = req.params;
+    const id = paramToString(req.params.id);
     console.log(`[Express DELETE /api/products/${id}] Received delete request`);
     const deletedProduct = await deleteProduct(id);
 

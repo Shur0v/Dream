@@ -69,7 +69,7 @@ async function migrate() {
       for (const product of productsToInsert) {
         try {
           // Check if SKU already exists
-          const existing = await ProductModel.findOne({ sku: product.sku });
+          const existing = await ProductModel.findOne({ sku: product.sku } as any);
           if (existing) {
             // Make SKU unique by appending timestamp
             product.sku = `${product.sku}-${Date.now()}-${Math.random().toString(36).substring(7)}`;

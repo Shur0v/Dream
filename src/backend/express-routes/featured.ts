@@ -12,6 +12,7 @@ import {
 } from '../lib/db';
 
 const router = Router();
+const paramToString = (value: string | string[] | undefined): string => Array.isArray(value) ? value[0] || '' : value || '';
 
 /**
  * GET /api/featured-products
@@ -88,7 +89,7 @@ router.post('/admin/feature', async (req: Request, res: Response) => {
  */
 router.delete('/admin/feature/:productId', async (req: Request, res: Response) => {
   try {
-    const { productId } = req.params;
+    const productId = paramToString(req.params.productId);
 
     if (!productId || productId.trim() === '') {
       return res.status(400).json({
