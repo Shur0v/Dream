@@ -56,6 +56,10 @@ export default function CachedImage({
   });
 
   const [hasError, setHasError] = useState(false);
+  const isExternalOrBlob =
+    imageSrc?.startsWith('http://') ||
+    imageSrc?.startsWith('https://') ||
+    imageSrc?.startsWith('blob:');
 
   const handleError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     setHasError(true);
@@ -118,6 +122,7 @@ export default function CachedImage({
       {...props}
       src={imageSrc}
       alt={alt || ''}
+      unoptimized={isExternalOrBlob}
       onError={handleError}
       // Only set placeholder if blurDataURL is provided
       placeholder={shouldUseBlur ? 'blur' : props.placeholder || undefined}
