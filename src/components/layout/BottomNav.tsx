@@ -70,7 +70,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   ];
 
   return (
-    <nav className={`father w-full bg-gradient-to-r from-[rgba(210,105,216,1)] to-[rgba(242,0,255,1)] py-3 ${className}`} role="navigation" aria-label="Main navigation" data-layer="father">
+    <nav className={`father w-full bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 py-3 ${className}`} role="navigation" aria-label="Main navigation" data-layer="father">
       {/* father = full width bottom navigation section */}
       
       <div className="daughter w-full max-w-[1320px] mx-auto flex items-center justify-center" data-layer="daughter">

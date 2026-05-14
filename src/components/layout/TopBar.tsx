@@ -44,7 +44,7 @@ export const TopBar: React.FC = () => {
   ];
 
   return (
-    <div className="w-full bg-gradient-to-r from-[rgba(210,105,216,1)] to-[rgba(242,0,255,1)] py-1">
+    <div className="w-full bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 py-1">
       <div className="w-full max-w-[1320px] mx-auto flex items-center justify-between">
         <div className="font-normal text-white text-sm tracking-[-0.28px] leading-[22.4px] whitespace-nowrap">
           Need help with your order?

@@ -79,15 +79,34 @@ type DistrictApiItem = {
 };
 
 type DistrictDetailApiItem = {
-  upazilla?: string;
-  upazila?: string;
-  thana?: string;
-  postOffice?: string;
-  post_office?: string;
+  upazilla?: string | { en?: string; bn?: string } | Array<string | { en?: string; bn?: string }>;
+  upazila?: string | { en?: string; bn?: string } | Array<string | { en?: string; bn?: string }>;
+  thana?: string | { en?: string; bn?: string } | Array<string | { en?: string; bn?: string }>;
+  postOffice?: string | { en?: string; bn?: string };
+  post_office?: string | { en?: string; bn?: string };
+  post?: {
+    postOffice?: string | { en?: string; bn?: string };
+    postCode?: string | number | { en?: string | number; bn?: string | number };
+  };
 };
 
 const isNonEmptyString = (value: unknown): value is string =>
   typeof value === 'string' && value.trim().length > 0;
+
+const extractEnglishText = (value: unknown): string[] => {
+  if (typeof value === 'string') {
+    return value.trim() ? [value.trim()] : [];
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => extractEnglishText(item));
+  }
+  if (value && typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    const candidate = obj.en ?? obj.name ?? obj.value ?? obj.postOffice ?? '';
+    if (typeof candidate === 'string' && candidate.trim()) return [candidate.trim()];
+  }
+  return [];
+};
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   isOpen,
@@ -109,8 +128,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const upazilaOptions = useMemo(() => {
     const set = new Set<string>();
     districtDetails.forEach((item) => {
-      const name = (item.upazilla || item.upazila || '').trim();
-      if (name) set.add(name);
+      extractEnglishText(item.upazilla ?? item.upazila).forEach((name) => set.add(name));
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [districtDetails]);
@@ -118,10 +136,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const thanaOptions = useMemo(() => {
     const set = new Set<string>();
     districtDetails.forEach((item) => {
-      const inUpazila = !values.upazila || (item.upazilla || item.upazila || '').trim() === values.upazila.trim();
+      const rowUpazilas = extractEnglishText(item.upazilla ?? item.upazila);
+      const inUpazila = !values.upazila || rowUpazilas.includes(values.upazila.trim());
       if (!inUpazila) return;
-      const thanaName = (item.thana || item.upazilla || item.upazila || '').trim();
-      if (thanaName) set.add(thanaName);
+      extractEnglishText(item.thana).forEach((thanaName) => set.add(thanaName));
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [districtDetails, values.upazila]);
@@ -129,11 +147,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const postOfficeOptions = useMemo(() => {
     const set = new Set<string>();
     districtDetails.forEach((item) => {
-      const inUpazila = !values.upazila || (item.upazilla || item.upazila || '').trim() === values.upazila.trim();
-      const inThana = !values.thana || (item.thana || item.upazilla || item.upazila || '').trim() === values.thana.trim();
+      const rowUpazilas = extractEnglishText(item.upazilla ?? item.upazila);
+      const rowThanas = extractEnglishText(item.thana);
+      const inUpazila = !values.upazila || rowUpazilas.includes(values.upazila.trim());
+      const inThana = !values.thana || rowThanas.includes(values.thana.trim());
       if (!inUpazila || !inThana) return;
-      const po = (item.postOffice || item.post_office || '').trim();
-      if (po) set.add(po);
+
+      extractEnglishText(item.post?.postOffice ?? item.postOffice ?? item.post_office).forEach((po) => set.add(po));
     });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [districtDetails, values.upazila, values.thana]);
@@ -188,8 +208,45 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       const response = await fetch(`https://bdapis.com/api/v1.2/district/${encodeURIComponent(district)}`);
       if (!response.ok) throw new Error(`District detail API failed: ${response.status}`);
       const result = await response.json();
-      const rows = Array.isArray(result?.data) ? result.data : Array.isArray(result) ? result : [];
-      setDistrictDetails(rows as DistrictDetailApiItem[]);
+      let rows: DistrictDetailApiItem[] = [];
+
+      // Shape A: { data: [ { upazilla, thana, postOffice } ] }
+      if (Array.isArray(result?.data)) {
+        rows = result.data as DistrictDetailApiItem[];
+      }
+      // Shape B: { data: { upazilla: [{en,bn}], thana:[...], postOffice:[...] } }
+      else if (result?.data && typeof result.data === 'object') {
+        const upazillaList = Array.isArray(result.data.upazilla) ? result.data.upazilla : [];
+        const thanaList = Array.isArray(result.data.thana) ? result.data.thana : [];
+        const postOfficeList = Array.isArray(result.data.postOffice) ? result.data.postOffice : [];
+
+        const safeUpazilla = upazillaList.map((item: any) =>
+          typeof item === 'string' ? item : (item?.en || item?.name || '')
+        ).filter(isNonEmptyString);
+        const safeThana = thanaList.map((item: any) =>
+          typeof item === 'string' ? item : (item?.en || item?.name || '')
+        ).filter(isNonEmptyString);
+        const safePostOffice = postOfficeList.map((item: any) =>
+          typeof item === 'string' ? item : (item?.en || item?.name || item?.postOffice || '')
+        ).filter(isNonEmptyString);
+
+        const mergedRows: DistrictDetailApiItem[] = [];
+        const max = Math.max(safeUpazilla.length, safeThana.length, safePostOffice.length);
+        for (let i = 0; i < max; i += 1) {
+          mergedRows.push({
+            upazilla: safeUpazilla[i] || safeThana[i] || '',
+            thana: safeThana[i] || safeUpazilla[i] || '',
+            postOffice: safePostOffice[i] || '',
+          });
+        }
+        rows = mergedRows;
+      }
+      // Shape C: direct array
+      else if (Array.isArray(result)) {
+        rows = result as DistrictDetailApiItem[];
+      }
+
+      setDistrictDetails(rows);
     } catch (error: any) {
       console.error('Failed to load district details:', error);
       setDistrictDetails([]);
@@ -400,11 +457,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <label className="text-neutral-800 text-base font-medium font-['Poppins'] leading-5">
                   District
                 </label>
-                <input
-                  type="text"
-                  name="district"
-                  value={values.district}
-                  onChange={(e) => handleDistrictInput(e.target.value)}
+                    <input
+                      type="text"
+                      name="district"
+                      value={values.district}
+                      autoComplete="off"
+                      onChange={(e) => handleDistrictInput(e.target.value)}
                   onBlur={(e) => {
                     handleBlur(e as any);
                     enforceSelectionOrClear('district', districtOptions);
@@ -428,11 +486,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <label className="text-neutral-800 text-base font-medium font-['Poppins'] leading-5">
                   Upazila
                 </label>
-                <input
-                  type="text"
-                  name="upazila"
-                  value={values.upazila}
-                  onChange={(e) => handleUpazilaInput(e.target.value)}
+                    <input
+                      type="text"
+                      name="upazila"
+                      value={values.upazila}
+                      autoComplete="off"
+                      onChange={(e) => handleUpazilaInput(e.target.value)}
                   onBlur={(e) => {
                     handleBlur(e as any);
                     enforceSelectionOrClear('upazila', upazilaOptions);
@@ -457,11 +516,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <label className="text-neutral-800 text-base font-medium font-['Poppins'] leading-5">
                   Thana
                 </label>
-                <input
-                  type="text"
-                  name="thana"
-                  value={values.thana}
-                  onChange={(e) => handleThanaInput(e.target.value)}
+                    <input
+                      type="text"
+                      name="thana"
+                      value={values.thana}
+                      autoComplete="off"
+                      onChange={(e) => handleThanaInput(e.target.value)}
                   onBlur={(e) => {
                     handleBlur(e as any);
                     enforceSelectionOrClear('thana', thanaOptions);
@@ -486,11 +546,12 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 <label className="text-neutral-800 text-base font-medium font-['Poppins'] leading-5">
                   Post office
                 </label>
-                <input
-                  type="text"
-                  name="postOffice"
-                  value={values.postOffice}
-                  onChange={(e) => updateField('postOffice', e.target.value)}
+                    <input
+                      type="text"
+                      name="postOffice"
+                      value={values.postOffice}
+                      autoComplete="off"
+                      onChange={(e) => updateField('postOffice', e.target.value)}
                   onBlur={(e) => {
                     handleBlur(e as any);
                     enforceSelectionOrClear('postOffice', postOfficeOptions);
