@@ -100,7 +100,7 @@ export const WishlistDropdown: React.FC<WishlistDropdownProps> = ({
       <div className="father fixed top-0 right-0 h-screen w-[90vw] flex justify-center items-start pt-20 z-50" role="dialog" data-layer="father">
         {/* father = wishlist dropdown positioned from right side, 90vw width, horizontally centered */}
         
-        <div className="layer-1 relative bg-white rounded-xl w-[465px] max-w-[465px] flex flex-col" data-layer="1">
+        <div className="layer-1 relative bg-white rounded-xl w-[465px] max-w-[465px] flex flex-col shadow-[0_28px_80px_rgba(15,23,42,0.35),0_10px_30px_rgba(15,23,42,0.2)]" data-layer="1">
           {/* layer-1 = wishlist dropdown container with exact design */}
           
           <div className="layer-2 p-4 relative bg-white rounded-xl inline-flex flex-col justify-start items-start gap-8" data-layer="2">

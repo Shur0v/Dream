@@ -194,8 +194,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
           const created = await createOrder({
             userId: resolvedUserId,
             shippingAddress: savedAddress,
-            customerName: profile.firstName || userFromStorage.username || 'Customer',
-            phoneNumber: profile.phone || userFromStorage.mobile || '',
+            customerName: profile.firstName || userFromStorage?.username || 'Customer',
+            phoneNumber: profile.phone || userFromStorage?.mobile || '',
             email: userFromStorage?.email || '',
             district: savedDistrict,
             upazila: savedUpazila,
@@ -214,9 +214,9 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
         }
 
         setCheckoutInitialValues({
-          name: userFromStorage.username || '',
-          phoneNumber: userFromStorage.mobile || '',
-          email: userFromStorage.email || '',
+          name: userFromStorage?.username || '',
+          phoneNumber: userFromStorage?.mobile || '',
+          email: userFromStorage?.email || '',
           district: '',
           upazila: '',
           thana: '',
@@ -300,9 +300,9 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            username: formData.name || userFromStorage.username,
-            mobile: formData.phoneNumber || userFromStorage.mobile,
-            email: userFromStorage.email,
+            username: formData.name || userFromStorage?.username || '',
+            mobile: formData.phoneNumber || userFromStorage?.mobile || '',
+            email: userFromStorage?.email || '',
             address: shippingAddress,
           }),
         });
@@ -310,8 +310,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
       const created = await createOrder({
         userId: resolvedUserId,
         shippingAddress,
-        customerName: formData.name || userFromStorage.username || '',
-        phoneNumber: formData.phoneNumber || userFromStorage.mobile || '',
+        customerName: formData.name || userFromStorage?.username || '',
+        phoneNumber: formData.phoneNumber || userFromStorage?.mobile || '',
         email: formData.email || userFromStorage?.email || '',
         district: formData.district,
         upazila: formData.upazila,
@@ -416,7 +416,6 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
         {/* Product Details */}
         <div className="flex flex-col gap-1.5 text-neutral-700 text-sm sm:text-base font-medium font-['Poppins'] leading-relaxed">
           <div>Category: {product.category}</div>
-          <div>Order id: {product.orderId}</div>
           <div>Seller: {product.seller}</div>
         </div>
 
@@ -518,7 +517,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
                   aria-label="Increase quantity"
                   type="button"
                 >
-                  <Plus className="w-3 h-3 text-white" />
+                  <Plus className="w-3 h-3 text-black" strokeWidth={2.5} />
                 </button>
               </div>
 

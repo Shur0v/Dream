@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getOrders } from '@backend/lib/db';
+import { getOrders, getProductById, saveOrder } from '@backend/lib/db';
 import { mockApiDelay } from '@/lib/dummyData';
+import type { OrderStatus } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
@@ -97,6 +98,135 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Get orders error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+type ManualOrderItemInput = {
+  productId: string;
+  quantity?: number;
+  color?: string;
+  size?: string;
+};
+
+export async function POST(request: NextRequest) {
+  try {
+    await mockApiDelay(300);
+    const body = await request.json();
+
+    const customerInfo = body?.customerInfo ?? {};
+    const itemsInput: ManualOrderItemInput[] = Array.isArray(body?.items) ? body.items : [];
+    const statusInput = String(body?.status || 'approved').toLowerCase();
+    const status: OrderStatus =
+      statusInput === 'pending' ||
+      statusInput === 'confirmed' ||
+      statusInput === 'approved' ||
+      statusInput === 'rejected' ||
+      statusInput === 'shipped' ||
+      statusInput === 'delivered' ||
+      statusInput === 'cancelled' ||
+      statusInput === 'refunded'
+        ? (statusInput as OrderStatus)
+        : 'approved';
+
+    const customerName = String(customerInfo?.name || '').trim();
+    const phoneNumber = String(customerInfo?.phoneNumber || '').trim();
+    const district = String(customerInfo?.district || '').trim();
+    const upazila = String(customerInfo?.upazila || '').trim();
+    const thana = String(customerInfo?.thana || '').trim();
+    const postOffice = String(customerInfo?.postOffice || '').trim();
+    const email = String(customerInfo?.email || '').trim();
+
+    if (!customerName || !phoneNumber || !district || !upazila || !thana || !postOffice) {
+      return NextResponse.json(
+        { success: false, error: 'Name, phone, district, upazila, thana, and post office are required.' },
+        { status: 400 }
+      );
+    }
+
+    if (itemsInput.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'At least one product is required.' },
+        { status: 400 }
+      );
+    }
+
+    const normalizedItems = [];
+    let totalAmount = 0;
+
+    for (let i = 0; i < itemsInput.length; i += 1) {
+      const row = itemsInput[i];
+      const product = await getProductById(String(row.productId || '').trim());
+      if (!product) {
+        return NextResponse.json(
+          { success: false, error: `Product not found: ${row.productId}` },
+          { status: 404 }
+        );
+      }
+      const quantity = Math.max(1, Math.floor(Number(row.quantity || 1)));
+      const price = Number(product.price || 0);
+      totalAmount += price * quantity;
+      normalizedItems.push({
+        id: `order-item-${Date.now()}-${i}`,
+        productId: product.id,
+        product: {
+          id: product.id,
+          name: product.name,
+          price,
+          images: product.images,
+          category: product.category,
+          brand: product.brand,
+          sku: product.sku,
+        },
+        quantity,
+        price,
+        color: row.color ? String(row.color).trim() : undefined,
+        size: row.size ? String(row.size).trim() : undefined,
+      });
+    }
+
+    const now = new Date().toISOString();
+    const newOrder = {
+      id: `order-${Date.now()}`,
+      userId: 'manual-admin-order',
+      items: normalizedItems,
+      status,
+      totalAmount,
+      shippingAddress: {
+        street: thana,
+        city: district,
+        state: upazila,
+        zipCode: postOffice,
+        country: 'Bangladesh',
+      },
+      paymentMethod: String(body?.paymentMethod || 'Cash on Delivery'),
+      paymentStatus: status === 'approved' || status === 'delivered' ? 'paid' : 'pending',
+      notes: JSON.stringify({
+        customerName,
+        phoneNumber,
+        email: email || '',
+        district,
+        upazila,
+        thana,
+        postOffice,
+        manualOrder: true,
+      }),
+      createdAt: now,
+      updatedAt: now,
+      isActive: true,
+    };
+
+    const saved = await saveOrder(newOrder as any);
+    return NextResponse.json({
+      success: true,
+      data: saved,
+      message: 'Manual order created successfully',
+    });
+  } catch (error) {
+    console.error('Create manual admin order error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

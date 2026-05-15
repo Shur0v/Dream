@@ -1,6 +1,7 @@
 /**
  * User session + cart/wishlist helpers.
- * Cart/wishlist persistence is API-backed (no localStorage data storage).
+ * Guest users: localStorage-backed.
+ * Logged-in users: API-backed with local cache mirror.
  */
 
 import apiService from '@/services/api';
@@ -34,11 +35,30 @@ export interface WishlistItem {
 
 let cartCache: CartItem[] = [];
 let wishlistCache: WishlistItem[] = [];
+const CART_STORAGE_KEY = 'guest_cart_items';
+const WISHLIST_STORAGE_KEY = 'guest_wishlist_items';
 
 const dispatchStateUpdate = () => {
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event('cart-wishlist-updated'));
   }
+};
+
+const readLocalArray = <T>(key: string): T[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeLocalArray = <T>(key: string, data: T[]) => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(key, JSON.stringify(data));
 };
 
 export const getCurrentUser = (): UserData | null => {
@@ -59,13 +79,27 @@ export const getUserEmail = (): string | null => {
   return user?.email || null;
 };
 
-export const getCartItems = (): CartItem[] => cartCache;
-export const getWishlistItems = (): WishlistItem[] => wishlistCache;
+export const getCartItems = (): CartItem[] => {
+  if (!isUserLoggedIn()) {
+    cartCache = readLocalArray<CartItem>(CART_STORAGE_KEY);
+  }
+  return cartCache;
+};
+export const getWishlistItems = (): WishlistItem[] => {
+  if (!isUserLoggedIn()) {
+    wishlistCache = readLocalArray<WishlistItem>(WISHLIST_STORAGE_KEY);
+  }
+  return wishlistCache;
+};
 export const getCartCount = (): number => cartCache.reduce((total, item) => total + item.quantity, 0);
 export const getWishlistCount = (): number => wishlistCache.length;
 export const isInWishlist = (productId: string): boolean => wishlistCache.some((item) => item.productId === productId);
 
 export const syncCartFromApi = async (): Promise<CartItem[]> => {
+  if (!isUserLoggedIn()) {
+    cartCache = readLocalArray<CartItem>(CART_STORAGE_KEY);
+    return cartCache;
+  }
   const response = await apiService.getCart();
   cartCache = (response.data?.items || []).map((item: any) => ({
     id: item.id,
@@ -77,10 +111,15 @@ export const syncCartFromApi = async (): Promise<CartItem[]> => {
     color: item.color,
     size: item.size,
   }));
+  writeLocalArray(CART_STORAGE_KEY, cartCache);
   return cartCache;
 };
 
 export const syncWishlistFromApi = async (): Promise<WishlistItem[]> => {
+  if (!isUserLoggedIn()) {
+    wishlistCache = readLocalArray<WishlistItem>(WISHLIST_STORAGE_KEY);
+    return wishlistCache;
+  }
   const response = await apiService.getWishlist();
   wishlistCache = (response.data || []).map((item: any) => ({
     id: item.id,
@@ -89,16 +128,39 @@ export const syncWishlistFromApi = async (): Promise<WishlistItem[]> => {
     price: Number(item.price ?? 0),
     image: item.image || '/placeholder-image.png',
   }));
+  writeLocalArray(WISHLIST_STORAGE_KEY, wishlistCache);
   return wishlistCache;
 };
 
 export const addToCart = async (item: CartItem): Promise<void> => {
+  if (!isUserLoggedIn()) {
+    const items = readLocalArray<CartItem>(CART_STORAGE_KEY);
+    const existingIndex = items.findIndex(
+      (x) => x.productId === item.productId && (x.color || '') === (item.color || '') && (x.size || '') === (item.size || '')
+    );
+    if (existingIndex >= 0) {
+      items[existingIndex].quantity += Math.max(1, Number(item.quantity || 1));
+    } else {
+      items.push({ ...item, quantity: Math.max(1, Number(item.quantity || 1)) });
+    }
+    cartCache = items;
+    writeLocalArray(CART_STORAGE_KEY, items);
+    dispatchStateUpdate();
+    return;
+  }
   await apiService.addToCart(item.productId, item.quantity || 1);
   await syncCartFromApi();
   dispatchStateUpdate();
 };
 
 export const removeFromCart = async (itemId: string): Promise<void> => {
+  if (!isUserLoggedIn()) {
+    const items = readLocalArray<CartItem>(CART_STORAGE_KEY).filter((item) => item.id !== itemId);
+    cartCache = items;
+    writeLocalArray(CART_STORAGE_KEY, items);
+    dispatchStateUpdate();
+    return;
+  }
   const found = cartCache.find((item) => item.id === itemId);
   if (!found) return;
   await apiService.removeFromCart(found.productId);
@@ -107,6 +169,15 @@ export const removeFromCart = async (itemId: string): Promise<void> => {
 };
 
 export const updateCartQuantity = async (itemId: string, quantity: number): Promise<void> => {
+  if (!isUserLoggedIn()) {
+    const items = readLocalArray<CartItem>(CART_STORAGE_KEY).map((item) =>
+      item.id === itemId ? { ...item, quantity: Math.max(0, quantity) } : item
+    ).filter((item) => item.quantity > 0);
+    cartCache = items;
+    writeLocalArray(CART_STORAGE_KEY, items);
+    dispatchStateUpdate();
+    return;
+  }
   const found = cartCache.find((item) => item.id === itemId);
   if (!found) return;
   await apiService.updateCartItem(found.productId, Math.max(0, quantity));
@@ -115,7 +186,12 @@ export const updateCartQuantity = async (itemId: string, quantity: number): Prom
 };
 
 export const saveCartItems = async (items: CartItem[]): Promise<void> => {
-  // Deprecated: cart is API-backed. Kept for compatibility.
+  if (!isUserLoggedIn()) {
+    cartCache = items;
+    writeLocalArray(CART_STORAGE_KEY, items);
+    dispatchStateUpdate();
+    return;
+  }
   if (items.length === 0) {
     await apiService.clearCart();
   }
@@ -124,19 +200,41 @@ export const saveCartItems = async (items: CartItem[]): Promise<void> => {
 };
 
 export const addToWishlist = async (item: WishlistItem): Promise<void> => {
+  if (!isUserLoggedIn()) {
+    const items = readLocalArray<WishlistItem>(WISHLIST_STORAGE_KEY);
+    if (!items.some((x) => x.productId === item.productId)) {
+      items.push(item);
+    }
+    wishlistCache = items;
+    writeLocalArray(WISHLIST_STORAGE_KEY, items);
+    dispatchStateUpdate();
+    return;
+  }
   await apiService.addToWishlist(item.productId);
   await syncWishlistFromApi();
   dispatchStateUpdate();
 };
 
 export const removeFromWishlist = async (productId: string): Promise<void> => {
+  if (!isUserLoggedIn()) {
+    const items = readLocalArray<WishlistItem>(WISHLIST_STORAGE_KEY).filter((item) => item.productId !== productId);
+    wishlistCache = items;
+    writeLocalArray(WISHLIST_STORAGE_KEY, items);
+    dispatchStateUpdate();
+    return;
+  }
   await apiService.removeFromWishlist(productId);
   await syncWishlistFromApi();
   dispatchStateUpdate();
 };
 
-export const saveWishlistItems = async (_items: WishlistItem[]): Promise<void> => {
-  // Deprecated: wishlist is API-backed. Kept for compatibility.
+export const saveWishlistItems = async (items: WishlistItem[]): Promise<void> => {
+  if (!isUserLoggedIn()) {
+    wishlistCache = items;
+    writeLocalArray(WISHLIST_STORAGE_KEY, items);
+    dispatchStateUpdate();
+    return;
+  }
   await syncWishlistFromApi();
   dispatchStateUpdate();
 };

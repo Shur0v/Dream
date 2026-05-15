@@ -12,5 +12,5 @@
  * @version 1.0.0
  */
 
-export { GET } from '@backend/routes/admin/orders';
+export { GET, POST } from '@backend/routes/admin/orders';
 

@@ -6,6 +6,7 @@ import { Eye, X, Check, Trash2, RefreshCw } from 'lucide-react';
 import OrderDetailModal from './OrderDetailModal';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
 import Pagination from '../ui/Pagination';
+import SearchableMultiSelect from '../ui/SearchableMultiSelect';
 import { Order as ApiOrder } from '@/types';
 import { getApiUrl } from '@/lib/apiConfig';
 
@@ -38,6 +39,13 @@ export interface Order {
   status: 'pending' | 'accepted' | 'rejected';
   createdAt: string;
 }
+
+type ProductOption = {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+};
 
 /**
  * Transform API Order to OrdersTable Order format
@@ -123,6 +131,22 @@ export default function OrdersTable() {
   const [error, setError] = useState<string | null>(null);
   const [isRejecting, setIsRejecting] = useState(false);
   const [isAccepting, setIsAccepting] = useState<string | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [creatingManualOrder, setCreatingManualOrder] = useState(false);
+  const [productOptions, setProductOptions] = useState<ProductOption[]>([]);
+  const [selectedProductIds, setSelectedProductIds] = useState<Array<string | number>>([]);
+  const [manualItems, setManualItems] = useState<Array<{ productId: string; quantity: number; color: string; size: string }>>([]);
+  const [manualForm, setManualForm] = useState({
+    name: '',
+    phoneNumber: '',
+    email: '',
+    district: '',
+    upazila: '',
+    thana: '',
+    postOffice: '',
+    status: 'approved',
+    paymentMethod: 'Cash on Delivery',
+  });
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -298,6 +322,99 @@ export default function OrdersTable() {
     }
   };
 
+  const loadProductOptions = async () => {
+    try {
+      const response = await fetch(getApiUrl('products?limit=1000&sortBy=createdAt&sortOrder=desc'), {
+        cache: 'no-store',
+      });
+      const result = await response.json();
+      if (response.ok && result?.success && Array.isArray(result.data)) {
+        const options = result.data.map((product: any) => ({
+          id: product.id,
+          name: product.name || 'Unknown Product',
+          price: Number(product.price || 0),
+          image: product.images?.[0] || '/placeholder-image.png',
+        }));
+        setProductOptions(options);
+      }
+    } catch (error) {
+      console.error('Failed to load products:', error);
+    }
+  };
+
+  const openAddModal = async () => {
+    await loadProductOptions();
+    setSelectedProductIds([]);
+    setManualItems([]);
+    setManualForm({
+      name: '',
+      phoneNumber: '',
+      email: '',
+      district: '',
+      upazila: '',
+      thana: '',
+      postOffice: '',
+      status: 'approved',
+      paymentMethod: 'Cash on Delivery',
+    });
+    setIsAddModalOpen(true);
+  };
+
+  const manualTotal = manualItems.reduce((sum, row) => {
+    const found = productOptions.find((p) => p.id === row.productId);
+    return sum + Number(found?.price || 0) * Number(row.quantity || 1);
+  }, 0);
+
+  const handleCreateManualOrder = async () => {
+    if (!manualForm.name || !manualForm.phoneNumber || !manualForm.district || !manualForm.upazila || !manualForm.thana || !manualForm.postOffice) {
+      alert('Please fill all required customer and address fields.');
+      return;
+    }
+    if (manualItems.length === 0) {
+      alert('Please select at least one product.');
+      return;
+    }
+    try {
+      setCreatingManualOrder(true);
+      const payload = {
+        customerInfo: {
+          name: manualForm.name,
+          phoneNumber: manualForm.phoneNumber,
+          email: manualForm.email,
+          district: manualForm.district,
+          upazila: manualForm.upazila,
+          thana: manualForm.thana,
+          postOffice: manualForm.postOffice,
+        },
+        items: manualItems.map((row) => ({
+          productId: row.productId,
+          quantity: row.quantity,
+          color: row.color || undefined,
+          size: row.size || undefined,
+        })),
+        status: manualForm.status,
+        paymentMethod: manualForm.paymentMethod,
+      };
+      const response = await fetch(getApiUrl('admin/orders'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.error || 'Failed to create manual order.');
+      }
+      const { invalidateAdminOrdersCache } = await import('@/lib/indexeddb/adminCache');
+      await invalidateAdminOrdersCache();
+      await fetchOrders();
+      setIsAddModalOpen(false);
+    } catch (error: any) {
+      alert(error?.message || 'Failed to create manual order.');
+    } finally {
+      setCreatingManualOrder(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -357,15 +474,23 @@ export default function OrdersTable() {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="flex justify-between items-center p-4 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">Orders</h2>
-          <button
-            onClick={fetchOrders}
-            disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer transition-colors"
-            title="Refresh orders"
-          >
-            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={openAddModal}
+              className="flex items-center gap-2 px-4 py-2 bg-fuchsia-500 text-white rounded-lg hover:bg-fuchsia-600 cursor-pointer transition-colors"
+            >
+              <span>Add Order</span>
+            </button>
+            <button
+              onClick={fetchOrders}
+              disabled={isLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer transition-colors"
+              title="Refresh orders"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </button>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -518,6 +643,9 @@ export default function OrdersTable() {
           order={selectedOrder}
           onAcceptOrder={handleAcceptOrder}
           isAccepting={isAccepting === selectedOrder.id}
+          onOrderUpdated={async () => {
+            await fetchOrders();
+          }}
         />
       )}
 
@@ -551,6 +679,104 @@ export default function OrdersTable() {
           title="Delete Order"
           message={`Are you sure you want to permanently delete order ${orderToDelete.orderId}? This action cannot be undone.`}
         />
+      )}
+
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-2xl font-bold text-gray-900">Add Manual Order</h3>
+              <button
+                onClick={() => !creatingManualOrder && setIsAddModalOpen(false)}
+                className="rounded-md p-2 text-gray-500 hover:bg-gray-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <input className="rounded-lg border border-gray-300 p-3" placeholder="Customer name *" value={manualForm.name} onChange={(e) => setManualForm((prev) => ({ ...prev, name: e.target.value }))} />
+              <input className="rounded-lg border border-gray-300 p-3" placeholder="Phone number *" value={manualForm.phoneNumber} onChange={(e) => setManualForm((prev) => ({ ...prev, phoneNumber: e.target.value }))} />
+              <input className="rounded-lg border border-gray-300 p-3" placeholder="Email (optional)" value={manualForm.email} onChange={(e) => setManualForm((prev) => ({ ...prev, email: e.target.value }))} />
+              <select className="rounded-lg border border-gray-300 p-3" value={manualForm.status} onChange={(e) => setManualForm((prev) => ({ ...prev, status: e.target.value }))}>
+                <option value="approved">Accepted</option>
+                <option value="pending">Pending</option>
+              </select>
+              <input className="rounded-lg border border-gray-300 p-3" placeholder="District *" value={manualForm.district} onChange={(e) => setManualForm((prev) => ({ ...prev, district: e.target.value }))} />
+              <input className="rounded-lg border border-gray-300 p-3" placeholder="Upazila *" value={manualForm.upazila} onChange={(e) => setManualForm((prev) => ({ ...prev, upazila: e.target.value }))} />
+              <input className="rounded-lg border border-gray-300 p-3" placeholder="Thana *" value={manualForm.thana} onChange={(e) => setManualForm((prev) => ({ ...prev, thana: e.target.value }))} />
+              <input className="rounded-lg border border-gray-300 p-3" placeholder="Post office *" value={manualForm.postOffice} onChange={(e) => setManualForm((prev) => ({ ...prev, postOffice: e.target.value }))} />
+              <input className="rounded-lg border border-gray-300 p-3 md:col-span-2" placeholder="Payment method" value={manualForm.paymentMethod} onChange={(e) => setManualForm((prev) => ({ ...prev, paymentMethod: e.target.value }))} />
+            </div>
+
+            <div className="mt-5">
+              <label className="mb-2 block text-sm font-semibold text-gray-700">Select Products (one or multiple)</label>
+              <SearchableMultiSelect
+                options={productOptions}
+                selectedIds={selectedProductIds}
+                onChange={(ids) => {
+                  setSelectedProductIds(ids);
+                  setManualItems((prev) => {
+                    const existingMap = new Map(prev.map((it) => [it.productId, it]));
+                    return ids.map((id) => {
+                      const key = String(id);
+                      const existing = existingMap.get(key);
+                      return existing || { productId: key, quantity: 1, color: '', size: '' };
+                    });
+                  });
+                }}
+                placeholder="Search and select products"
+                searchPlaceholder="Search product by name"
+                renderOption={(option) => (
+                  <div className="flex items-center gap-2">
+                    <div className="relative h-8 w-8 overflow-hidden rounded-md bg-gray-100">
+                      <Image src={option.image} alt={option.name} fill className="object-cover" unoptimized />
+                    </div>
+                    <span>{option.name}</span>
+                    <span className="text-xs text-gray-500">({option.price})</span>
+                  </div>
+                )}
+              />
+            </div>
+
+            {manualItems.length > 0 && (
+              <div className="mt-4 space-y-3 rounded-lg border border-gray-200 p-4">
+                {manualItems.map((row) => {
+                  const product = productOptions.find((p) => p.id === row.productId);
+                  if (!product) return null;
+                  return (
+                    <div key={row.productId} className="grid grid-cols-1 gap-2 rounded-md bg-gray-50 p-3 md:grid-cols-5">
+                      <div className="md:col-span-2 flex items-center gap-2">
+                        <div className="relative h-10 w-10 overflow-hidden rounded bg-white">
+                          <Image src={product.image} alt={product.name} fill className="object-cover" unoptimized />
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold">{product.name}</div>
+                          <div className="text-xs text-gray-500">Price: à§³{product.price}</div>
+                        </div>
+                      </div>
+                      <input type="number" min={1} className="rounded border border-gray-300 px-2 py-1" value={row.quantity} onChange={(e) => setManualItems((prev) => prev.map((it) => it.productId === row.productId ? { ...it, quantity: Math.max(1, Number(e.target.value || 1)) } : it))} placeholder="Qty" />
+                      <input className="rounded border border-gray-300 px-2 py-1" value={row.color} onChange={(e) => setManualItems((prev) => prev.map((it) => it.productId === row.productId ? { ...it, color: e.target.value } : it))} placeholder="Color (optional)" />
+                      <input className="rounded border border-gray-300 px-2 py-1" value={row.size} onChange={(e) => setManualItems((prev) => prev.map((it) => it.productId === row.productId ? { ...it, size: e.target.value } : it))} placeholder="Size (optional)" />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="mt-5 flex items-center justify-between border-t border-gray-200 pt-4">
+              <div className="text-lg font-semibold text-gray-800">Total: à§³{manualTotal.toFixed(2)}</div>
+              <div className="flex gap-2">
+                <button onClick={() => setIsAddModalOpen(false)} disabled={creatingManualOrder} className="rounded-lg border border-gray-300 px-4 py-2">
+                  Cancel
+                </button>
+                <button onClick={handleCreateManualOrder} disabled={creatingManualOrder} className="rounded-lg bg-fuchsia-500 px-4 py-2 font-semibold text-white disabled:opacity-70">
+                  {creatingManualOrder ? 'Saving...' : 'Create Order'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

@@ -4,6 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import { X, Check, Loader2 } from 'lucide-react';
 import { Order } from './OrdersTable';
+import { getApiUrl } from '@/lib/apiConfig';
 
 interface OrderDetailModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ interface OrderDetailModalProps {
   order: Order;
   onAcceptOrder: (orderId: string) => void;
   isAccepting?: boolean;
+  onOrderUpdated?: () => Promise<void> | void;
 }
 
 /**
@@ -22,13 +24,48 @@ export default function OrderDetailModal({
   onClose,
   order,
   onAcceptOrder,
-  isAccepting = false
+  isAccepting = false,
+  onOrderUpdated,
 }: OrderDetailModalProps) {
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [form, setForm] = React.useState(order.customerInfo);
+
+  React.useEffect(() => {
+    setForm(order.customerInfo);
+  }, [order]);
+
   if (!isOpen) return null;
 
   const handleAccept = () => {
     if (!isAccepting) {
       onAcceptOrder(order.id);
+    }
+  };
+
+  const saveEdits = async () => {
+    if (!form.name || !form.phoneNumber || !form.district || !form.upazila || !form.thana || !form.postOffice) {
+      alert('Please fill required fields before saving.');
+      return;
+    }
+    try {
+      setIsSaving(true);
+      const response = await fetch(getApiUrl(`admin/orders/${order.id}`), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerInfo: form }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.error || 'Failed to update order.');
+      }
+      if (onOrderUpdated) {
+        await onOrderUpdated();
+      }
+      onClose();
+    } catch (error: any) {
+      alert(error?.message || 'Failed to update order.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -70,31 +107,31 @@ export default function OrderDetailModal({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Name</label>
-                  <p className="text-base text-gray-900 mt-1">{order.customerInfo.name}</p>
+                  <input className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" value={form.name} onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))} />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Phone Number</label>
-                  <p className="text-base text-gray-900 mt-1">{order.customerInfo.phoneNumber}</p>
+                  <input className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" value={form.phoneNumber} onChange={(e) => setForm((prev) => ({ ...prev, phoneNumber: e.target.value }))} />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Email</label>
-                  <p className="text-base text-gray-900 mt-1">{order.customerInfo.email}</p>
+                  <input className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" value={form.email} onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))} />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">District</label>
-                  <p className="text-base text-gray-900 mt-1">{order.customerInfo.district}</p>
+                  <input className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" value={form.district} onChange={(e) => setForm((prev) => ({ ...prev, district: e.target.value }))} />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Upazila</label>
-                  <p className="text-base text-gray-900 mt-1">{order.customerInfo.upazila}</p>
+                  <input className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" value={form.upazila} onChange={(e) => setForm((prev) => ({ ...prev, upazila: e.target.value }))} />
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Thana</label>
-                  <p className="text-base text-gray-900 mt-1">{order.customerInfo.thana}</p>
+                  <input className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" value={form.thana} onChange={(e) => setForm((prev) => ({ ...prev, thana: e.target.value }))} />
                 </div>
                 <div className="md:col-span-2">
                   <label className="text-sm font-medium text-gray-500">Post Office</label>
-                  <p className="text-base text-gray-900 mt-1">{order.customerInfo.postOffice}</p>
+                  <input className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" value={form.postOffice} onChange={(e) => setForm((prev) => ({ ...prev, postOffice: e.target.value }))} />
                 </div>
               </div>
             </div>
@@ -166,8 +203,15 @@ export default function OrderDetailModal({
             {order.status === 'pending' && (
               <div className="flex items-center justify-end gap-4 pt-4 border-t border-gray-200">
                 <button
+                  onClick={saveEdits}
+                  disabled={isAccepting || isSaving}
+                  className="px-6 py-3 border border-blue-300 rounded-lg text-blue-700 font-medium hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button
                   onClick={onClose}
-                  disabled={isAccepting}
+                  disabled={isAccepting || isSaving}
                   className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Close
@@ -188,7 +232,14 @@ export default function OrderDetailModal({
             )}
 
             {order.status !== 'pending' && (
-              <div className="flex items-center justify-end pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                <button
+                  onClick={saveEdits}
+                  disabled={isSaving}
+                  className="px-6 py-3 border border-blue-300 rounded-lg text-blue-700 font-medium hover:bg-blue-50 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {isSaving ? 'Saving...' : 'Save Changes'}
+                </button>
                 <button
                   onClick={onClose}
                   className="px-6 py-3 bg-fuchsia-500 text-white rounded-lg font-medium hover:bg-fuchsia-600 transition-colors cursor-pointer"

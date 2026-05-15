@@ -277,7 +277,7 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
       <div className="father fixed top-0 right-0 h-screen w-[90vw] flex justify-center items-start pt-20 z-50" role="dialog" data-layer="father">
         {/* father = cart dropdown positioned from right side, 80vw width, horizontally centered */}
         
-        <div className="layer-1 relative bg-white rounded-xl h-[80vh] w-full max-w-md flex flex-col" data-layer="1">
+        <div className="layer-1 relative bg-white rounded-xl h-[80vh] w-full max-w-md flex flex-col shadow-[0_28px_80px_rgba(15,23,42,0.35),0_10px_30px_rgba(15,23,42,0.2)]" data-layer="1">
           {/* layer-1 = cart dropdown container with exact design */}
           
           {/* Header Section */}
@@ -356,7 +356,7 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
                             data-layer="18"
                           >
                             {/* layer-18 = plus button */}
-                            <Plus className="w-3 h-3 text-white" />
+                            <Plus className="w-3 h-3 text-black" strokeWidth={2.5} />
                           </button>
                         </div>
                         
