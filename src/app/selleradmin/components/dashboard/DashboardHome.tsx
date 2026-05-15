@@ -220,9 +220,6 @@ export default function DashboardHome() {
             <p className="text-sm text-zinc-500">
               Expected Sales ( +10% ): <span className="font-semibold text-zinc-900">৳{expectedSales.toLocaleString()}</span>
             </p>
-            <p className="text-xs text-zinc-500">
-              Current month accepted sales: <span className="font-semibold text-zinc-900">৳{currentMonthSales.toLocaleString()}</span>
-            </p>
             <div className="mt-2 flex w-full items-center gap-2">
               <input
                 type="number"
