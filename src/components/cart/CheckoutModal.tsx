@@ -124,7 +124,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [districtDetails, setDistrictDetails] = useState<DistrictDetailApiItem[]>([]);
   const [locationLoading, setLocationLoading] = useState(false);
   const [locationError, setLocationError] = useState('');
-  const hasValidDistrictSelection = districtOptions.includes(values.district.trim());
 
   const upazilaOptions = useMemo(() => {
     const set = new Set<string>();
@@ -347,7 +346,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       {/* Centered Modal */}
       <div className="fixed inset-0 z-[90] flex items-center justify-center p-3 sm:p-4">
         <div
-          className="relative w-full max-w-[920px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl"
+          className="relative w-full max-w-[920px] max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-[0_28px_80px_rgba(15,23,42,0.35),0_10px_30px_rgba(15,23,42,0.2)]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Close Button */}
@@ -484,7 +483,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   onBlur={handleBlur}
                   placeholder="Type upazila here..."
                   list="upazila-options"
-                  disabled={!hasValidDistrictSelection}
                   className="w-full h-12 p-3 rounded-lg border border-zinc-300 text-base font-normal font-['Poppins'] leading-5 text-zinc-700 placeholder:text-zinc-400 focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-200 transition-all disabled:bg-zinc-100 disabled:text-zinc-400"
                 />
                 <datalist id="upazila-options">
@@ -511,7 +509,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   onBlur={handleBlur}
                   placeholder="Type thana here..."
                   list="thana-options"
-                  disabled={!hasValidDistrictSelection}
                   className="w-full h-12 p-3 rounded-lg border border-zinc-300 text-base font-normal font-['Poppins'] leading-5 text-zinc-700 placeholder:text-zinc-400 focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-200 transition-all disabled:bg-zinc-100 disabled:text-zinc-400"
                 />
                 <datalist id="thana-options">
@@ -538,7 +535,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   onBlur={handleBlur}
                   placeholder="Type post office here..."
                   list="post-office-options"
-                  disabled={!hasValidDistrictSelection}
                   className="w-full h-12 p-3 rounded-lg border border-zinc-300 text-base font-normal font-['Poppins'] leading-5 text-zinc-700 placeholder:text-zinc-400 focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-200 transition-all disabled:bg-zinc-100 disabled:text-zinc-400"
                 />
                 <datalist id="post-office-options">

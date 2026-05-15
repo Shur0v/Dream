@@ -458,10 +458,10 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
           
           {/* Modal */}
           <div className="fixed inset-0 z-[70] flex items-center justify-center p-4">
-            <div 
-              className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl"
-              onClick={(e) => e.stopPropagation()}
-            >
+              <div 
+                className="bg-white rounded-xl p-6 max-w-md w-full shadow-[0_28px_80px_rgba(15,23,42,0.35),0_10px_30px_rgba(15,23,42,0.2)]"
+                onClick={(e) => e.stopPropagation()}
+              >
               <h3 className="text-xl font-semibold font-['Poppins'] text-slate-950 mb-2">
                 Remove Item
               </h3>

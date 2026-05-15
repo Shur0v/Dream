@@ -81,7 +81,7 @@ export const SuccessModal: React.FC<SuccessModalProps> = ({
 
       {/* Modal - Centered in viewport */}
       <div
-        className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl transform transition-all duration-300"
+        className="relative w-full max-w-md bg-white rounded-2xl shadow-[0_28px_80px_rgba(15,23,42,0.35),0_10px_30px_rgba(15,23,42,0.2)] transform transition-all duration-300"
         style={{
           position: 'relative',
           zIndex: 1

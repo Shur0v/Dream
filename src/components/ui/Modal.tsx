@@ -93,7 +93,7 @@ export const Modal: React.FC<ModalProps> = ({
       <div
         className={`
           relative w-full max-w-4xl h-full max-h-[70vh] md:max-h-[90vh]
-          bg-white rounded-3xl shadow-2xl
+          bg-white rounded-3xl shadow-[0_28px_80px_rgba(15,23,42,0.35),0_10px_30px_rgba(15,23,42,0.2)]
           overflow-hidden transform transition-all duration-300
           ${className}
         `}
