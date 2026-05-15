@@ -178,9 +178,9 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
         const resolvedUserId = profile?.id || getGuestUserId();
 
         const hasSavedAddress =
-          !!profile.address?.street &&
-          !!profile.address?.city &&
-          !!profile.address?.zipCode;
+          !!profile?.address?.street &&
+          !!profile?.address?.city &&
+          !!profile?.address?.zipCode;
 
         if (hasSavedAddress) {
           setIsSubmitting(true);
