@@ -479,7 +479,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
                     type="button"
                     className={`w-9 h-9 rounded-md flex items-center justify-center transition-colors ${
                       selectedSize === size
-                        ? 'bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 text-neutral-50 shadow-[0_4px_12px_rgba(236,72,153,0.25)]'
+                        ? 'bg-black border border-black text-white shadow-[0_4px_10px_rgba(0,0,0,0.25)]'
                         : 'border border-black/30 text-black/80 bg-white hover:bg-gray-50'
                     }`}
                     onClick={() => setSelectedSize(size)}
