@@ -29,8 +29,8 @@ const StatCard = ({ title, value, icon }: { title: string; value: string; icon: 
 export default function DashboardHome() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
-  const [monthlyTarget, setMonthlyTarget] = useState(600000);
-  const [targetInput, setTargetInput] = useState('600000');
+  const [monthlyTarget, setMonthlyTarget] = useState(0);
+  const [targetInput, setTargetInput] = useState('0');
   const [targetSaving, setTargetSaving] = useState(false);
 
   useEffect(() => {
@@ -121,12 +121,13 @@ export default function DashboardHome() {
     })
     .join(' ');
 
-  const targetPercent = Math.min(100, Math.round((currentMonthSales / Math.max(1, monthlyTarget)) * 100));
-  const expectedSales = Math.round(monthlyTarget * 1.1);
+  const targetPercent =
+    monthlyTarget <= 0 ? 0 : Math.min(100, Math.round((currentMonthSales / monthlyTarget) * 100));
+  const expectedSales = monthlyTarget <= 0 ? 0 : Math.round(monthlyTarget * 1.1);
 
   const handleSaveTarget = async () => {
     const amount = Number(targetInput);
-    if (!Number.isFinite(amount) || amount <= 0) return;
+    if (!Number.isFinite(amount) || amount < 0) return;
     try {
       setTargetSaving(true);
       const response = await fetch('/api/admin/dashboard', {
@@ -155,7 +156,7 @@ export default function DashboardHome() {
       const response = await fetch('/api/admin/dashboard', { method: 'DELETE' });
       const result = await response.json();
       if (response.ok && result?.success) {
-        const resetAmount = Number(result.data?.amount ?? 600000);
+        const resetAmount = Number(result.data?.amount ?? 0);
         setMonthlyTarget(resetAmount);
         setTargetInput(String(resetAmount));
       }
@@ -169,7 +170,7 @@ export default function DashboardHome() {
   return (
     <div className="w-full space-y-6">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Accepted Sales" value={`৳${stats.totalSales.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} />
+        <StatCard title="Expected Sales (+10%)" value={`৳${expectedSales.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} />
         <StatCard title="Accepted Orders" value={stats.totalOrders.toLocaleString()} icon={<ShoppingCart className="h-5 w-5" />} />
         <StatCard title="Sold Products" value={stats.totalProducts.toLocaleString()} icon={<Package className="h-5 w-5" />} />
         <StatCard title="Active Sale Days" value={stats.uniqueDays.toLocaleString()} icon={<Users className="h-5 w-5" />} />
@@ -225,7 +226,7 @@ export default function DashboardHome() {
             <div className="mt-2 flex w-full items-center gap-2">
               <input
                 type="number"
-                min="1"
+                min="0"
                 value={targetInput}
                 onChange={(e) => setTargetInput(e.target.value)}
                 className="h-10 flex-1 rounded-lg border border-zinc-300 px-3 text-sm text-zinc-900 outline-none focus:border-fuchsia-400"

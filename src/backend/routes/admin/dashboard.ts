@@ -91,9 +91,9 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const amount = Number(body?.amount);
-    if (!Number.isFinite(amount) || amount <= 0) {
+    if (!Number.isFinite(amount) || amount < 0) {
       return NextResponse.json(
-        { success: false, error: 'Valid target amount is required' },
+        { success: false, error: 'Valid target amount is required (0 or more)' },
         { status: 400 }
       );
     }

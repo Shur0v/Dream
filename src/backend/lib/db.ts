@@ -686,17 +686,17 @@ export async function getMonthlyTargetSettings(): Promise<MonthlyTargetSettings>
   await ensureDatabaseReady();
   const rows = await sql.query(`SELECT data, updated_at FROM site_settings WHERE key = 'monthly_target' LIMIT 1`);
   const row = rows[0] as { data?: { amount?: number | string }; updated_at?: string } | undefined;
-  const parsed = Number(row?.data?.amount ?? 600000);
+  const parsed = Number(row?.data?.amount ?? 0);
 
   return {
-    amount: Number.isFinite(parsed) && parsed > 0 ? parsed : 600000,
+    amount: Number.isFinite(parsed) && parsed >= 0 ? parsed : 0,
     updatedAt: row?.updated_at || nowIso(),
   };
 }
 
 export async function saveMonthlyTargetSettings(amount: number): Promise<MonthlyTargetSettings> {
   await ensureDatabaseReady();
-  const normalized = Math.max(1, Math.round(amount));
+  const normalized = Math.max(0, Math.round(amount));
 
   await sql.query(
     `INSERT INTO site_settings (key, data, updated_at)
@@ -715,9 +715,16 @@ export async function saveMonthlyTargetSettings(amount: number): Promise<Monthly
 
 export async function resetMonthlyTargetSettings(): Promise<MonthlyTargetSettings> {
   await ensureDatabaseReady();
-  await sql.query(`DELETE FROM site_settings WHERE key = 'monthly_target'`);
+  await sql.query(
+    `INSERT INTO site_settings (key, data, updated_at)
+     VALUES ('monthly_target', $1::jsonb, NOW())
+     ON CONFLICT (key) DO UPDATE SET
+       data = EXCLUDED.data,
+       updated_at = NOW()`,
+    [JSON.stringify({ amount: 0 })]
+  );
   return {
-    amount: 600000,
+    amount: 0,
     updatedAt: nowIso(),
   };
 }
