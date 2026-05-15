@@ -1,12 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Minus, Plus, Heart, ShoppingCart, Star } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { CheckoutModal } from '@/components/cart/CheckoutModal';
 import { SuccessModal } from '@/components/ui/SuccessModal';
-import { SignInRequiredModal } from '@/components/ui/SignInRequiredModal';
-import { addToCart, addToWishlist, isInWishlist, removeFromWishlist, isUserLoggedIn, CartItem, WishlistItem } from '@/lib/userStorage';
+import { addToCart, addToWishlist, isInWishlist, removeFromWishlist, CartItem, WishlistItem } from '@/lib/userStorage';
 
 interface ProductInfoProps {
   product: {
@@ -47,7 +46,6 @@ interface SavedUserProfile {
 }
 
 const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], className }) => {
-  const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState<string | null>(
     product.colors && product.colors.length > 0 ? product.colors[0] : null
@@ -58,8 +56,6 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
   const [isWishlisted, setIsWishlisted] = useState(false);
-  const [showSignInModal, setShowSignInModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<'cart' | 'wishlist' | 'buyNow' | null>(null);
   const [checkoutInitialValues, setCheckoutInitialValues] = useState<{
     name: string;
     phoneNumber: string;
@@ -80,6 +76,15 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
     const result = await response.json();
     if (!result?.success || !result?.data) return null;
     return result.data as SavedUserProfile;
+  };
+
+  const getGuestUserId = (): string => {
+    if (typeof window === 'undefined') return `guest-${Date.now()}`;
+    const existing = localStorage.getItem('guestUserId');
+    if (existing) return existing;
+    const created = `guest-${Date.now()}`;
+    localStorage.setItem('guestUserId', created);
+    return created;
   };
 
   const createOrder = async (input: {
@@ -161,70 +166,16 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
     setIsWishlisted(isInWishlist(product.id));
   }, [product.id]);
 
-  // Listen for login success to retry pending actions
-  useEffect(() => {
-    const handleStorageChange = () => {
-      if (isUserLoggedIn() && pendingAction && showSignInModal) {
-        // User logged in, retry the pending action
-        if (pendingAction === 'cart') {
-          const cartItem: CartItem = {
-            id: `cart-${product.id}-${Date.now()}`,
-            productId: product.id,
-            name: product.name,
-            price: product.price,
-            quantity: quantity,
-            image: images && images.length > 0 ? images[0] : '/placeholder-image.png',
-            color: selectedColor || undefined,
-            size: selectedSize || undefined,
-          };
-          addToCart(cartItem);
-          window.dispatchEvent(new Event('storage'));
-        } else if (pendingAction === 'wishlist') {
-          const wishlistItem: WishlistItem = {
-            id: `wishlist-${product.id}-${Date.now()}`,
-            productId: product.id,
-            name: product.name,
-            price: product.price,
-            image: images && images.length > 0 ? images[0] : '/placeholder-image.png',
-          };
-          addToWishlist(wishlistItem);
-          setIsWishlisted(true);
-          window.dispatchEvent(new Event('storage'));
-        } else if (pendingAction === 'buyNow') {
-          setIsCheckoutOpen(true);
-        }
-        setShowSignInModal(false);
-        setPendingAction(null);
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [pendingAction, showSignInModal, product, quantity, selectedColor, selectedSize, images]);
-
   const handleQuantityChange = (amount: number) => {
     setQuantity((prev) => Math.max(1, prev + amount));
   };
 
   const handleBuyNow = () => {
-    if (!isUserLoggedIn()) {
-      setPendingAction('buyNow');
-      setShowSignInModal(true);
-      return;
-    }
-
     (async () => {
       try {
         const userFromStorage = JSON.parse(localStorage.getItem('userData') || 'null');
         const profile = await getCurrentUserProfile();
-
-        if (!profile?.id || !userFromStorage?.email) {
-          setPendingAction('buyNow');
-          setShowSignInModal(true);
-          return;
-        }
+        const resolvedUserId = profile?.id || getGuestUserId();
 
         const hasSavedAddress =
           !!profile.address?.street &&
@@ -241,11 +192,11 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
           const savedPostOffice = savedAddress.zipCode || '';
 
           const created = await createOrder({
-            userId: profile.id,
+            userId: resolvedUserId,
             shippingAddress: savedAddress,
             customerName: profile.firstName || userFromStorage.username || 'Customer',
             phoneNumber: profile.phone || userFromStorage.mobile || '',
-            email: userFromStorage.email,
+            email: userFromStorage?.email || '',
             district: savedDistrict,
             upazila: savedUpazila,
             thana: savedThana,
@@ -258,7 +209,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
           }
           setOrderId(created.order.id);
           setIsSuccessModalOpen(true);
-          alert('Order placed using your saved address.');
+          toast.success('Order placed successfully');
           return;
         }
 
@@ -274,7 +225,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
         setIsCheckoutOpen(true);
       } catch (error: any) {
         console.error('Error in Buy Now flow:', error);
-        alert('Failed to process Buy Now. Please try again. Error: ' + (error.message || 'Unknown error'));
+        toast.error('Failed to process Buy Now. Please try again.');
       } finally {
         setIsSubmitting(false);
       }
@@ -282,12 +233,6 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
   };
 
   const handleAddToCart = () => {
-    if (!isUserLoggedIn()) {
-      setPendingAction('cart');
-      setShowSignInModal(true);
-      return;
-    }
-
     const cartItem: CartItem = {
       id: `cart-${product.id}-${Date.now()}`,
       productId: product.id,
@@ -301,18 +246,14 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
     
     addToCart(cartItem);
     window.dispatchEvent(new Event('storage'));
+    toast.success('Added to cart');
   };
 
   const handleToggleWishlist = () => {
-    if (!isUserLoggedIn()) {
-      setPendingAction('wishlist');
-      setShowSignInModal(true);
-      return;
-    }
-
     if (isWishlisted) {
       removeFromWishlist(product.id);
       setIsWishlisted(false);
+      toast.success('Removed from favourite');
     } else {
       const wishlistItem: WishlistItem = {
         id: `wishlist-${product.id}-${Date.now()}`,
@@ -324,6 +265,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
       
       addToWishlist(wishlistItem);
       setIsWishlisted(true);
+      toast.success('Added to favourite');
     }
     window.dispatchEvent(new Event('storage'));
   };
@@ -341,18 +283,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
     
     try {
       const userFromStorage = JSON.parse(localStorage.getItem('userData') || 'null');
-      if (!userFromStorage?.email) {
-        setPendingAction('buyNow');
-        setShowSignInModal(true);
-        return;
-      }
-
       const profile = await getCurrentUserProfile();
-      if (!profile?.id) {
-        setPendingAction('buyNow');
-        setShowSignInModal(true);
-        return;
-      }
+      const resolvedUserId = profile?.id || getGuestUserId();
 
       const shippingAddress = {
         street: `${formData.thana}, ${formData.upazila}`,
@@ -363,22 +295,24 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
       };
 
       // Save one-time address to user account for future instant Buy Now
-      await fetch('/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: formData.name || userFromStorage.username,
-          mobile: formData.phoneNumber || userFromStorage.mobile,
-          email: userFromStorage.email,
-          address: shippingAddress,
-        }),
-      });
+      if (userFromStorage?.email) {
+        await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: formData.name || userFromStorage.username,
+            mobile: formData.phoneNumber || userFromStorage.mobile,
+            email: userFromStorage.email,
+            address: shippingAddress,
+          }),
+        });
+      }
       const created = await createOrder({
-        userId: profile.id,
+        userId: resolvedUserId,
         shippingAddress,
         customerName: formData.name || userFromStorage.username || '',
         phoneNumber: formData.phoneNumber || userFromStorage.mobile || '',
-        email: userFromStorage.email,
+        email: formData.email || userFromStorage?.email || '',
         district: formData.district,
         upazila: formData.upazila,
         thana: formData.thana,
@@ -392,10 +326,10 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
       setOrderId(created.order.id);
       setIsCheckoutOpen(false);
       setIsSuccessModalOpen(true);
-      alert('Address saved successfully. Next Buy Now will use this address automatically.');
+      toast.success('Order placed successfully');
     } catch (error: any) {
       console.error('Error creating order:', error);
-      alert('Failed to create order. Please try again. Error: ' + (error.message || 'Unknown error'));
+      toast.error('Failed to create order. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -550,7 +484,13 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
                     }`}
                     onClick={() => setSelectedSize(size)}
                   >
-                    <span className="text-sm sm:text-base font-medium font-['Poppins'] leading-tight">{size}</span>
+                    <span
+                      className={`text-sm sm:text-base font-medium font-['Poppins'] leading-tight ${
+                        selectedSize === size ? 'text-white' : 'text-black'
+                      }`}
+                    >
+                      {size}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -619,7 +559,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
         onSubmit={handleCheckoutSubmit}
         isSubmitting={isSubmitting}
         initialValues={checkoutInitialValues}
-        hideContactFields={isUserLoggedIn()}
+        hideContactFields={false}
       />
 
       {/* Success Modal */}
@@ -631,26 +571,6 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
         orderId={orderId || undefined}
       />
 
-      {/* Sign In Required Modal */}
-      <SignInRequiredModal
-        isOpen={showSignInModal}
-        onClose={() => {
-          setShowSignInModal(false);
-          setPendingAction(null);
-        }}
-        onSignIn={() => {
-          // Trigger login modal via custom event
-          window.dispatchEvent(new CustomEvent('openLoginModal', { detail: { userType: 'client' } }));
-          // The storage event listener will handle retry after login
-        }}
-        message={
-          pendingAction === 'cart'
-            ? 'Please sign in to add items to your cart.'
-            : pendingAction === 'buyNow'
-              ? 'Please sign in first to place your order.'
-              : 'Please sign in to add items to your wishlist.'
-        }
-      />
     </div>
   );
 };
