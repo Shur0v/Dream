@@ -326,10 +326,9 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
       setOrderId(created.order.id);
       setIsCheckoutOpen(false);
       setIsSuccessModalOpen(true);
-      toast.success('Order placed successfully');
     } catch (error: any) {
       console.error('Error creating order:', error);
-      toast.error('Failed to create order. Please try again.');
+      throw error;
     } finally {
       setIsSubmitting(false);
     }
@@ -544,9 +543,9 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
             {/* Buy Now Button */}
             <button 
               onClick={handleBuyNow}
-              className="w-full px-4 py-3 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 rounded-md flex justify-center items-center gap-2.5 hover:from-fuchsia-600 hover:to-fuchsia-600 transition-colors shadow-[0_6px_18px_rgba(236,72,153,0.25)]"
+              className="w-full px-4 py-3 bg-fuchsia-500 rounded-md flex justify-center items-center gap-2.5 hover:bg-fuchsia-600 transition-colors shadow-[0_6px_18px_rgba(236,72,153,0.25)]"
             >
-              <span className="text-neutral-50 text-base font-semibold font-['Poppins'] leading-normal">Buy Now</span>
+              <span className="text-white text-base font-semibold font-['Poppins'] leading-normal">Buy Now</span>
             </button>
           </div>
         </div>

@@ -171,11 +171,15 @@ function calculateStats(orders: any[]): {
   totalAmount: number;
   totalProducts: number;
 } {
-  const totalAmount = orders.reduce((sum: number, order: any) => {
+  const acceptedOrders = orders.filter((order: any) =>
+    ['approved', 'confirmed', 'shipped', 'delivered'].includes(String(order.status || '').toLowerCase())
+  );
+
+  const totalAmount = acceptedOrders.reduce((sum: number, order: any) => {
     return sum + (order.totalAmount || 0);
   }, 0);
 
-  const totalProducts = orders.reduce((sum: number, order: any) => {
+  const totalProducts = acceptedOrders.reduce((sum: number, order: any) => {
     const itemsCount = order.items?.reduce((itemSum: number, item: any) => {
       return itemSum + (item.quantity || 1);
     }, 0) || 0;

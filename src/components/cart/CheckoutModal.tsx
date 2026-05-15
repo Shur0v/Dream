@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useForm } from '@/hooks';
 
 interface CheckoutFormData {
@@ -17,7 +18,7 @@ interface CheckoutFormData {
 interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CheckoutFormData) => void;
+  onSubmit: (data: CheckoutFormData) => void | Promise<void>;
   isSubmitting?: boolean;
   initialValues?: Partial<CheckoutFormData>;
   hideContactFields?: boolean;
@@ -301,15 +302,20 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       return;
     }
 
-    handleSubmit((formData) => {
+    handleSubmit(async (formData) => {
       // Log all form data
       console.log('Form submitted with data:', formData);
       
-      // Submit the form (parent will handle closing modal)
-      onSubmit(formData);
-      
-      // Reset form after successful submission
-      reset();
+      try {
+        // Submit the form (parent may handle modal close)
+        await Promise.resolve(onSubmit(formData));
+        toast.success('Order placed successfully');
+        // Reset form after successful submission
+        reset();
+      } catch (submitError) {
+        console.error('Checkout submit failed:', submitError);
+        toast.error('Failed to place order. Please try again.');
+      }
     })(e);
   };
 

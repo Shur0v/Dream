@@ -5,6 +5,7 @@ import { Upload, X, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { HeroBanner } from '@/types';
 import { uploadImageClient } from '@/lib/uploadImageClient';
+import ImageUploadHint from '../ui/ImageUploadHint';
 
 interface AddBannerFormProps {
   onBack?: () => void;
@@ -232,6 +233,7 @@ export default function AddBannerForm({ onBack, onSave }: AddBannerFormProps) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left: Slider (50% width) */}
           <div>
+            <ImageUploadHint width={1608} height={1026} className="mb-2" />
             <div className="relative w-full bg-gray-100 rounded-xl overflow-hidden flex items-center justify-center aspect-[804/513]">
               {hasImages ? (
                 // Current slide
@@ -315,6 +317,7 @@ export default function AddBannerForm({ onBack, onSave }: AddBannerFormProps) {
               <div className="grid grid-cols-1 gap-4">
                 <div className="relative border border-gray-200 rounded-xl p-3">
                   <div className="text-sm font-medium mb-2">Header Image</div>
+                  <ImageUploadHint width={984} height={458} className="mb-2" />
                   <div className="bg-gray-50 rounded-lg overflow-hidden aspect-[492/229] flex items-center justify-center">
                     {rightBannerPreviews[0] ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -351,6 +354,7 @@ export default function AddBannerForm({ onBack, onSave }: AddBannerFormProps) {
                 {[1, 2].map((i) => (
                   <div key={`rb-${i}`} className="relative border border-gray-200 rounded-xl p-3">
                     <div className="text-sm font-medium mb-2">Right Banner {i}</div>
+                    <ImageUploadHint width={468} height={520} className="mb-2" />
                     <div className="bg-gray-50 rounded-lg overflow-hidden aspect-[234/260] flex items-center justify-center">
                       {rightBannerPreviews[i] ? (
                         // eslint-disable-next-line @next/next/no-img-element

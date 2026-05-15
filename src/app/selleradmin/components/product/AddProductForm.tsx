@@ -8,6 +8,7 @@ import { ArrowLeft, ImagePlus, X, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import SimpleSelect from '../ui/SimpleSelect';
 import SearchableMultiSelect from '../ui/SearchableMultiSelect';
+import ImageUploadHint from '../ui/ImageUploadHint';
 import { Color, Category } from '@/types';
 import { fetchCategories as loadCategoriesFromApi } from '@/lib/categories';
 import { getApiUrl } from '@/lib/apiConfig';
@@ -691,6 +692,7 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
                 <div className="self-stretch flex flex-col justify-start items-start gap-0.5">
                   <div className="text-neutral-600 text-base font-medium font-['Poppins'] leading-6">Add Photos <span className="text-red-500">*</span></div>
                   <div className="text-zinc-400 text-sm font-normal font-['Poppins'] leading-5">Upload 1-12 product photos</div>
+                  <ImageUploadHint width={1200} height={1200} />
                 </div>
                 <div className="w-full flex flex-col gap-4">
                   <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">

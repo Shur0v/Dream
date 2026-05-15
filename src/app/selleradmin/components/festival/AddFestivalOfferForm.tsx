@@ -5,6 +5,7 @@ import { ArrowLeft, Upload, Trash2, Plus, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
+import ImageUploadHint from '../ui/ImageUploadHint';
 import { FestivalBanner } from '@/types';
 import { uploadImageClient } from '@/lib/uploadImageClient';
 
@@ -378,6 +379,7 @@ export default function AddFestivalOfferForm({ onBack, onSave, onDelete }: AddFe
         {/* Right card - Photo */}
         <div className="w-full p-4 bg-white rounded-lg flex flex-col gap-2">
           <label className="text-neutral-800 text-base font-medium font-['Poppins']">Banner Image</label>
+          <ImageUploadHint width={984} height={458} />
           <div
             onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
             onDrop={handleDrop}

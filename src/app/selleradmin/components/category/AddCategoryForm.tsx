@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Plus, ImagePlus, Trash2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
+import ImageUploadHint from '../ui/ImageUploadHint';
 import { Category } from '@/types';
 import { uploadImageClient } from '@/lib/uploadImageClient';
 
@@ -242,6 +243,7 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
         {/* Right card - Photo */}
         <div className="w-full p-4 bg-white rounded-lg flex flex-col gap-2">
           <label className="text-neutral-800 text-base font-medium font-['Poppins']">Photo</label>
+          <ImageUploadHint width={320} height={320} />
           <div
             onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
             onDrop={handleDrop}
