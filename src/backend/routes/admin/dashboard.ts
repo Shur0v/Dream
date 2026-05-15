@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProducts, getOrders } from '@backend/lib/db';
+import {
+  getProducts,
+  getOrders,
+  getMonthlyTargetSettings,
+  saveMonthlyTargetSettings,
+  resetMonthlyTargetSettings,
+} from '@backend/lib/db';
 import { mockApiDelay } from '@/lib/dummyData';
 import { DashboardStats } from '@/types';
 
@@ -68,11 +74,55 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: dashboardStats,
+      monthlyTarget: await getMonthlyTargetSettings(),
       message: 'Dashboard statistics retrieved successfully',
     });
 
   } catch (error) {
     console.error('Get dashboard stats error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const amount = Number(body?.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return NextResponse.json(
+        { success: false, error: 'Valid target amount is required' },
+        { status: 400 }
+      );
+    }
+
+    const monthlyTarget = await saveMonthlyTargetSettings(amount);
+    return NextResponse.json({
+      success: true,
+      data: monthlyTarget,
+      message: 'Monthly target updated successfully',
+    });
+  } catch (error) {
+    console.error('Update monthly target error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE() {
+  try {
+    const monthlyTarget = await resetMonthlyTargetSettings();
+    return NextResponse.json({
+      success: true,
+      data: monthlyTarget,
+      message: 'Monthly target reset successfully',
+    });
+  } catch (error) {
+    console.error('Reset monthly target error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

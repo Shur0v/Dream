@@ -9,5 +9,5 @@
  * @version 1.0.0
  */
 
-export { GET } from '@backend/routes/admin/dashboard';
+export { GET, PUT, DELETE } from '@backend/routes/admin/dashboard';
 
