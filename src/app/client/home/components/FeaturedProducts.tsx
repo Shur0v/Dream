@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import CachedImage from '@/components/ui/CachedImage';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 import { FeaturedProduct } from '@/types';
 import { addToCart, addToWishlist, isInWishlist, removeFromWishlist, CartItem, WishlistItem } from '@/lib/userStorage';
 
@@ -254,6 +255,7 @@ export default function FeaturedProducts() {
                     const isWishlisted = isInWishlist(productId);
                     if (isWishlisted) {
                       await removeFromWishlist(productId);
+                      toast.success('Removed from favourite');
                     } else {
                       const wishlistItem: WishlistItem = {
                         id: `wishlist-${productId}-${Date.now()}`,
@@ -263,6 +265,7 @@ export default function FeaturedProducts() {
                         image: product.images && product.images.length > 0 ? product.images[0] : '/placeholder-image.png',
                       };
                       await addToWishlist(wishlistItem);
+                      toast.success('Added to favourite');
                     }
                   }}
                 >
@@ -397,6 +400,7 @@ export default function FeaturedProducts() {
                         image: product.images && product.images.length > 0 ? product.images[0] : '/placeholder-image.png',
                       };
                       await addToCart(cartItem);
+                      toast.success('Added to cart');
                     }}
                     className="layer-33 w-full h-0 opacity-0 px-7 bg-fuchsia-500 rounded-xl inline-flex justify-center items-center gap-1.5 md:group-hover:h-14 md:group-hover:py-3 md:group-hover:opacity-100 hover:bg-fuchsia-600 transition-all duration-500 ease-out transform translate-y-2 md:group-hover:translate-y-0 cursor-pointer"
                     aria-label={`Add ${product.name} to cart`}

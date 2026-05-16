@@ -23,7 +23,7 @@ import { ShoppingCart, Search, Menu, X } from 'lucide-react';
 import { CartDropdown } from '../cart/CartDropdown';
 import { WishlistDropdown } from '../wishlist/WishlistDropdown';
 import { Category, Product } from '@/types';
-import { getCartCount, getWishlistCount, getCurrentUser, syncCartFromApi, syncWishlistFromApi } from '@/lib/userStorage';
+import { getCartCount, getWishlistCount, getCartItems, getWishlistItems, getCurrentUser, syncCartFromApi, syncWishlistFromApi } from '@/lib/userStorage';
 import { fetchWithCache } from '@/lib/indexeddb/apiCache';
 
 // User data interface
@@ -115,13 +115,13 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
       if (user) {
         setUserData(user);
         await Promise.allSettled([syncCartFromApi(), syncWishlistFromApi()]);
-        setCartCount(getCartCount());
-        setWishlistCount(getWishlistCount());
       } else {
         setUserData(null);
-        setCartCount(0);
-        setWishlistCount(0);
+        getCartItems();
+        getWishlistItems();
       }
+      setCartCount(getCartCount());
+      setWishlistCount(getWishlistCount());
     };
 
     // Load initially
@@ -554,6 +554,13 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
                       height={24}
                       loading="lazy"
                     />
+                    {wishlistCount > 0 && (
+                      <div className="absolute -top-2 left-2 w-[22px] h-[22px] p-[7.83px] bg-orange-500 rounded-full flex justify-center items-center">
+                        <span className="text-white text-[8px] font-semibold leading-none">
+                          {wishlistCount > 99 ? '99+' : wishlistCount}
+                        </span>
+                      </div>
+                    )}
                   </button>
 
                   {/* Cart */}
