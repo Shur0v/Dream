@@ -513,7 +513,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
                 </div>
                 <button
                   onClick={() => handleQuantityChange(1)}
-                  className="w-8 h-9 rounded-r bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 flex items-center justify-center hover:from-fuchsia-600 hover:to-fuchsia-600 transition-colors"
+                  className="w-8 h-9 rounded-r border border-black/40 border-l-0 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 flex items-center justify-center hover:from-fuchsia-600 hover:to-fuchsia-600 transition-colors"
                   aria-label="Increase quantity"
                   type="button"
                 >
