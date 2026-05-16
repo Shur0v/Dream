@@ -5,8 +5,7 @@ import Image from 'next/image';
 import CachedImage from '@/components/ui/CachedImage';
 import Link from 'next/link';
 import { Product } from '@/types';
-import { addToCart, addToWishlist, isInWishlist, removeFromWishlist, isUserLoggedIn, CartItem, WishlistItem } from '@/lib/userStorage';
-import { SignInRequiredModal } from '@/components/ui/SignInRequiredModal';
+import { addToCart, addToWishlist, isInWishlist, removeFromWishlist, CartItem, WishlistItem } from '@/lib/userStorage';
 
 interface ForYouProps {
   currentProduct?: {
@@ -25,9 +24,6 @@ export default function ForYou({ currentProduct }: ForYouProps) {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showSignInModal, setShowSignInModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<'cart' | 'wishlist' | null>(null);
-  const [pendingProduct, setPendingProduct] = useState<Product | null>(null);
 
   // Fetch products based on context - Always ensure 4 products are shown
   useEffect(() => {
@@ -347,28 +343,21 @@ export default function ForYou({ currentProduct }: ForYouProps) {
                 <div 
                   className="layer-11 transform md:group-hover:scale-110 md:group-hover:rotate-12 transition-all duration-300 cursor-pointer" 
                   data-layer="11"
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (!isUserLoggedIn()) {
-                      setPendingAction('wishlist');
-                      setPendingProduct(product);
-                      setShowSignInModal(true);
+                    const isWishlisted = isInWishlist(productId);
+                    if (isWishlisted) {
+                      await removeFromWishlist(productId);
                     } else {
-                      const isWishlisted = isInWishlist(productId);
-                      if (isWishlisted) {
-                        removeFromWishlist(productId);
-                      } else {
-                        const wishlistItem: WishlistItem = {
-                          id: `wishlist-${productId}-${Date.now()}`,
-                          productId: productId,
-                          name: product.name,
-                          price: product.price,
-                          image: product.images && product.images.length > 0 ? product.images[0] : '/placeholder-image.png',
-                        };
-                        addToWishlist(wishlistItem);
-                      }
-                      window.dispatchEvent(new Event('storage'));
+                      const wishlistItem: WishlistItem = {
+                        id: `wishlist-${productId}-${Date.now()}`,
+                        productId: productId,
+                        name: product.name,
+                        price: product.price,
+                        image: product.images && product.images.length > 0 ? product.images[0] : '/placeholder-image.png',
+                      };
+                      await addToWishlist(wishlistItem);
                     }
                   }}
                 >
@@ -490,25 +479,18 @@ export default function ForYou({ currentProduct }: ForYouProps) {
                   {/* layer-24 = add to cart button container */}
                   
                   <button 
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      if (!isUserLoggedIn()) {
-                        setPendingAction('cart');
-                        setPendingProduct(product);
-                        setShowSignInModal(true);
-                      } else {
-                        const cartItem: CartItem = {
-                          id: `cart-${productId}-${Date.now()}`,
-                          productId: productId,
-                          name: product.name,
-                          price: product.price,
-                          quantity: 1,
-                          image: product.images && product.images.length > 0 ? product.images[0] : '/placeholder-image.png',
-                        };
-                        addToCart(cartItem);
-                        window.dispatchEvent(new Event('storage'));
-                      }
+                      const cartItem: CartItem = {
+                        id: `cart-${productId}-${Date.now()}`,
+                        productId: productId,
+                        name: product.name,
+                        price: product.price,
+                        quantity: 1,
+                        image: product.images && product.images.length > 0 ? product.images[0] : '/placeholder-image.png',
+                      };
+                      await addToCart(cartItem);
                     }}
                     className="layer-25 w-full h-0 opacity-0 px-7 bg-fuchsia-500 rounded-xl inline-flex justify-center items-center gap-1.5 md:group-hover:h-14 md:group-hover:py-3 md:group-hover:opacity-100 hover:bg-fuchsia-600 transition-all duration-500 ease-out transform translate-y-2 md:group-hover:translate-y-0 cursor-pointer"
                     aria-label={`Add ${product.name} to cart`}

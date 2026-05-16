@@ -351,7 +351,7 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
                           
                           <button
                             onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                            className="layer-18 w-7 h-8 relative rounded-tr-[2.91px] rounded-br-[2.91px] border border-black/50 border-l-0 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 overflow-hidden hover:from-fuchsia-600 hover:to-fuchsia-600 transition-colors flex items-center justify-center"
+                            className="layer-18 w-7 h-8 relative rounded-tr-[2.91px] rounded-br-[2.91px] border border-black/50 bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 overflow-hidden hover:from-fuchsia-600 hover:to-fuchsia-600 transition-colors flex items-center justify-center"
                             aria-label="Increase quantity"
                             data-layer="18"
                           >

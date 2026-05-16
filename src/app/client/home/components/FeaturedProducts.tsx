@@ -5,8 +5,7 @@ import Image from 'next/image';
 import CachedImage from '@/components/ui/CachedImage';
 import Link from 'next/link';
 import { FeaturedProduct } from '@/types';
-import { addToCart, addToWishlist, isInWishlist, removeFromWishlist, isUserLoggedIn, CartItem, WishlistItem } from '@/lib/userStorage';
-import { SignInRequiredModal } from '@/components/ui/SignInRequiredModal';
+import { addToCart, addToWishlist, isInWishlist, removeFromWishlist, CartItem, WishlistItem } from '@/lib/userStorage';
 
 /**
  * Featured Products Component
@@ -19,9 +18,6 @@ export default function FeaturedProducts() {
   const [products, setProducts] = useState<FeaturedProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [showSignInModal, setShowSignInModal] = useState(false);
-  const [pendingAction, setPendingAction] = useState<'cart' | 'wishlist' | null>(null);
-  const [pendingProduct, setPendingProduct] = useState<FeaturedProduct | null>(null);
 
   const filters = ['Man', 'Woman', 'Kids'];
   const resolveProductId = (product: FeaturedProduct): string =>
@@ -251,28 +247,22 @@ export default function FeaturedProducts() {
                 <div 
                   className="layer-19 transform md:group-hover:scale-110 md:group-hover:rotate-12 transition-all duration-300 cursor-pointer" 
                   data-layer="19"
-                  onClick={(e) => {
+                  onClick={async (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (!isUserLoggedIn()) {
-                      setPendingAction('wishlist');
-                      setPendingProduct(product);
-                      setShowSignInModal(true);
+                    const productId = resolveProductId(product);
+                    const isWishlisted = isInWishlist(productId);
+                    if (isWishlisted) {
+                      await removeFromWishlist(productId);
                     } else {
-                      const isWishlisted = isInWishlist(product.id);
-                      if (isWishlisted) {
-                        removeFromWishlist(product.id);
-                      } else {
-                        const wishlistItem: WishlistItem = {
-                          id: `wishlist-${product.id}-${Date.now()}`,
-                          productId: resolveProductId(product),
-                          name: product.name,
-                          price: product.price,
-                          image: product.images && product.images.length > 0 ? product.images[0] : '/placeholder-image.png',
-                        };
-                        addToWishlist(wishlistItem);
-                      }
-                      window.dispatchEvent(new Event('storage'));
+                      const wishlistItem: WishlistItem = {
+                        id: `wishlist-${productId}-${Date.now()}`,
+                        productId,
+                        name: product.name,
+                        price: product.price,
+                        image: product.images && product.images.length > 0 ? product.images[0] : '/placeholder-image.png',
+                      };
+                      await addToWishlist(wishlistItem);
                     }
                   }}
                 >
@@ -394,25 +384,19 @@ export default function FeaturedProducts() {
                   {/* layer-32 = add to cart button container */}
                   
                   <button 
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      if (!isUserLoggedIn()) {
-                        setPendingAction('cart');
-                        setPendingProduct(product);
-                        setShowSignInModal(true);
-                      } else {
-                        const cartItem: CartItem = {
-                          id: `cart-${product.id}-${Date.now()}`,
-                          productId: resolveProductId(product),
-                          name: product.name,
-                          price: product.price,
-                          quantity: 1,
-                          image: product.images && product.images.length > 0 ? product.images[0] : '/placeholder-image.png',
-                        };
-                        addToCart(cartItem);
-                        window.dispatchEvent(new Event('storage'));
-                      }
+                      const productId = resolveProductId(product);
+                      const cartItem: CartItem = {
+                        id: `cart-${productId}-${Date.now()}`,
+                        productId,
+                        name: product.name,
+                        price: product.price,
+                        quantity: 1,
+                        image: product.images && product.images.length > 0 ? product.images[0] : '/placeholder-image.png',
+                      };
+                      await addToCart(cartItem);
                     }}
                     className="layer-33 w-full h-0 opacity-0 px-7 bg-fuchsia-500 rounded-xl inline-flex justify-center items-center gap-1.5 md:group-hover:h-14 md:group-hover:py-3 md:group-hover:opacity-100 hover:bg-fuchsia-600 transition-all duration-500 ease-out transform translate-y-2 md:group-hover:translate-y-0 cursor-pointer"
                     aria-label={`Add ${product.name} to cart`}
@@ -472,49 +456,6 @@ export default function FeaturedProducts() {
         )}
       </div>
 
-      {/* Sign In Required Modal */}
-      <SignInRequiredModal
-        isOpen={showSignInModal}
-        onClose={() => {
-          setShowSignInModal(false);
-          setPendingAction(null);
-          setPendingProduct(null);
-        }}
-        onSignIn={() => {
-          // Trigger login modal via custom event
-          window.dispatchEvent(new CustomEvent('openLoginModal', { detail: { userType: 'client' } }));
-          // After login, retry the pending action
-          setTimeout(() => {
-            if (pendingProduct && pendingAction) {
-              if (pendingAction === 'cart') {
-                const cartItem: CartItem = {
-                  id: `cart-${pendingProduct.id}-${Date.now()}`,
-                  productId: resolveProductId(pendingProduct as FeaturedProduct),
-                  name: pendingProduct.name,
-                  price: pendingProduct.price,
-                  quantity: 1,
-                  image: pendingProduct.images && pendingProduct.images.length > 0 ? pendingProduct.images[0] : '/placeholder-image.png',
-                };
-                addToCart(cartItem);
-                window.dispatchEvent(new Event('storage'));
-              } else if (pendingAction === 'wishlist') {
-                const wishlistItem: WishlistItem = {
-                  id: `wishlist-${pendingProduct.id}-${Date.now()}`,
-                  productId: resolveProductId(pendingProduct as FeaturedProduct),
-                  name: pendingProduct.name,
-                  price: pendingProduct.price,
-                  image: pendingProduct.images && pendingProduct.images.length > 0 ? pendingProduct.images[0] : '/placeholder-image.png',
-                };
-                addToWishlist(wishlistItem);
-                window.dispatchEvent(new Event('storage'));
-              }
-            }
-          }, 1000);
-        }}
-        message={pendingAction === 'cart' 
-          ? 'Please sign in to add items to your cart.' 
-          : 'Please sign in to add items to your wishlist.'}
-      />
     </section>
   );
 }
