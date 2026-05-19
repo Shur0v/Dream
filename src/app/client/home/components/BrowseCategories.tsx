@@ -110,7 +110,7 @@ export default function BrowseCategories() {
     }
   }
 
-  // Enable wheel and pointer drag scrolling (mouse + touch)
+  // Enable wheel/mouse drag and robust touch swipe scrolling
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
@@ -178,12 +178,59 @@ export default function BrowseCategories() {
     const handlePointerCancel = (e: PointerEvent) => endDrag(e.pointerId);
     const handlePointerLeave = () => endDrag();
 
+    // Touch drag fallback for mobile browsers where native horizontal overflow is unreliable.
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartScrollLeft = 0;
+    let touchDragging = false;
+    let isHorizontalGesture = false;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+      touchStartScrollLeft = container.scrollLeft;
+      touchDragging = false;
+      isHorizontalGesture = false;
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!e.touches.length) return;
+      const touch = e.touches[0];
+      const diffX = touch.clientX - touchStartX;
+      const diffY = touch.clientY - touchStartY;
+
+      // Lock to the dominant direction after slight movement.
+      if (!touchDragging && (Math.abs(diffX) > 6 || Math.abs(diffY) > 6)) {
+        touchDragging = true;
+        isHorizontalGesture = Math.abs(diffX) > Math.abs(diffY);
+      }
+
+      if (!touchDragging || !isHorizontalGesture) return;
+
+      e.preventDefault();
+      container.scrollLeft = touchStartScrollLeft - diffX;
+      wasDragRef.current = true;
+    };
+
+    const handleTouchEnd = () => {
+      touchDragging = false;
+      isHorizontalGesture = false;
+      setTimeout(() => {
+        wasDragRef.current = false;
+      }, 120);
+    };
+
     container.addEventListener('wheel', handleWheel, { passive: false });
     container.addEventListener('pointerdown', handlePointerDown);
     container.addEventListener('pointermove', handlePointerMove);
     container.addEventListener('pointerup', handlePointerUp);
     container.addEventListener('pointercancel', handlePointerCancel);
     container.addEventListener('pointerleave', handlePointerLeave);
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd);
+    container.addEventListener('touchcancel', handleTouchEnd);
 
     // Set initial cursor
     container.style.cursor = 'grab';
@@ -195,6 +242,10 @@ export default function BrowseCategories() {
       container.removeEventListener('pointerup', handlePointerUp);
       container.removeEventListener('pointercancel', handlePointerCancel);
       container.removeEventListener('pointerleave', handlePointerLeave);
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+      container.removeEventListener('touchcancel', handleTouchEnd);
     };
   }, []);
 
@@ -227,7 +278,7 @@ export default function BrowseCategories() {
               ref={scrollContainerRef}
               className="layer-4 w-full overflow-x-auto scrollbar-hide horizontal-scroll" 
               data-layer="4" 
-              style={{ WebkitOverflowScrolling: 'touch', cursor: 'grab' }}
+              style={{ WebkitOverflowScrolling: 'touch', cursor: 'grab', touchAction: 'pan-y' }}
             >
               {/* layer-4 = categories scrollable container */}
               
