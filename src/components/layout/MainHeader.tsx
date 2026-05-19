@@ -760,15 +760,32 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
       >
         <div className="flex flex-col h-full">
           {/* Mobile Menu Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-neutral-800">Menu</h2>
-            <button
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="p-2 hover:opacity-80 transition-opacity"
-              aria-label="Close mobile menu"
-            >
-              <X className="w-6 h-6 text-neutral-800" strokeWidth={2.5} />
-            </button>
+          <div className="p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between gap-3">
+              <Link
+                href="/"
+                onClick={() => setIsMobileMenuOpen(false)}
+                aria-label="Dreamshop homepage"
+                className="inline-flex items-center hover:opacity-90 transition-opacity"
+              >
+                <Image
+                  className="h-10 w-auto object-contain"
+                  src="/common/logo.svg"
+                  alt="Dreamshop logo"
+                  width={140}
+                  height={40}
+                  priority
+                />
+              </Link>
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-2 hover:opacity-80 transition-opacity"
+                aria-label="Close mobile menu"
+              >
+                <X className="w-6 h-6 text-neutral-800" strokeWidth={2.5} />
+              </button>
+            </div>
+            <h2 className="mt-3 text-lg font-semibold text-neutral-800">Menu</h2>
           </div>
 
           {/* Mobile Menu Content */}
