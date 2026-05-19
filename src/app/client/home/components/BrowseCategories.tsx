@@ -37,6 +37,8 @@ export default function BrowseCategories() {
   const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const wasDragRef = useRef(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
@@ -110,7 +112,25 @@ export default function BrowseCategories() {
     }
   }
 
-  // Enable wheel/mouse drag and robust touch swipe scrolling
+  const updateScrollButtons = () => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    setCanScrollLeft(scrollLeft > 4);
+    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 4);
+  };
+
+  const scrollByCards = (direction: 'left' | 'right') => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const cardWidth = window.innerWidth < 768 ? 156 : 244;
+    container.scrollBy({
+      left: direction === 'left' ? -cardWidth * 2 : cardWidth * 2,
+      behavior: 'smooth',
+    });
+  };
+
+  // Keep wheel support on desktop
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
@@ -123,131 +143,20 @@ export default function BrowseCategories() {
       container.scrollLeft += delta;
     };
 
-    // Pointer drag to scroll - works on cards and empty space.
-    let isPointerDown = false;
-    let startX = 0;
-    let startScrollLeft = 0;
-    const dragThreshold = 5; // pixels to move before considering it a drag
-    let hasMoved = false; // Track if pointer has moved during drag
-
-    const handlePointerDown = (e: PointerEvent) => {
-      // Keep custom drag only for mouse; let touch use native horizontal scroll.
-      if (e.pointerType !== 'mouse') return;
-      if (e.button !== 0) return;
-
-      isPointerDown = true;
-      hasMoved = false;
-      startX = e.clientX;
-      startScrollLeft = container.scrollLeft;
-      container.style.cursor = 'grabbing';
-      container.setPointerCapture?.(e.pointerId);
-    };
-
-    const handlePointerMove = (e: PointerEvent) => {
-      if (!isPointerDown) return;
-
-      const diffX = e.clientX - startX;
-
-      // If moved enough, it's a drag
-      if (Math.abs(diffX) > dragThreshold) {
-        hasMoved = true;
-        e.preventDefault();
-        container.scrollLeft = startScrollLeft - diffX;
-      }
-    };
-
-    const endDrag = (pointerId?: number) => {
-      // Store drag state before resetting
-      const wasDragging = isPointerDown && hasMoved;
-      wasDragRef.current = wasDragging;
-
-      isPointerDown = false;
-      hasMoved = false;
-      container.style.cursor = 'grab';
-      if (typeof pointerId === 'number') {
-        container.releasePointerCapture?.(pointerId);
-      }
-
-      // Reset drag flag after a short delay to allow click event
-      setTimeout(() => {
-        wasDragRef.current = false;
-      }, 100);
-    };
-
-    const handlePointerUp = (e: PointerEvent) => endDrag(e.pointerId);
-    const handlePointerCancel = (e: PointerEvent) => endDrag(e.pointerId);
-    const handlePointerLeave = () => endDrag();
-
-    // Touch drag fallback for mobile browsers where native horizontal overflow is unreliable.
-    let touchStartX = 0;
-    let touchStartY = 0;
-    let touchStartScrollLeft = 0;
-    let touchDragging = false;
-    let isHorizontalGesture = false;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      const touch = e.touches[0];
-      touchStartX = touch.clientX;
-      touchStartY = touch.clientY;
-      touchStartScrollLeft = container.scrollLeft;
-      touchDragging = false;
-      isHorizontalGesture = false;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!e.touches.length) return;
-      const touch = e.touches[0];
-      const diffX = touch.clientX - touchStartX;
-      const diffY = touch.clientY - touchStartY;
-
-      // Lock to the dominant direction after slight movement.
-      if (!touchDragging && (Math.abs(diffX) > 6 || Math.abs(diffY) > 6)) {
-        touchDragging = true;
-        isHorizontalGesture = Math.abs(diffX) > Math.abs(diffY);
-      }
-
-      if (!touchDragging || !isHorizontalGesture) return;
-
-      e.preventDefault();
-      container.scrollLeft = touchStartScrollLeft - diffX;
-      wasDragRef.current = true;
-    };
-
-    const handleTouchEnd = () => {
-      touchDragging = false;
-      isHorizontalGesture = false;
-      setTimeout(() => {
-        wasDragRef.current = false;
-      }, 120);
-    };
+    const handleScroll = () => updateScrollButtons();
+    const handleResize = () => updateScrollButtons();
 
     container.addEventListener('wheel', handleWheel, { passive: false });
-    container.addEventListener('pointerdown', handlePointerDown);
-    container.addEventListener('pointermove', handlePointerMove);
-    container.addEventListener('pointerup', handlePointerUp);
-    container.addEventListener('pointercancel', handlePointerCancel);
-    container.addEventListener('pointerleave', handlePointerLeave);
-    container.addEventListener('touchstart', handleTouchStart, { passive: true });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-    container.addEventListener('touchend', handleTouchEnd);
-    container.addEventListener('touchcancel', handleTouchEnd);
-
-    // Set initial cursor
-    container.style.cursor = 'grab';
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleResize);
+    updateScrollButtons();
 
     return () => {
       container.removeEventListener('wheel', handleWheel);
-      container.removeEventListener('pointerdown', handlePointerDown);
-      container.removeEventListener('pointermove', handlePointerMove);
-      container.removeEventListener('pointerup', handlePointerUp);
-      container.removeEventListener('pointercancel', handlePointerCancel);
-      container.removeEventListener('pointerleave', handlePointerLeave);
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
-      container.removeEventListener('touchcancel', handleTouchEnd);
+      container.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleResize);
     };
-  }, []);
+  }, [categories.length]);
 
   return (
     <section className="father w-full pt-4 pb-8 sm:pt-6 sm:pb-12 md:pt-8 md:pb-16 lg:pt-10 lg:pb-24 bg-white" role="region" aria-labelledby="browse-categories-heading" data-layer="father">
@@ -274,12 +183,13 @@ export default function BrowseCategories() {
             </div>
             
             {/* Horizontal scrollable category row */}
-            <div 
-              ref={scrollContainerRef}
-              className="layer-4 w-full overflow-x-auto scrollbar-hide horizontal-scroll" 
-              data-layer="4" 
-              style={{ WebkitOverflowScrolling: 'touch', cursor: 'grab', touchAction: 'pan-y' }}
-            >
+            <div className="relative w-full">
+              <div 
+                ref={scrollContainerRef}
+                className="layer-4 w-full overflow-x-auto overflow-y-hidden scrollbar-hide horizontal-scroll snap-x snap-mandatory" 
+                data-layer="4" 
+                style={{ WebkitOverflowScrolling: 'touch', touchAction: 'auto' }}
+              >
               {/* layer-4 = categories scrollable container */}
               
               {loading ? (
@@ -297,7 +207,7 @@ export default function BrowseCategories() {
                   {loopedCategories.map((category, index) => (
                     <button 
                       key={`${category.id}-${index}`}
-                      className="layer-5 flex-shrink-0 w-[140px] md:w-[220px] h-[140px] md:h-[220px] p-1.5 md:p-3 bg-fuchsia-400/10 rounded-xl inline-flex flex-col justify-start items-center gap-1.5 md:gap-4 cursor-pointer select-none"
+                      className="layer-5 snap-start flex-shrink-0 w-[140px] md:w-[220px] h-[140px] md:h-[220px] p-1.5 md:p-3 bg-fuchsia-400/10 rounded-xl inline-flex flex-col justify-start items-center gap-1.5 md:gap-4 cursor-pointer select-none"
                       style={{ 
                         userSelect: 'none',
                         WebkitUserSelect: 'none',
@@ -343,6 +253,29 @@ export default function BrowseCategories() {
                     </button>
                   ))}
                 </div>
+              )}
+              </div>
+              {!loading && categories.length > 0 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => scrollByCards('left')}
+                    disabled={!canScrollLeft}
+                    className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/95 border border-neutral-200 text-neutral-700 shadow-sm disabled:opacity-30"
+                    aria-label="Scroll categories left"
+                  >
+                    ‹
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollByCards('right')}
+                    disabled={!canScrollRight}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/95 border border-neutral-200 text-neutral-700 shadow-sm disabled:opacity-30"
+                    aria-label="Scroll categories right"
+                  >
+                    ›
+                  </button>
+                </>
               )}
             </div>
           </div>
