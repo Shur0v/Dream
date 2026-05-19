@@ -878,11 +878,11 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
           </div>
 
           {/* Actions */}
-          <div className="w-full flex items-center justify-end gap-4 pt-4">
+          <div className="w-full flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-3 sm:gap-4 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium font-['Poppins'] transition-colors"
+              className="w-full sm:w-auto px-6 py-3 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium font-['Poppins'] transition-colors"
             >
               Cancel
             </button>
@@ -890,8 +890,8 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
               type="button"
               onClick={handleSave}
               className={cn(
-                'px-6 py-3 rounded-lg bg-gradient-to-r from-fuchsia-500 to-fuchsia-500 text-white font-medium font-["Poppins"] transition-colors',
-                !canSave && 'opacity-60 cursor-not-allowed'
+                'w-full sm:w-auto px-6 py-3 rounded-lg bg-fuchsia-500 hover:bg-fuchsia-600 text-white font-medium font-[\'Poppins\'] transition-colors',
+                !canSave && 'opacity-60 cursor-not-allowed hover:bg-fuchsia-500'
               )}
               disabled={!canSave}
             >

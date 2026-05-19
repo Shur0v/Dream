@@ -55,9 +55,9 @@ export default function SupportPage() {
       icon: Phone,
       title: "Phone Support",
       description: "Call us for immediate assistance",
-      contact: "0964710-1112",
+      contact: "09647-101112",
       hours: "9:00 AM - 6:00 PM (Mon-Fri)",
-      href: "tel:0964710-1112"
+      href: "tel:09647-101112"
     },
     {
       icon: MessageCircle,
@@ -225,7 +225,7 @@ export default function SupportPage() {
                 </p>
                 <div className="space-y-2">
                   <p className="font-['Poppins']">
-                    📞 <a href="tel:0964710-1112" className="underline">0964710-1112</a>
+                    📞 <a href="tel:09647101112" className="underline">09647-101112</a>
                   </p>
                   <p className="font-['Poppins']">
                     💬 Live Chat (24/7)

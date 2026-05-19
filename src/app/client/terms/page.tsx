@@ -144,7 +144,7 @@ export default function TermsPage() {
                   Phone
                 </h3>
                 <p className="font-['Poppins'] opacity-90">
-                  0964710-1112
+                  09647-101112
                 </p>
               </div>
               <div>

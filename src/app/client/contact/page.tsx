@@ -46,7 +46,7 @@ export default function ContactPage() {
     { 
       icon: Headphones, 
       title: "Support", 
-      info: "0964710-1112",
+      info: "09647-101112",
       href: "tel:09647101112"
     },
     { 

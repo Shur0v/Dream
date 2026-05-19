@@ -110,43 +110,43 @@ export default function BrowseCategories() {
     }
   }
 
-  // Enable mouse wheel and drag scrolling on large screens
+  // Enable wheel and pointer drag scrolling (mouse + touch)
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    // Mouse wheel scroll
+    // Wheel scroll: map both horizontal and vertical wheel movement to x-scroll.
     const handleWheel = (e: WheelEvent) => {
-      // Only handle horizontal scroll
-      if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) return;
-      
+      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+      if (delta === 0) return;
       e.preventDefault();
-      container.scrollLeft += e.deltaX;
+      container.scrollLeft += delta;
     };
 
-    // Drag to scroll - works on cards and empty space
-    let isDragging = false;
+    // Pointer drag to scroll - works on cards and empty space.
+    let isPointerDown = false;
     let startX = 0;
     let startScrollLeft = 0;
-    let dragThreshold = 5; // pixels to move before considering it a drag
-    let hasMoved = false; // Track if mouse has moved during drag
+    const dragThreshold = 5; // pixels to move before considering it a drag
+    let hasMoved = false; // Track if pointer has moved during drag
 
-    const handleMouseDown = (e: MouseEvent) => {
-      // Only handle left mouse button
-      if (e.button !== 0) return;
-      
-      isDragging = true;
+    const handlePointerDown = (e: PointerEvent) => {
+      // Only handle primary button for mouse
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+      isPointerDown = true;
       hasMoved = false;
       startX = e.clientX;
       startScrollLeft = container.scrollLeft;
       container.style.cursor = 'grabbing';
+      container.setPointerCapture?.(e.pointerId);
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!isPointerDown) return;
+
       const diffX = e.clientX - startX;
-      
+
       // If moved enough, it's a drag
       if (Math.abs(diffX) > dragThreshold) {
         hasMoved = true;
@@ -155,42 +155,45 @@ export default function BrowseCategories() {
       }
     };
 
-    const handleMouseUp = (e: MouseEvent) => {
+    const endDrag = (pointerId?: number) => {
       // Store drag state before resetting
-      const wasDragging = isDragging && hasMoved;
+      const wasDragging = isPointerDown && hasMoved;
       wasDragRef.current = wasDragging;
-      
-      isDragging = false;
+
+      isPointerDown = false;
       hasMoved = false;
       container.style.cursor = 'grab';
-      
+      if (typeof pointerId === 'number') {
+        container.releasePointerCapture?.(pointerId);
+      }
+
       // Reset drag flag after a short delay to allow click event
       setTimeout(() => {
         wasDragRef.current = false;
       }, 100);
     };
 
-    const handleMouseLeave = () => {
-      isDragging = false;
-      hasMoved = false;
-      container.style.cursor = 'grab';
-    };
+    const handlePointerUp = (e: PointerEvent) => endDrag(e.pointerId);
+    const handlePointerCancel = (e: PointerEvent) => endDrag(e.pointerId);
+    const handlePointerLeave = () => endDrag();
 
     container.addEventListener('wheel', handleWheel, { passive: false });
-    container.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    container.addEventListener('mouseleave', handleMouseLeave);
+    container.addEventListener('pointerdown', handlePointerDown);
+    container.addEventListener('pointermove', handlePointerMove);
+    container.addEventListener('pointerup', handlePointerUp);
+    container.addEventListener('pointercancel', handlePointerCancel);
+    container.addEventListener('pointerleave', handlePointerLeave);
 
     // Set initial cursor
     container.style.cursor = 'grab';
 
     return () => {
       container.removeEventListener('wheel', handleWheel);
-      container.removeEventListener('mousedown', handleMouseDown);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      container.removeEventListener('mouseleave', handleMouseLeave);
+      container.removeEventListener('pointerdown', handlePointerDown);
+      container.removeEventListener('pointermove', handlePointerMove);
+      container.removeEventListener('pointerup', handlePointerUp);
+      container.removeEventListener('pointercancel', handlePointerCancel);
+      container.removeEventListener('pointerleave', handlePointerLeave);
     };
   }, []);
 

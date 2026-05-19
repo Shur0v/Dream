@@ -38,7 +38,7 @@ export const TopBar: React.FC = () => {
     },
     {
       icon: "/header/icons/hotline.svg",
-      text: "Hotline: 096471-01112",
+      text: "Hotline: 09647-101112",
       isImage: true,
     },
   ];

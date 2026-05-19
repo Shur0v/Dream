@@ -118,7 +118,7 @@ export default function Footer({ onOpenLoginModal, onOpenRegisterModal }: Footer
     },
     { 
       icon: "support", 
-      text: "0964710-1112",
+      text: "09647-101112",
       href: "tel:09647101112"
     },
     { 
