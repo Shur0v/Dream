@@ -37,8 +37,12 @@ export default function BrowseCategories() {
   const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const wasDragRef = useRef(false);
+  const isPointerDownRef = useRef(false);
+  const startXRef = useRef(0);
+  const startScrollLeftRef = useRef(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
@@ -158,6 +162,37 @@ export default function BrowseCategories() {
     };
   }, [categories.length]);
 
+  const handlePointerDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    isPointerDownRef.current = true;
+    wasDragRef.current = false;
+    setIsDragging(false);
+    startXRef.current = e.pageX - container.offsetLeft;
+    startScrollLeftRef.current = container.scrollLeft;
+  };
+
+  const handlePointerMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const container = scrollContainerRef.current;
+    if (!container || !isPointerDownRef.current) return;
+    const x = e.pageX - container.offsetLeft;
+    const walk = x - startXRef.current;
+    if (Math.abs(walk) > 4) {
+      wasDragRef.current = true;
+      setIsDragging(true);
+    }
+    container.scrollLeft = startScrollLeftRef.current - walk;
+  };
+
+  const handlePointerUpOrLeave = () => {
+    isPointerDownRef.current = false;
+    setIsDragging(false);
+    // Let click handlers run with fresh flag in the next tick.
+    setTimeout(() => {
+      wasDragRef.current = false;
+    }, 0);
+  };
+
   return (
     <section className="father w-full pt-4 pb-8 sm:pt-6 sm:pb-12 md:pt-8 md:pb-16 lg:pt-10 lg:pb-24 bg-white" role="region" aria-labelledby="browse-categories-heading" data-layer="father">
       {/* father = full width browse categories section */}
@@ -186,9 +221,13 @@ export default function BrowseCategories() {
             <div className="relative w-full">
               <div 
                 ref={scrollContainerRef}
-                className="layer-4 w-full overflow-x-auto overflow-y-hidden scrollbar-hide horizontal-scroll snap-x snap-mandatory" 
+                className={`layer-4 w-full overflow-x-auto overflow-y-hidden scrollbar-hide horizontal-scroll snap-x md:snap-proximity ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                 data-layer="4" 
-                style={{ WebkitOverflowScrolling: 'touch', touchAction: 'auto' }}
+                style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}
+                onMouseDown={handlePointerDown}
+                onMouseMove={handlePointerMove}
+                onMouseUp={handlePointerUpOrLeave}
+                onMouseLeave={handlePointerUpOrLeave}
               >
               {/* layer-4 = categories scrollable container */}
               
