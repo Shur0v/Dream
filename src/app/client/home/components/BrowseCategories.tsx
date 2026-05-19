@@ -6,19 +6,19 @@ import { useCachedImageUrl } from '@/hooks/useCachedImageUrl';
 import { Category } from '@/types';
 
 // Component for cached category image
-function CachedCategoryImage({ 
-  src, 
-  alt, 
-  onError 
-}: { 
-  src: string; 
-  alt: string; 
+function CachedCategoryImage({
+  src,
+  alt,
+  onError
+}: {
+  src: string;
+  alt: string;
   onError: () => void;
 }) {
   const cachedSrc = useCachedImageUrl(src);
   return (
-    <img 
-      className="w-full h-full object-cover select-none pointer-events-none" 
+    <img
+      className="w-full h-full object-cover select-none pointer-events-none"
       src={cachedSrc}
       alt={alt}
       loading="lazy"
@@ -31,22 +31,17 @@ function CachedCategoryImage({
 
 /**
  * Browse Categories Component
- * Displays category cards for easy navigation
+ * Displays circular category icons for easy navigation
+ * Cards loop within 8000rem width container
  */
 export default function BrowseCategories() {
   const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const wasDragRef = useRef(false);
-  const isDraggingRef = useRef(false);
-  const startXRef = useRef(0);
-  const startScrollLeftRef = useRef(0);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
-  
+
   /**
    * Handle category click navigation
    */
@@ -62,14 +57,14 @@ export default function BrowseCategories() {
   // Fetch categories from API with caching for instant loading
   useEffect(() => {
     let active = true;
-    
+
     const fetchCategories = async () => {
       try {
         // Check cache first for instant loading
         const { getCachedResponse } = await import('@/lib/indexeddb/apiCache');
         const cacheKey = '/api/categories?limit=80';
         const cachedData = await getCachedResponse(cacheKey);
-        
+
         if (cachedData && active) {
           // Show cached data instantly (no loading state)
           const activeCategories = (cachedData.data || []).filter((cat: Category) => cat.isActive);
@@ -80,13 +75,11 @@ export default function BrowseCategories() {
         }
 
         // Fetch from network (update cache in background)
-        // Note: We use the cache key without forceRefresh for caching
         const { fetchWithCache } = await import('@/lib/indexeddb/apiCache');
         const response = await fetchWithCache(cacheKey, {}, 60 * 60 * 1000); // 1 hour cache
         const result = await response.json();
-        
+
         if (active && result.success && result.data) {
-          // API already filters active categories, but we ensure only active ones
           const activeCategories = result.data.filter((cat: Category) => cat.isActive);
           setCategories(activeCategories);
         }
@@ -100,167 +93,114 @@ export default function BrowseCategories() {
     };
 
     fetchCategories();
-    
+
     return () => {
       active = false;
     };
   }, []);
 
-  // Keep a small repeated set for smooth horizontal scroll without huge DOM cost.
+  // Calculate loop count for long horizontal strip
   const loopedCategories: Category[] = [];
   if (categories.length > 0) {
-    const minVisibleCards = 12;
-    const setsNeeded = Math.max(3, Math.ceil(minVisibleCards / categories.length) + 1);
+    const setsNeeded = Math.ceil(8000 / 15);
     for (let i = 0; i < setsNeeded; i++) {
-      loopedCategories.push(...categories.map(cat => ({ ...cat })));
+      loopedCategories.push(...categories.map((cat) => ({ ...cat })));
     }
   }
 
-  const updateScrollButtons = () => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-    const { scrollLeft, scrollWidth, clientWidth } = container;
-    setCanScrollLeft(scrollLeft > 4);
-    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 4);
-  };
-
-  const scrollByCards = (direction: 'left' | 'right') => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-    const cardWidth = window.innerWidth < 768 ? 156 : 244;
-    container.scrollBy({
-      left: direction === 'left' ? -cardWidth * 2 : cardWidth * 2,
-      behavior: 'smooth',
-    });
-  };
-
-  // Keep wheel support on desktop
+  // Enable mouse wheel and drag scrolling on desktop
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    // Wheel scroll: map both horizontal and vertical wheel movement to x-scroll.
     const handleWheel = (e: WheelEvent) => {
-      const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-      if (delta === 0) return;
+      if (Math.abs(e.deltaX) < Math.abs(e.deltaY)) return;
       e.preventDefault();
-      container.scrollLeft += delta;
+      container.scrollLeft += e.deltaX;
     };
 
-    const handleScroll = () => updateScrollButtons();
-    const handleResize = () => updateScrollButtons();
+    let isDragging = false;
+    let startX = 0;
+    let startScrollLeft = 0;
+    const dragThreshold = 5;
+    let hasMoved = false;
+
+    const handleMouseDown = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      isDragging = true;
+      hasMoved = false;
+      startX = e.clientX;
+      startScrollLeft = container.scrollLeft;
+      container.style.cursor = 'grabbing';
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      const diffX = e.clientX - startX;
+
+      if (Math.abs(diffX) > dragThreshold) {
+        hasMoved = true;
+        e.preventDefault();
+        container.scrollLeft = startScrollLeft - diffX;
+      }
+    };
+
+    const handleMouseUp = () => {
+      const wasDragging = isDragging && hasMoved;
+      wasDragRef.current = wasDragging;
+
+      isDragging = false;
+      hasMoved = false;
+      container.style.cursor = 'grab';
+
+      setTimeout(() => {
+        wasDragRef.current = false;
+      }, 100);
+    };
+
+    const handleMouseLeave = () => {
+      isDragging = false;
+      hasMoved = false;
+      container.style.cursor = 'grab';
+    };
 
     container.addEventListener('wheel', handleWheel, { passive: false });
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleResize);
-    updateScrollButtons();
+    container.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    container.addEventListener('mouseleave', handleMouseLeave);
+    container.style.cursor = 'grab';
 
     return () => {
       container.removeEventListener('wheel', handleWheel);
-      container.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [categories.length]);
-
-  const stopDrag = () => {
-    isDraggingRef.current = false;
-    setIsDragging(false);
-    setTimeout(() => {
-      wasDragRef.current = false;
-    }, 0);
-  };
-
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-    if (e.button !== 0) return;
-    e.preventDefault();
-    isDraggingRef.current = true;
-    wasDragRef.current = false;
-    setIsDragging(false);
-    startXRef.current = e.clientX;
-    startScrollLeftRef.current = container.scrollLeft;
-  };
-
-  const handleMouseMove = (clientX: number) => {
-    const container = scrollContainerRef.current;
-    if (!container || !isDraggingRef.current) return;
-    const walk = clientX - startXRef.current;
-    if (Math.abs(walk) > 4) {
-      wasDragRef.current = true;
-      setIsDragging(true);
-    }
-    container.scrollLeft = startScrollLeftRef.current - walk;
-  };
-
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-    isDraggingRef.current = true;
-    wasDragRef.current = false;
-    setIsDragging(false);
-    startXRef.current = e.touches[0].clientX;
-    startScrollLeftRef.current = container.scrollLeft;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    handleMouseMove(e.touches[0].clientX);
-  };
-
-  useEffect(() => {
-    const onWindowMouseMove = (e: MouseEvent) => {
-      if (!isDraggingRef.current) return;
-      e.preventDefault();
-      handleMouseMove(e.clientX);
-    };
-    const onWindowMouseUp = () => stopDrag();
-    window.addEventListener('mousemove', onWindowMouseMove);
-    window.addEventListener('mouseup', onWindowMouseUp);
-    return () => {
-      window.removeEventListener('mousemove', onWindowMouseMove);
-      window.removeEventListener('mouseup', onWindowMouseUp);
+      container.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      container.removeEventListener('mouseleave', handleMouseLeave);
     };
   }, []);
 
   return (
     <section className="father w-full pt-4 pb-8 sm:pt-6 sm:pb-12 md:pt-8 md:pb-16 lg:pt-10 lg:pb-24 bg-white" role="region" aria-labelledby="browse-categories-heading" data-layer="father">
-      {/* father = full width browse categories section */}
-      
       <div className="daughter px-2 md:px-0 overflow-x-hidden" data-layer="daughter">
-        {/* daughter = design holder for entire browse categories section */}
-        
         <div className="layer-1 w-full max-w-[1320px] mx-auto overflow-x-hidden" role="main" data-layer="1">
-          {/* layer-1 = main content container with max width constraint */}
-          
           <div className="layer-2 self-stretch inline-flex flex-col justify-start items-start gap-2 sm:gap-3 md:gap-5 lg:gap-8" data-layer="2">
-            {/* layer-2 = content wrapper */}
-            
-            <div 
+            <div
               className="layer-3 self-stretch justify-start text-slate-950 text-2xl md:text-3xl lg:text-5xl font-medium font-['Poppins'] leading-tight md:leading-normal lg:leading-[57.60px]"
               id="browse-categories-heading"
               role="heading"
               aria-level={2}
               data-layer="3"
             >
-              {/* layer-3 = section heading */}
               Browse Categories
             </div>
-            
-            {/* Horizontal scrollable category row */}
-            <div className="relative w-full">
-              <div 
-                ref={scrollContainerRef}
-                className={`layer-4 w-full overflow-x-auto overflow-y-hidden scrollbar-hide horizontal-scroll select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
-                data-layer="4" 
-                style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}
-                onMouseDown={handleMouseDown}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={stopDrag}
-                onTouchCancel={stopDrag}
-              >
-              {/* layer-4 = categories scrollable container */}
-              
+
+            <div
+              ref={scrollContainerRef}
+              className="layer-4 w-full overflow-x-auto scrollbar-hide horizontal-scroll"
+              data-layer="4"
+              style={{ WebkitOverflowScrolling: 'touch', cursor: 'grab' }}
+            >
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="text-neutral-500">Loading categories...</div>
@@ -270,21 +210,21 @@ export default function BrowseCategories() {
                   <div className="text-neutral-500">No categories available</div>
                 </div>
               ) : (
-                <div className="inline-flex w-max min-w-max justify-start items-center gap-4 md:gap-6 select-none pr-2 md:pr-4" style={{ userSelect: 'none' }}>
-                  {/* Inner flex container for repeated categories */}
-                  
+                <div
+                  className="inline-flex justify-start items-center gap-4 md:gap-6 select-none"
+                  style={{ width: '8000rem', userSelect: 'none' }}
+                >
                   {loopedCategories.map((category, index) => (
-                    <button 
+                    <button
                       key={`${category.id}-${index}`}
                       className="layer-5 flex-shrink-0 w-[140px] md:w-[220px] h-[140px] md:h-[220px] p-1.5 md:p-3 bg-fuchsia-400/10 rounded-xl inline-flex flex-col justify-start items-center gap-1.5 md:gap-4 cursor-pointer select-none"
-                      style={{ 
+                      style={{
                         userSelect: 'none',
                         WebkitUserSelect: 'none',
                         MozUserSelect: 'none',
                         msUserSelect: 'none'
                       }}
                       onClick={(e) => {
-                        // Only navigate if it wasn't a drag
                         if (!wasDragRef.current) {
                           e.preventDefault();
                           handleCategoryClick(category.name, category.slug);
@@ -293,17 +233,13 @@ export default function BrowseCategories() {
                       aria-label={`Browse ${category.name} category`}
                       data-layer="5"
                     >
-                      {/* layer-5 = individual category button */}
-                      
                       <div className="layer-6 w-full h-20 md:h-40 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" data-layer="6">
-                        {/* layer-6 = category image container */}
                         {category.image && !imageErrors.has(`${category.id}-${index}`) ? (
                           <CachedCategoryImage
                             src={category.image}
                             alt={`${category.name} category`}
                             onError={() => {
-                              // If image fails to load, mark it as error to show name instead
-                              setImageErrors(prev => new Set([...prev, `${category.id}-${index}`]));
+                              setImageErrors((prev) => new Set([...prev, `${category.id}-${index}`]));
                             }}
                           />
                         ) : (
@@ -314,37 +250,13 @@ export default function BrowseCategories() {
                           </div>
                         )}
                       </div>
-                      
+
                       <div className="layer-7 w-full text-center justify-center text-black text-sm md:text-base font-medium font-['Poppins'] leading-tight md:leading-normal select-none pointer-events-none flex-shrink-0 whitespace-nowrap overflow-hidden text-ellipsis" data-layer="7" title={category.name}>
-                        {/* layer-7 = category name - nowrap to keep full name in one line */}
                         {category.name}
                       </div>
                     </button>
                   ))}
                 </div>
-              )}
-              </div>
-              {!loading && categories.length > 0 && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => scrollByCards('left')}
-                    disabled={!canScrollLeft}
-                    className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/95 border border-neutral-200 text-neutral-700 shadow-sm disabled:opacity-30"
-                    aria-label="Scroll categories left"
-                  >
-                    &#8249;
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => scrollByCards('right')}
-                    disabled={!canScrollRight}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/95 border border-neutral-200 text-neutral-700 shadow-sm disabled:opacity-30"
-                    aria-label="Scroll categories right"
-                  >
-                    &#8250;
-                  </button>
-                </>
               )}
             </div>
           </div>
@@ -353,5 +265,4 @@ export default function BrowseCategories() {
     </section>
   );
 }
-
 
