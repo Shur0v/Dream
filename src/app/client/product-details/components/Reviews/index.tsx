@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Star, SlidersVertical, ChevronDown, MoreHorizontal, Check } from 'lucide-react';
 import { ProductReview } from '@/types';
+import { getCurrentUser } from '@/lib/userStorage';
 
 interface ReviewsProps {
   productId: string;
@@ -18,6 +19,11 @@ const Reviews: React.FC<ReviewsProps> = ({ productId, productName, productDescri
   const [reviews, setReviews] = useState<ProductReview[]>(initialReviews);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
+  const [reviewAuthor, setReviewAuthor] = useState('');
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -88,6 +94,78 @@ const Reviews: React.FC<ReviewsProps> = ({ productId, productName, productDescri
     ));
   };
 
+  const openLoginModal = () => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent('openLoginModal', { detail: { userType: 'client' } }));
+  };
+
+  const handleWriteReviewClick = () => {
+    const user = getCurrentUser();
+    if (!user) {
+      openLoginModal();
+      return;
+    }
+    setReviewAuthor(user.username || '');
+    setReviewRating(5);
+    setReviewComment('');
+    setIsWriteModalOpen(true);
+  };
+
+  const handleSubmitReview = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const user = getCurrentUser();
+    if (!user) {
+      setIsWriteModalOpen(false);
+      openLoginModal();
+      return;
+    }
+
+    const author = reviewAuthor.trim() || user.username || 'Anonymous';
+    const comment = reviewComment.trim();
+    if (!comment) {
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const response = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productId,
+          author,
+          comment,
+          rating: reviewRating,
+          verified: true,
+          source: 'user',
+          date: new Date().toISOString(),
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to submit review');
+      }
+
+      const params = new URLSearchParams({ productId });
+      if (productName) {
+        params.append('productName', productName);
+      }
+      const refreshResponse = await fetch(`/api/reviews?${params.toString()}`, { cache: 'no-store' });
+      const refreshResult = await refreshResponse.json();
+      if (refreshResponse.ok && refreshResult.success) {
+        setReviews(Array.isArray(refreshResult.data) ? refreshResult.data : []);
+      }
+
+      setVisibleReviewsCount(4);
+      setIsWriteModalOpen(false);
+      setReviewComment('');
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Unable to submit review');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'details':
@@ -147,9 +225,13 @@ const Reviews: React.FC<ReviewsProps> = ({ productId, productName, productDescri
                   <ChevronDown size={16} className="text-black" />
                 </div>
                 {/* Write Review Button */}
-                <div className="h-12 px-5 py-4 bg-black rounded-[62px] flex justify-center items-center">
+                <button
+                  type="button"
+                  onClick={handleWriteReviewClick}
+                  className="h-12 px-5 py-4 bg-black rounded-[62px] flex justify-center items-center hover:opacity-90 transition-opacity"
+                >
                   <div className="text-white text-base font-normal font-['Poppins']">Write a Review</div>
-                </div>
+                </button>
               </div>
             </div>
 
@@ -228,35 +310,102 @@ const Reviews: React.FC<ReviewsProps> = ({ productId, productName, productDescri
   };
 
   return (
-    <section className="w-full bg-white max-w-[1320px] mx-auto px-2">
-      {/* Layer 1: Tab Navigation */}
-      <div className="flex flex-wrap items-center gap-4 sm:gap-8 border-b border-black">
-        <button
-          onClick={() => setActiveTab('details')}
-          className={`py-4 sm:py-6 px-2 sm:px-4 ${activeTab === 'details' 
-            ? 'border-b-2 border-fuchsia-500 text-fuchsia-500' 
-            : 'text-black/60'
-          } text-xl font-medium font-['Poppins']`}
-        >
-          Product Details
-        </button>
-        <button
-          onClick={() => setActiveTab('reviews')}
-          className={`py-4 sm:py-6 px-2 sm:px-4 ${activeTab === 'reviews' 
-            ? 'border-b-2 border-fuchsia-500 text-fuchsia-500' 
-            : 'text-black/60'
-          } text-xl font-medium font-['Poppins']`}
-        >
-          Rating & Reviews
-        </button>
-      </div>
+    <>
+      <section className="w-full bg-white max-w-[1320px] mx-auto px-2">
+        {/* Layer 1: Tab Navigation */}
+        <div className="flex flex-wrap items-center gap-4 sm:gap-8 border-b border-black">
+          <button
+            onClick={() => setActiveTab('details')}
+            className={`py-4 sm:py-6 px-2 sm:px-4 ${activeTab === 'details' 
+              ? 'border-b-2 border-fuchsia-500 text-fuchsia-500' 
+              : 'text-black/60'
+            } text-xl font-medium font-['Poppins']`}
+          >
+            Product Details
+          </button>
+          <button
+            onClick={() => setActiveTab('reviews')}
+            className={`py-4 sm:py-6 px-2 sm:px-4 ${activeTab === 'reviews' 
+              ? 'border-b-2 border-fuchsia-500 text-fuchsia-500' 
+              : 'text-black/60'
+            } text-xl font-medium font-['Poppins']`}
+          >
+            Rating & Reviews
+          </button>
+        </div>
 
-      {/* Layer 2: Tab Content Container */}
-      <div className="w-full py-6">
-        {/* Layer 3: Tab Content */}
-        {renderTabContent()}
-      </div>
-    </section>
+        {/* Layer 2: Tab Content Container */}
+        <div className="w-full py-6">
+          {/* Layer 3: Tab Content */}
+          {renderTabContent()}
+        </div>
+      </section>
+
+      {isWriteModalOpen && (
+        <div
+          className="fixed inset-0 z-[120] bg-black/35 backdrop-blur-[2px] flex items-center justify-center p-4"
+          onClick={() => setIsWriteModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl border border-zinc-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-2xl font-semibold text-zinc-900 mb-4">Write a Review</h3>
+            <form onSubmit={handleSubmitReview} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 mb-1">Your Name</label>
+                <input
+                  value={reviewAuthor}
+                  onChange={(e) => setReviewAuthor(e.target.value)}
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 outline-none focus:ring-2 focus:ring-fuchsia-300"
+                  placeholder="Enter your name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 mb-1">Rating</label>
+                <select
+                  value={reviewRating}
+                  onChange={(e) => setReviewRating(Number(e.target.value))}
+                  className="w-full rounded-lg border border-zinc-300 px-3 py-2 outline-none focus:ring-2 focus:ring-fuchsia-300"
+                >
+                  <option value={5}>5 - Excellent</option>
+                  <option value={4}>4 - Very Good</option>
+                  <option value={3}>3 - Good</option>
+                  <option value={2}>2 - Fair</option>
+                  <option value={1}>1 - Poor</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 mb-1">Comment</label>
+                <textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  className="min-h-28 w-full rounded-lg border border-zinc-300 px-3 py-2 outline-none focus:ring-2 focus:ring-fuchsia-300"
+                  placeholder="Write your review..."
+                  required
+                />
+              </div>
+              <div className="flex items-center justify-end gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsWriteModalOpen(false)}
+                  className="rounded-lg border border-zinc-300 px-4 py-2 text-zinc-700 hover:bg-zinc-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="rounded-lg bg-fuchsia-500 px-4 py-2 text-white hover:bg-fuchsia-600 disabled:opacity-60"
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit Review'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
