@@ -791,17 +791,8 @@ export const MainHeader: React.FC<MainHeaderProps> = ({
           {/* Mobile Menu Content */}
           <div className="flex-1 overflow-y-auto p-4">
             <div className="flex flex-col gap-2">
-              {/* Shop Button */}
-              <Link
-                href="/client/categories"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="w-full px-4 py-3 bg-gradient-to-r from-fuchsia-500 to-fuchsia-600 text-white rounded-lg font-semibold text-center hover:opacity-90 transition-opacity"
-              >
-                Shop
-              </Link>
-
               {/* Navigation Links */}
-              <div className="flex flex-col gap-1 mt-4">
+              <div className="flex flex-col gap-1">
                 {navigationLinks.map((link, index) => {
                   if (link.onClick) {
                     return (
