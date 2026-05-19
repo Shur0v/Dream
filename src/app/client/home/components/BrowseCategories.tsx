@@ -37,8 +37,7 @@ export default function BrowseCategories() {
   const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const wasDragRef = useRef(false);
-  const isPointerDownRef = useRef(false);
-  const pointerIdRef = useRef<number | null>(null);
+  const isDraggingRef = useRef(false);
   const startXRef = useRef(0);
   const startScrollLeftRef = useRef(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -163,32 +162,30 @@ export default function BrowseCategories() {
     };
   }, [categories.length]);
 
-  const releaseDrag = () => {
-    isPointerDownRef.current = false;
-    pointerIdRef.current = null;
+  const stopDrag = () => {
+    isDraggingRef.current = false;
     setIsDragging(false);
+    setTimeout(() => {
+      wasDragRef.current = false;
+    }, 0);
   };
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     const container = scrollContainerRef.current;
     if (!container) return;
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    if (e.button !== 0) return;
     e.preventDefault();
-    container.setPointerCapture(e.pointerId);
-    isPointerDownRef.current = true;
-    pointerIdRef.current = e.pointerId;
+    isDraggingRef.current = true;
     wasDragRef.current = false;
     setIsDragging(false);
     startXRef.current = e.clientX;
     startScrollLeftRef.current = container.scrollLeft;
   };
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+  const handleMouseMove = (clientX: number) => {
     const container = scrollContainerRef.current;
-    if (!container || !isPointerDownRef.current) return;
-    if (pointerIdRef.current !== null && e.pointerId !== pointerIdRef.current) return;
-    e.preventDefault();
-    const walk = e.clientX - startXRef.current;
+    if (!container || !isDraggingRef.current) return;
+    const walk = clientX - startXRef.current;
     if (Math.abs(walk) > 4) {
       wasDragRef.current = true;
       setIsDragging(true);
@@ -196,29 +193,43 @@ export default function BrowseCategories() {
     container.scrollLeft = startScrollLeftRef.current - walk;
   };
 
-  const handlePointerEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
     const container = scrollContainerRef.current;
-    if (container && pointerIdRef.current !== null) {
-      try {
-        container.releasePointerCapture(pointerIdRef.current);
-      } catch {
-        // Ignore if pointer was already released.
-      }
-    }
-    releaseDrag();
-    setTimeout(() => {
-      wasDragRef.current = false;
-    }, 0);
+    if (!container) return;
+    isDraggingRef.current = true;
+    wasDragRef.current = false;
+    setIsDragging(false);
+    startXRef.current = e.touches[0].clientX;
+    startScrollLeftRef.current = container.scrollLeft;
   };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    handleMouseMove(e.touches[0].clientX);
+  };
+
+  useEffect(() => {
+    const onWindowMouseMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      e.preventDefault();
+      handleMouseMove(e.clientX);
+    };
+    const onWindowMouseUp = () => stopDrag();
+    window.addEventListener('mousemove', onWindowMouseMove);
+    window.addEventListener('mouseup', onWindowMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onWindowMouseMove);
+      window.removeEventListener('mouseup', onWindowMouseUp);
+    };
+  }, []);
 
   return (
     <section className="father w-full pt-4 pb-8 sm:pt-6 sm:pb-12 md:pt-8 md:pb-16 lg:pt-10 lg:pb-24 bg-white" role="region" aria-labelledby="browse-categories-heading" data-layer="father">
       {/* father = full width browse categories section */}
       
-      <div className="daughter px-2 md:px-0 overflow-x-visible" data-layer="daughter">
+      <div className="daughter px-2 md:px-0 overflow-x-hidden" data-layer="daughter">
         {/* daughter = design holder for entire browse categories section */}
         
-        <div className="layer-1 w-full max-w-[1320px] mx-auto overflow-x-visible" role="main" data-layer="1">
+        <div className="layer-1 w-full max-w-[1320px] mx-auto overflow-x-hidden" role="main" data-layer="1">
           {/* layer-1 = main content container with max width constraint */}
           
           <div className="layer-2 self-stretch inline-flex flex-col justify-start items-start gap-2 sm:gap-3 md:gap-5 lg:gap-8" data-layer="2">
@@ -242,11 +253,11 @@ export default function BrowseCategories() {
                 className={`layer-4 w-full overflow-x-auto overflow-y-hidden scrollbar-hide horizontal-scroll select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                 data-layer="4" 
                 style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}
-                onPointerDown={handlePointerDown}
-                onPointerMove={handlePointerMove}
-                onPointerUp={handlePointerEnd}
-                onPointerCancel={handlePointerEnd}
-                onPointerLeave={handlePointerEnd}
+                onMouseDown={handleMouseDown}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={stopDrag}
+                onTouchCancel={stopDrag}
               >
               {/* layer-4 = categories scrollable container */}
               
