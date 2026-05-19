@@ -162,9 +162,10 @@ export default function BrowseCategories() {
     };
   }, [categories.length]);
 
-  const handlePointerDown = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const container = scrollContainerRef.current;
     if (!container) return;
+    container.setPointerCapture(e.pointerId);
     isPointerDownRef.current = true;
     wasDragRef.current = false;
     setIsDragging(false);
@@ -172,7 +173,7 @@ export default function BrowseCategories() {
     startScrollLeftRef.current = container.scrollLeft;
   };
 
-  const handlePointerMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const container = scrollContainerRef.current;
     if (!container || !isPointerDownRef.current) return;
     const x = e.pageX - container.offsetLeft;
@@ -221,13 +222,14 @@ export default function BrowseCategories() {
             <div className="relative w-full">
               <div 
                 ref={scrollContainerRef}
-                className={`layer-4 w-full overflow-x-auto overflow-y-hidden scrollbar-hide horizontal-scroll snap-x md:snap-proximity ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                className={`layer-4 w-full overflow-x-auto overflow-y-hidden scrollbar-hide horizontal-scroll ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                 data-layer="4" 
                 style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}
-                onMouseDown={handlePointerDown}
-                onMouseMove={handlePointerMove}
-                onMouseUp={handlePointerUpOrLeave}
-                onMouseLeave={handlePointerUpOrLeave}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUpOrLeave}
+                onPointerCancel={handlePointerUpOrLeave}
+                onPointerLeave={handlePointerUpOrLeave}
               >
               {/* layer-4 = categories scrollable container */}
               
@@ -246,7 +248,7 @@ export default function BrowseCategories() {
                   {loopedCategories.map((category, index) => (
                     <button 
                       key={`${category.id}-${index}`}
-                      className="layer-5 snap-start flex-shrink-0 w-[140px] md:w-[220px] h-[140px] md:h-[220px] p-1.5 md:p-3 bg-fuchsia-400/10 rounded-xl inline-flex flex-col justify-start items-center gap-1.5 md:gap-4 cursor-pointer select-none"
+                      className="layer-5 flex-shrink-0 w-[140px] md:w-[220px] h-[140px] md:h-[220px] p-1.5 md:p-3 bg-fuchsia-400/10 rounded-xl inline-flex flex-col justify-start items-center gap-1.5 md:gap-4 cursor-pointer select-none"
                       style={{ 
                         userSelect: 'none',
                         WebkitUserSelect: 'none',
