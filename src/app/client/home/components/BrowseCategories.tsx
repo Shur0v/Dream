@@ -165,18 +165,20 @@ export default function BrowseCategories() {
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const container = scrollContainerRef.current;
     if (!container) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
     container.setPointerCapture(e.pointerId);
     isPointerDownRef.current = true;
     wasDragRef.current = false;
     setIsDragging(false);
-    startXRef.current = e.pageX - container.offsetLeft;
+    startXRef.current = e.clientX;
     startScrollLeftRef.current = container.scrollLeft;
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const container = scrollContainerRef.current;
     if (!container || !isPointerDownRef.current) return;
-    const x = e.pageX - container.offsetLeft;
+    e.preventDefault();
+    const x = e.clientX;
     const walk = x - startXRef.current;
     if (Math.abs(walk) > 4) {
       wasDragRef.current = true;
@@ -305,7 +307,7 @@ export default function BrowseCategories() {
                     className="absolute left-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/95 border border-neutral-200 text-neutral-700 shadow-sm disabled:opacity-30"
                     aria-label="Scroll categories left"
                   >
-                    ‹
+                    &#8249;
                   </button>
                   <button
                     type="button"
@@ -314,7 +316,7 @@ export default function BrowseCategories() {
                     className="absolute right-0 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/95 border border-neutral-200 text-neutral-700 shadow-sm disabled:opacity-30"
                     aria-label="Scroll categories right"
                   >
-                    ›
+                    &#8250;
                   </button>
                 </>
               )}
@@ -325,4 +327,5 @@ export default function BrowseCategories() {
     </section>
   );
 }
+
 

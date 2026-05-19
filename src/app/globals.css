@@ -289,6 +289,7 @@ p, span, div, a, button, input, textarea, select, label {
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
   touch-action: pan-x; /* Enable horizontal panning */
   overscroll-behavior-x: contain; /* Prevent scroll chaining */
+  scroll-snap-type: none !important; /* Avoid lock-in from inherited snap behavior */
 }
 
 @keyframes scroll-horizontal {
