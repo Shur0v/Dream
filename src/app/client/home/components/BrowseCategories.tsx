@@ -217,7 +217,7 @@ export default function BrowseCategories() {
                   {loopedCategories.map((category, index) => (
                     <button
                       key={`${category.id}-${index}`}
-                      className="layer-5 flex-shrink-0 w-[140px] md:w-[220px] h-[140px] md:h-[220px] p-1.5 md:p-3 bg-fuchsia-400/10 rounded-xl inline-flex flex-col justify-start items-center gap-1.5 md:gap-4 cursor-pointer select-none"
+                      className="layer-5 flex-shrink-0 w-[140px] md:w-[220px] h-[140px] md:h-[220px] p-1.5 md:p-3 bg-fuchsia-400/10 rounded-xl inline-flex flex-col justify-start items-center gap-1 md:gap-4 cursor-pointer select-none"
                       style={{
                         userSelect: 'none',
                         WebkitUserSelect: 'none',
@@ -233,7 +233,7 @@ export default function BrowseCategories() {
                       aria-label={`Browse ${category.name} category`}
                       data-layer="5"
                     >
-                      <div className="layer-6 w-full h-20 md:h-40 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" data-layer="6">
+                      <div className="layer-6 w-full h-24 md:h-40 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" data-layer="6">
                         {category.image && !imageErrors.has(`${category.id}-${index}`) ? (
                           <CachedCategoryImage
                             src={category.image}
@@ -251,7 +251,7 @@ export default function BrowseCategories() {
                         )}
                       </div>
 
-                      <div className="layer-7 w-full text-center justify-center text-black text-sm md:text-base font-medium font-['Poppins'] leading-tight md:leading-normal select-none pointer-events-none flex-shrink-0 whitespace-nowrap overflow-hidden text-ellipsis" data-layer="7" title={category.name}>
+                      <div className="layer-7 w-full text-center justify-center text-black text-sm md:text-base font-medium font-['Poppins'] leading-tight md:leading-normal select-none pointer-events-none flex-shrink-0 whitespace-nowrap overflow-hidden text-ellipsis pb-0.5 md:pb-0" data-layer="7" title={category.name}>
                         {category.name}
                       </div>
                     </button>
@@ -265,4 +265,3 @@ export default function BrowseCategories() {
     </section>
   );
 }
-
