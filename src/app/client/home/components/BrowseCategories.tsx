@@ -131,8 +131,9 @@ export default function BrowseCategories() {
     let hasMoved = false; // Track if pointer has moved during drag
 
     const handlePointerDown = (e: PointerEvent) => {
-      // Only handle primary button for mouse
-      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      // Keep custom drag only for mouse; let touch use native horizontal scroll.
+      if (e.pointerType !== 'mouse') return;
+      if (e.button !== 0) return;
 
       isPointerDown = true;
       hasMoved = false;
@@ -239,7 +240,7 @@ export default function BrowseCategories() {
                   <div className="text-neutral-500">No categories available</div>
                 </div>
               ) : (
-                <div className="inline-flex justify-start items-center gap-4 md:gap-6 select-none" style={{ userSelect: 'none' }}>
+                <div className="inline-flex w-max min-w-max justify-start items-center gap-4 md:gap-6 select-none pr-2 md:pr-4" style={{ userSelect: 'none' }}>
                   {/* Inner flex container for repeated categories */}
                   
                   {loopedCategories.map((category, index) => (
