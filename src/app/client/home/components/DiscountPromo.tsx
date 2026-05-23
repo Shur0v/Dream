@@ -7,6 +7,7 @@ import CachedImage from '@/components/ui/CachedImage';
 import { PromoBanner } from '@/types';
 import { CheckoutModal } from '@/components/cart/CheckoutModal';
 import { SuccessModal } from '@/components/ui/SuccessModal';
+import { fetchWithCache, getCachedResponse, peekCachedResponse } from '@/lib/indexeddb/apiCache';
 
 const getInitialCountdown = (banner?: PromoBanner) => ({
   days: banner?.initialTime?.days ?? 0,
@@ -21,10 +22,13 @@ const getInitialCountdown = (banner?: PromoBanner) => ({
  */
 export default function DiscountPromo() {
   const router = useRouter();
-  const [banners, setBanners] = useState<PromoBanner[]>([]);
+  const cacheKey = '/api/promo-banners?variant=card&limit=2';
+  const initialCached = peekCachedResponse(cacheKey);
+  const initialBanners: PromoBanner[] = Array.isArray(initialCached?.data) ? initialCached.data.slice(0, 2) : [];
+  const [banners, setBanners] = useState<PromoBanner[]>(initialBanners);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [timeLefts, setTimeLefts] = useState<Array<PromoBanner['initialTime']>>([]);
-  const [loading, setLoading] = useState(true);
+  const [timeLefts, setTimeLefts] = useState<Array<PromoBanner['initialTime']>>(initialBanners.map((banner) => getInitialCountdown(banner)));
+  const [loading, setLoading] = useState(initialBanners.length === 0);
   const [error, setError] = useState<string | null>(null);
   const [processingPayment, setProcessingPayment] = useState<string | null>(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -38,9 +42,6 @@ export default function DiscountPromo() {
     let active = true;
     const loadBanners = async () => {
       try {
-        // Check cache first for instant loading
-        const { getCachedResponse } = await import('@/lib/indexeddb/apiCache');
-        const cacheKey = '/api/promo-banners?variant=card&limit=2';
         const cachedData = await getCachedResponse(cacheKey);
         
         if (cachedData && active) {
@@ -52,12 +53,11 @@ export default function DiscountPromo() {
           setCurrentSlide(0);
           setError(null);
           setLoading(false);
-        } else if (active) {
+        } else if (active && initialBanners.length === 0) {
           setLoading(true);
         }
 
         // Fetch from network (update cache in background)
-        const { fetchWithCache } = await import('@/lib/indexeddb/apiCache');
         const response = await fetchWithCache(cacheKey, {}, 60 * 60 * 1000);
         const result = await response.json();
         

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { PromoBanner } from '@/types';
+import { fetchWithCache, getCachedResponse, peekCachedResponse } from '@/lib/indexeddb/apiCache';
 
 const getInitialCountdown = (banner?: PromoBanner) => ({
   days: banner?.initialTime?.days ?? 0,
@@ -15,19 +16,19 @@ const getInitialCountdown = (banner?: PromoBanner) => ({
  * Displays promotional banner with countdown timer and product image
  */
 export default function PromoBanners() {
-  const [banners, setBanners] = useState<PromoBanner[]>([]);
+  const cacheKey = '/api/promo-banners?variant=slider';
+  const initialCached = peekCachedResponse(cacheKey);
+  const initialBanners: PromoBanner[] = Array.isArray(initialCached?.data) ? initialCached.data : [];
+  const [banners, setBanners] = useState<PromoBanner[]>(initialBanners);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [timeLefts, setTimeLefts] = useState<Array<PromoBanner['initialTime']>>([]);
-  const [loading, setLoading] = useState(true);
+  const [timeLefts, setTimeLefts] = useState<Array<PromoBanner['initialTime']>>(initialBanners.map((banner) => getInitialCountdown(banner)));
+  const [loading, setLoading] = useState(initialBanners.length === 0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
     const loadBanners = async () => {
       try {
-        // Check cache first for instant loading
-        const { getCachedResponse } = await import('@/lib/indexeddb/apiCache');
-        const cacheKey = '/api/promo-banners?variant=slider';
         const cachedData = await getCachedResponse(cacheKey);
         
         if (cachedData && active) {
@@ -38,12 +39,11 @@ export default function PromoBanners() {
           setCurrentSlide(0);
           setError(null);
           setLoading(false);
-        } else if (active) {
+        } else if (active && initialBanners.length === 0) {
           setLoading(true);
         }
 
         // Fetch from network (update cache in background)
-        const { fetchWithCache } = await import('@/lib/indexeddb/apiCache');
         const response = await fetchWithCache(cacheKey, {}, 60 * 60 * 1000);
         const result = await response.json();
         

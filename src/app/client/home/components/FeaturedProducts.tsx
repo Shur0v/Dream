@@ -7,6 +7,7 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { FeaturedProduct } from '@/types';
 import { addToCart, addToWishlist, isInWishlist, removeFromWishlist, CartItem, WishlistItem } from '@/lib/userStorage';
+import { fetchWithCache, getCachedResponse, peekCachedResponse } from '@/lib/indexeddb/apiCache';
 
 /**
  * Featured Products Component
@@ -16,8 +17,11 @@ export default function FeaturedProducts() {
   const [activeFilter, setActiveFilter] = useState('Man');
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
   const [showDropdown, setShowDropdown] = useState<string | null>(null);
-  const [products, setProducts] = useState<FeaturedProduct[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cacheKey = '/api/featured-products?limit=4';
+  const initialCached = peekCachedResponse(cacheKey);
+  const initialProducts: FeaturedProduct[] = (initialCached?.data || []).filter((p: FeaturedProduct) => p.isActive).slice(0, 4);
+  const [products, setProducts] = useState<FeaturedProduct[]>(initialProducts);
+  const [loading, setLoading] = useState(initialProducts.length === 0);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const filters = ['Man', 'Woman', 'Kids'];
@@ -36,22 +40,19 @@ export default function FeaturedProducts() {
     
     const fetchFeaturedProducts = async () => {
       try {
-        // Check cache first for instant loading
-        const { getCachedResponse } = await import('@/lib/indexeddb/apiCache');
-        const cachedData = await getCachedResponse(`/api/featured-products?limit=4`);
+        const cachedData = await getCachedResponse(cacheKey);
         
         if (cachedData && active) {
           // Show cached data instantly (no loading state)
           const activeProducts = (cachedData.data || []).filter((p: FeaturedProduct) => p.isActive);
           setProducts(activeProducts.slice(0, 4));
           setLoading(false);
-        } else if (active) {
+        } else if (active && initialProducts.length === 0) {
           setLoading(true);
         }
 
         // Fetch from network (update cache in background)
-        const { fetchWithCache } = await import('@/lib/indexeddb/apiCache');
-        const response = await fetchWithCache(`/api/featured-products?limit=4`, {}, 60 * 60 * 1000);
+        const response = await fetchWithCache(cacheKey, {}, 60 * 60 * 1000);
         const result = await response.json();
         
         if (active && result.success && result.data) {

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCachedImageUrl } from '@/hooks/useCachedImageUrl';
+import { fetchWithCache, getCachedResponse, peekCachedResponse } from '@/lib/indexeddb/apiCache';
 import { HeroBanner } from '@/types';
 
 /**
@@ -61,11 +62,15 @@ function CachedBannerImage({
 }
 
 export default function Hero() {
+  const cacheKey = '/api/hero-banners';
+  const initialCached = peekCachedResponse(cacheKey);
+  const initialBanner: HeroBanner | null = initialCached ? (initialCached.data || initialCached) : null;
+
   // Slider state
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [sliderImages, setSliderImages] = useState<string[]>([]);
-  const [rightBanners, setRightBanners] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [sliderImages, setSliderImages] = useState<string[]>(initialBanner?.sliderImages || []);
+  const [rightBanners, setRightBanners] = useState<string[]>(initialBanner?.rightBanners || []);
+  const [loading, setLoading] = useState(!initialBanner);
 
   // Fetch hero banner from API with caching
   useEffect(() => {
@@ -73,23 +78,20 @@ export default function Hero() {
     
     const fetchHeroBanner = async () => {
       try {
-        // Check cache first for instant loading
-        const { getCachedResponse } = await import('@/lib/indexeddb/apiCache');
-        const cachedData = await getCachedResponse(`/api/hero-banners`);
+        // Check IndexedDB cache first (no loading flash if initial memory cache already exists)
+        const cachedData = await getCachedResponse(cacheKey);
         
         if (cachedData && active) {
-          // Show cached data instantly (no loading state)
           const banner: HeroBanner = cachedData.data || cachedData;
           setSliderImages(banner.sliderImages || []);
           setRightBanners(banner.rightBanners || []);
           setLoading(false);
-        } else if (active) {
+        } else if (active && !initialBanner) {
           setLoading(true);
         }
 
         // Fetch from network (update cache in background)
-        const { fetchWithCache } = await import('@/lib/indexeddb/apiCache');
-        const response = await fetchWithCache(`/api/hero-banners`, {}, 60 * 60 * 1000);
+        const response = await fetchWithCache(cacheKey, {}, 60 * 60 * 1000);
         const result = await response.json();
         
         if (active && result.success && result.data) {

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { Product } from '@/types';
 import { addToCart, addToWishlist, isInWishlist, removeFromWishlist, CartItem, WishlistItem } from '@/lib/userStorage';
+import { fetchWithCache, getCachedResponse, peekCachedResponse } from '@/lib/indexeddb/apiCache';
 
 interface ForYouProps {
   currentProduct?: {
@@ -23,8 +24,13 @@ interface ForYouProps {
  */
 export default function ForYou({ currentProduct }: ForYouProps) {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const homeCacheKey = '/api/products?limit=50&inStock=true';
+  const initialCached = !currentProduct ? peekCachedResponse(homeCacheKey) : null;
+  const initialProducts: Product[] = !currentProduct
+    ? ((initialCached?.data || []).filter((p: Product) => p.isActive).slice(0, 4))
+    : [];
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [loading, setLoading] = useState(initialProducts.length === 0);
 
   // Fetch products based on context - Always ensure 4 products are shown
   useEffect(() => {
@@ -33,7 +39,6 @@ export default function ForYou({ currentProduct }: ForYouProps) {
     const fetchProducts = async () => {
       try {
         let fetchedProducts: Product[] = [];
-        const { getCachedResponse, fetchWithCache } = await import('@/lib/indexeddb/apiCache');
 
         if (currentProduct?.tags && currentProduct.tags.length > 0) {
           // On product details page: Fetch related products and reverse the order
@@ -70,7 +75,7 @@ export default function ForYou({ currentProduct }: ForYouProps) {
               setProducts(fetchedProducts);
               setLoading(false);
             }
-          } else if (active) {
+          } else if (active && initialProducts.length === 0) {
             setLoading(true);
           }
 
@@ -112,7 +117,7 @@ export default function ForYou({ currentProduct }: ForYouProps) {
           }
         } else {
           // On other pages: Fetch 4 different tech products
-          const cacheKey = '/api/products?limit=50&inStock=true';
+          const cacheKey = homeCacheKey;
           
           // Check cache first
           const cachedData = await getCachedResponse(cacheKey);
@@ -142,7 +147,7 @@ export default function ForYou({ currentProduct }: ForYouProps) {
               setProducts(fetchedProducts.slice(0, 4));
               setLoading(false);
             }
-          } else if (active) {
+          } else if (active && initialProducts.length === 0) {
             setLoading(true);
           }
 
@@ -224,7 +229,6 @@ export default function ForYou({ currentProduct }: ForYouProps) {
         // Even on error, try to get some products from cache
         if (active) {
           try {
-            const { getCachedResponse, fetchWithCache } = await import('@/lib/indexeddb/apiCache');
             const fallbackCacheKey = '/api/products?limit=4&inStock=true';
             const fallbackCached = await getCachedResponse(fallbackCacheKey);
             

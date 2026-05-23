@@ -3,6 +3,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCachedImageUrl } from '@/hooks/useCachedImageUrl';
+import { fetchWithCache, getCachedResponse, peekCachedResponse } from '@/lib/indexeddb/apiCache';
 import { Category } from '@/types';
 
 // Component for cached category image
@@ -38,8 +39,11 @@ export default function BrowseCategories() {
   const router = useRouter();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const wasDragRef = useRef(false);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cacheKey = '/api/categories?limit=80';
+  const initialCached = peekCachedResponse(cacheKey);
+  const initialCategories: Category[] = (initialCached?.data || []).filter((cat: Category) => cat.isActive);
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [loading, setLoading] = useState(initialCategories.length === 0);
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
 
   /**
@@ -60,22 +64,18 @@ export default function BrowseCategories() {
 
     const fetchCategories = async () => {
       try {
-        // Check cache first for instant loading
-        const { getCachedResponse } = await import('@/lib/indexeddb/apiCache');
-        const cacheKey = '/api/categories?limit=80';
+        // Check IndexedDB cache first
         const cachedData = await getCachedResponse(cacheKey);
 
         if (cachedData && active) {
-          // Show cached data instantly (no loading state)
           const activeCategories = (cachedData.data || []).filter((cat: Category) => cat.isActive);
           setCategories(activeCategories);
           setLoading(false);
-        } else if (active) {
+        } else if (active && initialCategories.length === 0) {
           setLoading(true);
         }
 
         // Fetch from network (update cache in background)
-        const { fetchWithCache } = await import('@/lib/indexeddb/apiCache');
         const response = await fetchWithCache(cacheKey, {}, 60 * 60 * 1000); // 1 hour cache
         const result = await response.json();
 

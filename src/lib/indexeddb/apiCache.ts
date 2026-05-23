@@ -11,6 +11,7 @@ const API_STORE = 'apiResponses';
 const IMAGE_STORE = 'images'; // Reuse existing image store
 const DISABLE_CLIENT_CACHE = false;
 const inFlightRequests = new Map<string, Promise<Response>>();
+const memoryResponseCache = new Map<string, { data: any; expiresAt: number }>();
 
 interface CachedAPIResponse {
   url: string;
@@ -84,6 +85,14 @@ class APICacheDB {
    */
   async getResponse(url: string): Promise<any | null> {
     try {
+      const memoryCached = memoryResponseCache.get(url);
+      if (memoryCached) {
+        if (!memoryCached.expiresAt || Date.now() <= memoryCached.expiresAt) {
+          return memoryCached.data;
+        }
+        memoryResponseCache.delete(url);
+      }
+
       await this.init();
 
       if (!this.db) {
@@ -107,10 +116,15 @@ class APICacheDB {
           if (result.expiresAt && Date.now() > result.expiresAt) {
             // Delete expired entry
             this.deleteResponse(url).catch(() => {});
+            memoryResponseCache.delete(url);
             resolve(null);
             return;
           }
 
+          memoryResponseCache.set(url, {
+            data: result.data,
+            expiresAt: result.expiresAt || Date.now() + 60 * 1000,
+          });
           resolve(result.data);
         };
 
@@ -155,6 +169,10 @@ class APICacheDB {
         const request = store.put(cachedResponse);
 
         request.onsuccess = () => {
+          memoryResponseCache.set(url, {
+            data,
+            expiresAt: cachedResponse.expiresAt,
+          });
           resolve();
         };
 
@@ -184,6 +202,7 @@ class APICacheDB {
         const request = store.delete(url);
 
         request.onsuccess = () => {
+          memoryResponseCache.delete(url);
           resolve();
         };
 
@@ -213,6 +232,7 @@ class APICacheDB {
         const request = store.clear();
 
         request.onsuccess = () => {
+          memoryResponseCache.clear();
           resolve();
         };
 
@@ -457,12 +477,32 @@ export async function getCachedResponse(url: string): Promise<any | null> {
 }
 
 /**
+ * Get cached API response instantly from in-memory cache (session lifetime).
+ * Returns null on hard reload before first request is hydrated from IndexedDB/network.
+ */
+export function peekCachedResponse(url: string): any | null {
+  if (DISABLE_CLIENT_CACHE) {
+    return null;
+  }
+  const memoryCached = memoryResponseCache.get(url);
+  if (!memoryCached) {
+    return null;
+  }
+  if (memoryCached.expiresAt && Date.now() > memoryCached.expiresAt) {
+    memoryResponseCache.delete(url);
+    return null;
+  }
+  return memoryCached.data;
+}
+
+/**
  * Clear API cache
  */
 export async function clearAPICache(): Promise<void> {
   if (DISABLE_CLIENT_CACHE) {
     return;
   }
+  memoryResponseCache.clear();
   return apiCacheDB.clearAll();
 }
 
@@ -504,6 +544,7 @@ export async function clearClientAPICache(): Promise<void> {
         let deletedCount = 0;
         for (const key of clientCacheKeys) {
           deleteStore.delete(key);
+          memoryResponseCache.delete(key);
           deletedCount++;
         }
 
