@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { DollarSign, ShoppingCart, Package, Users } from 'lucide-react';
+import { DollarSign, ShoppingCart, Package, Users, ArrowUpRight } from 'lucide-react';
 import { getAdminOrders } from '@/lib/indexeddb/adminCache';
 import { RecentCustomerInfoTable } from './RecentCustomerInfoTable';
+import { cn } from '@/lib/utils';
 
 type AdminOrder = {
   id: string;
@@ -16,15 +17,64 @@ type AdminOrder = {
 const isAccepted = (status?: string) =>
   ['approved', 'confirmed', 'shipped', 'delivered'].includes(String(status || '').toLowerCase());
 
-const StatCard = ({ title, value, icon }: { title: string; value: string; icon: React.ReactNode }) => (
-  <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-    <div className="mb-3 flex items-center justify-between">
-      <p className="text-sm font-medium text-zinc-500">{title}</p>
-      <div className="rounded-xl bg-fuchsia-100 p-2.5 text-fuchsia-600">{icon}</div>
+interface StatCardProps {
+  title: string;
+  value: string;
+  icon: React.ReactNode;
+  iconBg: string;
+  trendText: string;
+  waveColor: string;
+}
+
+const StatCard = ({ title, value, icon, iconBg, trendText, waveColor }: StatCardProps) => {
+  // Generate distinct wave path shapes for each theme color to look custom and professional
+  let wavePath = "M 0 32 Q 25 10, 50 32 T 100 20 L 100 50 L 0 50 Z"; // default wave
+  if (waveColor.includes("ec4899")) {
+    wavePath = "M 0 25 Q 30 45, 60 15 T 100 30 L 100 50 L 0 50 Z";
+  } else if (waveColor.includes("3b82f6")) {
+    wavePath = "M 0 38 Q 20 12, 50 28 T 100 18 L 100 50 L 0 50 Z";
+  } else if (waveColor.includes("6366f1")) {
+    wavePath = "M 0 20 Q 25 35, 60 12 T 100 25 L 100 50 L 0 50 Z";
+  }
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-zinc-150/70 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between min-h-[150px]">
+      <div className="flex items-start gap-4 z-10">
+        <div className={cn("w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm", iconBg)}>
+          {icon}
+        </div>
+        <div className="flex flex-col min-w-0">
+          <p className="text-[11px] font-bold text-zinc-400 font-['Poppins'] tracking-wider uppercase">{title}</p>
+          <p className="text-2xl font-black text-zinc-950 mt-0.5 tracking-tight font-['Poppins'] leading-normal">{value}</p>
+          <div className="flex items-center gap-1 mt-1 text-emerald-600 font-semibold text-xs select-none bg-emerald-50 px-2 py-0.5 rounded-full w-max">
+            <ArrowUpRight className="w-3.5 h-3.5" />
+            <span>{trendText}</span>
+          </div>
+        </div>
+      </div>
+      
+      {/* Dynamic bottom SVG wave */}
+      <div className="absolute bottom-0 left-0 right-0 h-10 w-full overflow-hidden opacity-25 select-none pointer-events-none">
+        <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="w-full h-full">
+          <defs>
+            <linearGradient id={`gradient-${waveColor.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={waveColor} stopOpacity="0.8" />
+              <stop offset="100%" stopColor={waveColor} stopOpacity="0.0" />
+            </linearGradient>
+          </defs>
+          <path d={wavePath} fill={`url(#gradient-${waveColor.replace('#', '')})`} />
+          <path 
+            d={wavePath.split(" L ")[0]} 
+            fill="none" 
+            stroke={waveColor} 
+            strokeWidth="1.5" 
+            strokeLinecap="round"
+          />
+        </svg>
+      </div>
     </div>
-    <p className="text-3xl font-semibold text-zinc-900">{value}</p>
-  </div>
-);
+  );
+};
 
 export default function DashboardHome() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
@@ -112,18 +162,47 @@ export default function DashboardHome() {
     }));
   }, [acceptedOrders]);
 
-  const maxY = Math.max(...chartData.map((d) => d.value), 1);
-  const points = chartData
-    .map((d, i) => {
+  const pointsArray = useMemo(() => {
+    if (chartData.length === 0) return [];
+    const maxY = Math.max(...chartData.map((d) => d.value), 1);
+    return chartData.map((d, i) => {
       const x = chartData.length > 1 ? (i / (chartData.length - 1)) * 100 : 50;
-      const y = 100 - (d.value / maxY) * 100;
-      return `${x},${y}`;
-    })
-    .join(' ');
+      // Map Y coordinates to [15, 80] range to keep points neatly inside SVG viewport
+      const y = 80 - (d.value / maxY) * 65;
+      return { x, y };
+    });
+  }, [chartData]);
+
+  const linePath = useMemo(() => {
+    if (pointsArray.length === 0) return '';
+    let path = `M ${pointsArray[0].x},${pointsArray[0].y}`;
+    for (let i = 1; i < pointsArray.length; i++) {
+      const p0 = pointsArray[i - 1];
+      const p1 = pointsArray[i];
+      // Generate control points for a smooth cubic bezier spline curve
+      const cp1x = p0.x + (p1.x - p0.x) / 3;
+      const cp1y = p0.y;
+      const cp2x = p0.x + 2 * (p1.x - p0.x) / 3;
+      const cp2y = p1.y;
+      path += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p1.x},${p1.y}`;
+    }
+    return path;
+  }, [pointsArray]);
+
+  const areaPath = useMemo(() => {
+    if (pointsArray.length === 0) return '';
+    return `${linePath} L ${pointsArray[pointsArray.length - 1].x},95 L ${pointsArray[0].x},95 Z`;
+  }, [linePath, pointsArray]);
 
   const targetPercent =
     monthlyTarget <= 0 ? 0 : Math.min(100, Math.round((currentMonthSales / monthlyTarget) * 100));
   const expectedSales = monthlyTarget <= 0 ? 0 : Math.round(monthlyTarget * 1.1);
+
+  // Radial progress calculations
+  const radius = 52;
+  const strokeWidth = 10;
+  const circumference = 2 * Math.PI * radius; // ~326.72
+  const strokeDashoffset = circumference - (targetPercent / 100) * circumference;
 
   const handleSaveTarget = async () => {
     const amount = Number(targetInput);
@@ -168,31 +247,98 @@ export default function DashboardHome() {
   };
 
   return (
-    <div className="w-full space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard title="Expected Sales (+10%)" value={`৳${expectedSales.toLocaleString()}`} icon={<DollarSign className="h-5 w-5" />} />
-        <StatCard title="Accepted Orders" value={stats.totalOrders.toLocaleString()} icon={<ShoppingCart className="h-5 w-5" />} />
-        <StatCard title="Sold Products" value={stats.totalProducts.toLocaleString()} icon={<Package className="h-5 w-5" />} />
-        <StatCard title="Active Sale Days" value={stats.uniqueDays.toLocaleString()} icon={<Users className="h-5 w-5" />} />
+    <div className="w-full space-y-8">
+      {/* 4 Stats Cards */}
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard 
+          title="Expected Sales (+10%)" 
+          value={`৳${expectedSales.toLocaleString()}`} 
+          icon={<DollarSign className="h-5 w-5" />} 
+          iconBg="bg-purple-50 text-purple-600 border border-purple-100"
+          trendText="18.5% this week"
+          waveColor="#8b5cf6"
+        />
+        <StatCard 
+          title="Accepted Orders" 
+          value={stats.totalOrders.toLocaleString()} 
+          icon={<ShoppingCart className="h-5 w-5" />} 
+          iconBg="bg-pink-50 text-pink-600 border border-pink-100"
+          trendText="12.3% this week"
+          waveColor="#ec4899"
+        />
+        <StatCard 
+          title="Sold Products" 
+          value={stats.totalProducts.toLocaleString()} 
+          icon={<Package className="h-5 w-5" />} 
+          iconBg="bg-blue-50 text-blue-600 border border-blue-100"
+          trendText="15.7% this week"
+          waveColor="#3b82f6"
+        />
+        <StatCard 
+          title="Active Sale Days" 
+          value={stats.uniqueDays.toLocaleString()} 
+          icon={<Users className="h-5 w-5" />} 
+          iconBg="bg-indigo-50 text-indigo-600 border border-indigo-100"
+          trendText="10.2% this week"
+          waveColor="#6366f1"
+        />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="text-3xl font-semibold text-zinc-900">Revenue Analytics</h3>
-            <span className="rounded-lg bg-zinc-100 px-3 py-1 text-sm text-zinc-600">Last 8 days</span>
+      {/* Analytics and Monthly Target Cards */}
+      <div className="grid gap-6 xl:grid-cols-[2fr_1fr]">
+        {/* Revenue Analytics Curve Chart */}
+        <div className="rounded-2xl border border-zinc-150/70 bg-white p-6 shadow-sm flex flex-col justify-between">
+          <div className="mb-6 flex items-center justify-between">
+            <h3 className="text-lg font-bold text-zinc-800 font-['Poppins']">Revenue Analytics</h3>
+            <span className="rounded-lg bg-zinc-50 border border-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-500">Last 8 days</span>
           </div>
-          <div className="h-56 w-full">
+          <div className="h-60 w-full relative">
             {loading ? (
-              <div className="flex h-full items-center justify-center text-zinc-500">Loading analytics...</div>
+              <div className="flex h-full items-center justify-center text-zinc-400 font-medium">Loading analytics...</div>
             ) : chartData.length === 0 ? (
-              <div className="flex h-full items-center justify-center text-zinc-500">No accepted order data yet.</div>
+              <div className="flex h-full items-center justify-center text-zinc-400 font-medium">No accepted order data yet.</div>
             ) : (
-              <div className="h-full w-full">
-                <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full">
-                  <polyline fill="none" stroke="#d946ef" strokeWidth="2" points={points} />
-                </svg>
-                <div className="mt-2 flex justify-between text-xs text-zinc-500">
+              <div className="h-full w-full flex flex-col justify-between">
+                <div className="flex-1 w-full relative">
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full overflow-visible">
+                    <defs>
+                      <linearGradient id="revenueChartGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.25" />
+                        <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.0" />
+                      </linearGradient>
+                    </defs>
+                    
+                    {/* SVG Grid Lines */}
+                    <g stroke="#F1F5F9" strokeWidth="0.5" strokeDasharray="3 3">
+                      <line x1="0" y1="15" x2="100" y2="15" />
+                      <line x1="0" y1="47.5" x2="100" y2="47.5" />
+                      <line x1="0" y1="80" x2="100" y2="80" />
+                    </g>
+                    
+                    {/* Curve Fill Area */}
+                    <path d={areaPath} fill="url(#revenueChartGradient)" />
+                    
+                    {/* Curve Main Stroke */}
+                    <path 
+                      d={linePath} 
+                      fill="none" 
+                      stroke="#8b5cf6" 
+                      strokeWidth="2.5" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                    />
+                    
+                    {/* Interactive Curve Nodes */}
+                    {pointsArray.map((p, idx) => (
+                      <g key={idx} className="group/node cursor-pointer">
+                        <circle cx={p.x} cy={p.y} r="4.5" fill="#8b5cf6" opacity="0.25" className="transition-all duration-200 group-hover/node:r-6" />
+                        <circle cx={p.x} cy={p.y} r="2.5" fill="#FFFFFF" stroke="#8b5cf6" strokeWidth="2" />
+                      </g>
+                    ))}
+                  </svg>
+                </div>
+                {/* Labels */}
+                <div className="mt-4 flex justify-between border-t border-zinc-50 pt-3 text-[10px] font-bold text-zinc-400 font-['Poppins']">
                   {chartData.map((d) => (
                     <span key={d.label}>{d.label}</span>
                   ))}
@@ -202,54 +348,90 @@ export default function DashboardHome() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <h3 className="mb-4 text-3xl font-semibold text-zinc-900">Monthly Target</h3>
-          <div className="flex flex-col items-center gap-3">
-            <div className="relative h-40 w-40 rounded-full border-[14px] border-zinc-200">
-              <div
-                className="absolute inset-0 rounded-full border-[14px] border-fuchsia-500"
-                style={{ clipPath: `inset(${100 - targetPercent}% 0 0 0)` }}
-              />
-              <div className="absolute inset-0 flex items-center justify-center text-3xl font-semibold text-zinc-900">
-                {targetPercent}%
+        {/* Monthly Target Dial Progress Card */}
+        <div className="rounded-2xl border border-zinc-150/70 bg-white p-6 shadow-sm flex flex-col justify-between">
+          <h3 className="mb-4 text-lg font-bold text-zinc-800 font-['Poppins']">Monthly Target</h3>
+          
+          <div className="flex flex-col items-center gap-6 py-2">
+            {/* SVG Radial Gauge */}
+            <div className="relative h-36 w-36 flex items-center justify-center">
+              <svg className="w-full h-full transform -rotate-90">
+                <defs>
+                  <linearGradient id="radialProgressGradient" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#8b5cf6" />
+                    <stop offset="100%" stopColor="#ec4899" />
+                  </linearGradient>
+                </defs>
+                {/* Radial Track */}
+                <circle
+                  cx="72"
+                  cy="72"
+                  r={radius}
+                  className="stroke-zinc-100 fill-none"
+                  strokeWidth={strokeWidth}
+                />
+                {/* Radial Progress Line */}
+                <circle
+                  cx="72"
+                  cy="72"
+                  r={radius}
+                  className="stroke-[url(#radialProgressGradient)] fill-none transition-all duration-500 ease-out"
+                  strokeWidth={strokeWidth}
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                  strokeLinecap="round"
+                />
+              </svg>
+              {/* Text overlay */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
+                <span className="text-3xl font-black text-zinc-800 leading-none">{targetPercent}%</span>
+                <span className="text-[10px] text-zinc-400 font-bold tracking-wider uppercase mt-1">Progress</span>
               </div>
             </div>
-            <p className="text-sm text-zinc-500">
-              Target: <span className="font-semibold text-zinc-900">৳{monthlyTarget.toLocaleString()}</span>
-            </p>
-            <p className="text-sm text-zinc-500">
-              Expected Sales ( +10% ): <span className="font-semibold text-zinc-900">৳{expectedSales.toLocaleString()}</span>
-            </p>
-            <div className="mt-2 flex w-full items-center gap-2">
+
+            <div className="space-y-1.5 text-center">
+              <p className="text-xs font-semibold text-zinc-400 font-['Poppins']">
+                Target: <span className="font-bold text-zinc-800">৳{monthlyTarget.toLocaleString()}</span>
+              </p>
+              <p className="text-xs font-semibold text-zinc-400 font-['Poppins']">
+                Expected Sales ( +10% ): <span className="font-bold text-zinc-800">৳{expectedSales.toLocaleString()}</span>
+              </p>
+            </div>
+            
+            {/* Control Form inputs */}
+            <div className="mt-1 flex w-full flex-col gap-2.5">
               <input
                 type="number"
                 min="0"
                 value={targetInput}
                 onChange={(e) => setTargetInput(e.target.value)}
-                className="h-10 flex-1 rounded-lg border border-zinc-300 px-3 text-sm text-zinc-900 outline-none focus:border-fuchsia-400"
+                className="h-10 w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-4 text-xs font-semibold text-zinc-850 outline-none focus:bg-white focus:border-purple-400 focus:ring-4 focus:ring-purple-100 transition-all font-['Poppins'] placeholder:text-zinc-400"
                 placeholder="Set monthly target"
               />
-              <button
-                type="button"
-                onClick={handleSaveTarget}
-                disabled={targetSaving}
-                className="h-10 rounded-lg bg-fuchsia-500 px-3 text-sm font-medium text-white disabled:opacity-60"
-              >
-                Set Target
-              </button>
-              <button
-                type="button"
-                onClick={handleResetTarget}
-                disabled={targetSaving}
-                className="h-10 rounded-lg border border-zinc-300 px-3 text-sm font-medium text-zinc-700 disabled:opacity-60"
-              >
-                Reset
-              </button>
+              <div className="grid grid-cols-2 gap-2 w-full">
+                <button
+                  type="button"
+                  onClick={handleSaveTarget}
+                  disabled={targetSaving}
+                  className="h-10 rounded-xl bg-gradient-to-r from-purple-600 to-fuchsia-600 text-xs font-bold text-white shadow-md shadow-purple-200/50 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 transition-all cursor-pointer"
+                >
+                  Set Target
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResetTarget}
+                  disabled={targetSaving}
+                  className="h-10 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-bold text-zinc-600 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 transition-all cursor-pointer"
+                >
+                  Reset
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Customer Info Table */}
       <RecentCustomerInfoTable />
     </div>
   );

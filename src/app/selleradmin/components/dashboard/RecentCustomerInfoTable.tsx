@@ -300,21 +300,21 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
     switch (status) {
       case 'approved':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-green-50 text-green-700 text-xs font-medium">
-            <CheckCircle2 className="w-3 h-3" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-100">
+            <CheckCircle2 className="w-3.5 h-3.5" />
             Approved
           </span>
         );
       case 'cancelled':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-red-50 text-red-700 text-xs font-medium">
-            <XCircle className="w-3 h-3" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 text-rose-700 text-[11px] font-bold border border-rose-100">
+            <XCircle className="w-3.5 h-3.5" />
             Cancelled
           </span>
         );
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-yellow-50 text-yellow-700 text-xs font-medium">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-[11px] font-bold border border-amber-100">
             Pending
           </span>
         );
@@ -323,14 +323,14 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
 
   if (isLoading) {
     return (
-      <div className={cn('self-stretch bg-white rounded-xl border border-neutral-200 shadow-sm', className)}>
-        <div className="px-6 py-4 border-b border-neutral-200">
-          <h3 className="text-neutral-950 text-2xl font-semibold font-['Poppins'] leading-8">
+      <div className={cn('self-stretch bg-white rounded-2xl border border-zinc-150/70 shadow-sm overflow-hidden', className)}>
+        <div className="px-6 py-5 border-b border-zinc-100 bg-white">
+          <h3 className="text-zinc-800 text-lg font-bold font-['Poppins']">
             Recent Customer Info
           </h3>
         </div>
-        <div className="px-6 py-12 text-center">
-          <div className="text-neutral-500 text-sm font-normal font-['Poppins']">
+        <div className="px-6 py-16 text-center bg-white">
+          <div className="text-zinc-400 text-sm font-semibold font-['Poppins'] animate-pulse">
             Loading orders...
           </div>
         </div>
@@ -340,14 +340,14 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
 
   if (error) {
     return (
-      <div className={cn('self-stretch bg-white rounded-xl border border-neutral-200 shadow-sm', className)}>
-        <div className="px-6 py-4 border-b border-neutral-200">
-          <h3 className="text-neutral-950 text-2xl font-semibold font-['Poppins'] leading-8">
+      <div className={cn('self-stretch bg-white rounded-2xl border border-zinc-150/70 shadow-sm overflow-hidden', className)}>
+        <div className="px-6 py-5 border-b border-zinc-100 bg-white">
+          <h3 className="text-zinc-800 text-lg font-bold font-['Poppins']">
             Recent Customer Info
           </h3>
         </div>
-        <div className="px-6 py-12 text-center">
-          <div className="text-red-500 text-sm font-normal font-['Poppins']">
+        <div className="px-6 py-16 text-center bg-white">
+          <div className="text-rose-500 text-sm font-semibold font-['Poppins']">
             Error: {error}
           </div>
         </div>
@@ -356,57 +356,57 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
   }
 
   return (
-    <div className={cn('self-stretch bg-white rounded-xl border border-neutral-200 shadow-sm', className)}>
+    <div className={cn('self-stretch bg-white rounded-2xl border border-zinc-150/70 shadow-sm overflow-hidden', className)}>
       {/* Table Header */}
-      <div className="px-6 py-4 border-b border-neutral-200">
-        <h3 className="text-neutral-950 text-2xl font-semibold font-['Poppins'] leading-8">
+      <div className="px-6 py-5 border-b border-zinc-100 bg-white">
+        <h3 className="text-zinc-800 text-lg font-bold font-['Poppins']">
           Recent Customer Info
         </h3>
       </div>
 
       {/* Table Container */}
-      <div className="overflow-x-auto">
-        <table className="w-full">
+      <div className="overflow-x-auto bg-white">
+        <table className="w-full border-collapse">
           {/* Table Head */}
           <thead>
-            <tr className="bg-neutral-50 border-b border-neutral-200">
+            <tr className="bg-zinc-50/50 border-b border-zinc-100/80">
               <th className="px-6 py-4 text-left">
-                <div className="text-neutral-950 text-sm font-semibold font-['Poppins'] uppercase tracking-wider">
+                <div className="text-zinc-400 text-[10px] font-extrabold font-['Poppins'] uppercase tracking-wider">
                   Product Name
                 </div>
               </th>
               <th className="px-6 py-4 text-left">
-                <div className="text-neutral-950 text-sm font-semibold font-['Poppins'] uppercase tracking-wider">
+                <div className="text-zinc-400 text-[10px] font-extrabold font-['Poppins'] uppercase tracking-wider">
                   Product ID
                 </div>
               </th>
               <th className="px-6 py-4 text-center">
-                <div className="text-neutral-950 text-sm font-semibold font-['Poppins'] uppercase tracking-wider">
+                <div className="text-zinc-400 text-[10px] font-extrabold font-['Poppins'] uppercase tracking-wider">
                   Quantity
                 </div>
               </th>
               <th className="px-6 py-4 text-center">
-                <div className="text-neutral-950 text-sm font-semibold font-['Poppins'] uppercase tracking-wider">
+                <div className="text-zinc-400 text-[10px] font-extrabold font-['Poppins'] uppercase tracking-wider">
                   Color
                 </div>
               </th>
               <th className="px-6 py-4 text-center">
-                <div className="text-neutral-950 text-sm font-semibold font-['Poppins'] uppercase tracking-wider">
+                <div className="text-zinc-400 text-[10px] font-extrabold font-['Poppins'] uppercase tracking-wider">
                   Category
                 </div>
               </th>
               <th className="px-6 py-4 text-right">
-                <div className="text-neutral-950 text-sm font-semibold font-['Poppins'] uppercase tracking-wider">
+                <div className="text-zinc-400 text-[10px] font-extrabold font-['Poppins'] uppercase tracking-wider">
                   Amount
                 </div>
               </th>
               <th className="px-6 py-4 text-center">
-                <div className="text-neutral-950 text-sm font-semibold font-['Poppins'] uppercase tracking-wider">
+                <div className="text-zinc-400 text-[10px] font-extrabold font-['Poppins'] uppercase tracking-wider">
                   Status
                 </div>
               </th>
               <th className="px-6 py-4 text-center w-20">
-                <div className="text-neutral-950 text-sm font-semibold font-['Poppins'] uppercase tracking-wider">
+                <div className="text-zinc-400 text-[10px] font-extrabold font-['Poppins'] uppercase tracking-wider">
                   Actions
                 </div>
               </th>
@@ -414,41 +414,41 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
           </thead>
 
           {/* Table Body */}
-          <tbody className="divide-y divide-neutral-200">
+          <tbody className="divide-y divide-zinc-100/80">
             {orders.map((row, index) => (
               <tr
                 key={row.id || index}
-                className="hover:bg-neutral-50 transition-colors"
+                className="hover:bg-zinc-50/50 transition-colors"
               >
                 <td className="px-6 py-4">
-                  <div className="text-neutral-900 text-sm font-normal font-['Poppins']">
+                  <div className="text-zinc-800 text-sm font-bold font-['Poppins']">
                     {row.productName}
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="text-neutral-700 text-sm font-normal font-['Poppins']">
-                    <code className="text-xs">{row.productId}</code>
+                  <div className="text-purple-600 font-mono text-xs font-bold bg-purple-50/60 px-2 py-0.5 rounded-md border border-purple-100/50 inline-block">
+                    <code>{row.productId}</code>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-center">
-                  <div className="text-neutral-900 text-sm font-normal font-['Poppins']">
+                  <div className="text-zinc-700 text-sm font-semibold font-['Poppins']">
                     {row.quantity.toLocaleString()}
                   </div>
                 </td>
                 <td className="px-6 py-4 text-center">
-                  <div className="text-neutral-900 text-sm font-normal font-['Poppins']">
+                  <div className="text-zinc-700 text-sm font-semibold font-['Poppins']">
                     {row.color}
                   </div>
                 </td>
                 <td className="px-6 py-4 text-center">
-                  <div className="text-neutral-900 text-sm font-normal font-['Poppins']">
+                  <div className="text-zinc-550 text-sm font-bold font-['Poppins']">
                     {row.category}
                   </div>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <div className="inline-flex items-center gap-1.5 text-neutral-900 text-sm font-medium font-['Poppins']">
-                    <DollarSign className="w-4 h-4 text-neutral-600" />
-                    <span>{formatAmount(row.amount, row.currency)}</span>
+                  <div className="inline-flex items-center gap-1 text-zinc-900 text-sm font-black font-['Poppins']">
+                    <span className="text-[10px] text-zinc-400 font-bold">BDT</span>
+                    <span>{row.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-center">
@@ -458,21 +458,21 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
                   <div data-menu-container className="relative inline-block">
                     <button
                       onClick={(e) => handleMenuToggle(index, e)}
-                      className="p-2 rounded-lg hover:bg-neutral-100 transition-colors inline-flex items-center justify-center"
+                      className="p-1.5 rounded-xl hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 border border-transparent hover:border-zinc-200/50 transition-all inline-flex items-center justify-center cursor-pointer"
                       aria-label="Actions"
                     >
-                      <MoreVertical className="w-5 h-5 text-neutral-600" />
+                      <MoreVertical className="w-4.5 h-4.5" />
                     </button>
 
                     {/* Action Menu */}
                     {openMenuIndex === index && (
-                      <div className="absolute right-0 top-full mt-2 p-2 bg-white rounded-lg shadow-lg border border-neutral-200 flex flex-col gap-1.5 z-50 min-w-[140px]">
+                      <div className="absolute right-0 top-full mt-2 p-1.5 bg-white rounded-xl shadow-xl border border-zinc-200/60 flex flex-col gap-1 z-50 min-w-[130px]">
                         {/* Detail button - always visible */}
                         <button
                           onClick={() => handleDetail(index)}
-                          className="px-5 py-2 text-sm text-blue-700 hover:bg-blue-50 rounded-md transition-colors text-left flex items-center gap-2"
+                          className="px-3.5 py-2 text-xs font-bold text-purple-600 hover:bg-purple-50 rounded-lg transition-colors text-left flex items-center gap-2 cursor-pointer"
                         >
-                          <Eye className="w-4 h-4" />
+                          <Eye className="w-3.5 h-3.5" />
                           Detail
                         </button>
                         
@@ -480,9 +480,9 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
                         {row.status !== 'approved' && !approvedOrders.has(row.id) && (
                           <button
                             onClick={() => handleApprove(index)}
-                            className="px-5 py-2 text-sm text-green-700 hover:bg-green-50 rounded-md transition-colors text-left flex items-center gap-2"
+                            className="px-3.5 py-2 text-xs font-bold text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors text-left flex items-center gap-2 cursor-pointer"
                           >
-                            <CheckCircle2 className="w-4 h-4" />
+                            <CheckCircle2 className="w-3.5 h-3.5" />
                             Approve
                           </button>
                         )}
@@ -490,9 +490,9 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
                         {/* Cancel button - always visible */}
                         <button
                           onClick={() => handleCancel(index)}
-                          className="px-5 py-2 text-sm text-red-700 hover:bg-red-50 rounded-md transition-colors text-left flex items-center gap-2"
+                          className="px-3.5 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors text-left flex items-center gap-2 cursor-pointer"
                         >
-                          <XCircle className="w-4 h-4" />
+                          <XCircle className="w-3.5 h-3.5" />
                           Cancel
                         </button>
                       </div>
@@ -507,19 +507,21 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
 
       {/* Pagination */}
       {totalItems > 0 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
-          onPageChange={(page) => setCurrentPage(page)}
-        />
+        <div className="px-6 py-4 border-t border-zinc-100 bg-white">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={itemsPerPage}
+            onPageChange={(page) => setCurrentPage(page)}
+          />
+        </div>
       )}
 
-      {/* Table Footer (Optional - for pagination or summary) */}
+      {/* Table Footer */}
       {orders.length === 0 && !isLoading && (
-        <div className="px-6 py-12 text-center">
-          <div className="text-neutral-500 text-sm font-normal font-['Poppins']">
+        <div className="px-6 py-16 text-center bg-white">
+          <div className="text-zinc-400 text-sm font-semibold font-['Poppins']">
             No customer orders found
           </div>
         </div>
@@ -532,119 +534,82 @@ export const RecentCustomerInfoTable: React.FC<RecentCustomerInfoTableProps> = (
           setDetailModalOpen(false);
           setSelectedOrder(null);
         }}
-        className="max-w-[960px] h-[872px]"
+        className="max-w-[720px] rounded-2xl"
       >
-        <div className="w-full h-full px-4 py-[73px] flex flex-col justify-start items-center gap-8">
-          <div className="w-full max-w-[808px] flex flex-col justify-start items-start gap-5">
+        <div className="w-full px-6 py-8 flex flex-col gap-6">
+          <div className="flex flex-col gap-1 border-b border-zinc-100 pb-4">
+            <h3 className="text-lg font-bold text-zinc-900 font-['Poppins']">Customer Order Details</h3>
+            <p className="text-xs text-zinc-450 font-semibold font-['Poppins']">Detailed shipment and customer profile</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Name Field */}
-            <div className="self-stretch flex flex-col justify-start items-start gap-2">
-              <div className="self-stretch inline-flex justify-start items-start gap-2">
-                <div className="flex-1 justify-start text-neutral-800 text-base font-medium font-['Poppins'] leading-5">Name</div>
-              </div>
-              <div className="self-stretch p-3 rounded-lg outline-1 outline-offset-[-1px] outline-zinc-400 inline-flex justify-start items-center gap-1 overflow-hidden">
-                <div className="flex-1 h-6 flex justify-start items-center gap-2 overflow-hidden">
-                  <div className="justify-start text-zinc-600 text-base font-normal font-['Poppins'] leading-5">
-                    {selectedOrder?.name || 'Type category name here. . .'}
-                  </div>
-                </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-zinc-450 font-['Poppins'] uppercase tracking-wider">Name</label>
+              <div className="w-full bg-zinc-50 border border-zinc-200/80 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 shadow-sm font-['Poppins']">
+                {selectedOrder?.name || 'N/A'}
               </div>
             </div>
 
             {/* Phone Number Field */}
-            <div className="self-stretch flex flex-col justify-start items-start gap-2">
-              <div className="self-stretch inline-flex justify-start items-start gap-2">
-                <div className="flex-1 justify-start text-neutral-800 text-base font-medium font-['Poppins'] leading-5">Phone Number</div>
-              </div>
-              <div className="self-stretch h-12 p-3 rounded-lg outline-1 outline-offset-[-1px] outline-zinc-400 inline-flex justify-start items-start gap-1 overflow-hidden">
-                <div className="flex-1 flex justify-start items-start gap-2 overflow-hidden">
-                  <div className="flex-1 justify-start text-zinc-600 text-base font-normal font-['Poppins'] leading-5">
-                    {selectedOrder?.phoneNumber || 'Type child category name here. . .'}
-                  </div>
-                </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-zinc-450 font-['Poppins'] uppercase tracking-wider">Phone Number</label>
+              <div className="w-full bg-zinc-50 border border-zinc-200/80 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 shadow-sm font-['Poppins']">
+                {selectedOrder?.phoneNumber || 'N/A'}
               </div>
             </div>
 
             {/* Email Field */}
-            <div className="self-stretch flex flex-col justify-start items-start gap-2">
-              <div className="self-stretch inline-flex justify-start items-start gap-2">
-                <div className="flex-1 justify-start text-neutral-800 text-base font-medium font-['Poppins'] leading-5">Email</div>
-              </div>
-              <div className="self-stretch h-12 p-3 rounded-lg outline-1 outline-offset-[-1px] outline-zinc-400 inline-flex justify-start items-start gap-1 overflow-hidden">
-                <div className="flex-1 flex justify-start items-start gap-2 overflow-hidden">
-                  <div className="flex-1 justify-start text-zinc-600 text-base font-normal font-['Poppins'] leading-5">
-                    {selectedOrder?.email || 'Type child category name here. . .'}
-                  </div>
-                </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-zinc-450 font-['Poppins'] uppercase tracking-wider">Email</label>
+              <div className="w-full bg-zinc-50 border border-zinc-200/80 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 shadow-sm font-['Poppins'] break-all">
+                {selectedOrder?.email || 'N/A'}
               </div>
             </div>
 
             {/* District Field */}
-            <div className="self-stretch flex flex-col justify-start items-start gap-2">
-              <div className="self-stretch inline-flex justify-start items-start gap-2">
-                <div className="flex-1 justify-start text-neutral-800 text-base font-medium font-['Poppins'] leading-5">District</div>
-              </div>
-              <div className="self-stretch h-12 p-3 rounded-lg outline-1 outline-offset-[-1px] outline-zinc-400 inline-flex justify-start items-start gap-1 overflow-hidden">
-                <div className="flex-1 flex justify-start items-start gap-2 overflow-hidden">
-                  <div className="flex-1 justify-start text-zinc-600 text-base font-normal font-['Poppins'] leading-5">
-                    {selectedOrder?.district || 'Type child category name here. . .'}
-                  </div>
-                </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-zinc-450 font-['Poppins'] uppercase tracking-wider">District</label>
+              <div className="w-full bg-zinc-50 border border-zinc-200/80 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 shadow-sm font-['Poppins']">
+                {selectedOrder?.district || 'N/A'}
               </div>
             </div>
 
             {/* Upazila Field */}
-            <div className="self-stretch flex flex-col justify-start items-start gap-2">
-              <div className="self-stretch inline-flex justify-start items-start gap-2">
-                <div className="flex-1 justify-start text-neutral-800 text-base font-medium font-['Poppins'] leading-5">Upazila</div>
-              </div>
-              <div className="self-stretch h-12 p-3 rounded-lg outline-1 outline-offset-[-1px] outline-zinc-400 inline-flex justify-start items-start gap-1 overflow-hidden">
-                <div className="flex-1 flex justify-start items-start gap-2 overflow-hidden">
-                  <div className="flex-1 justify-start text-zinc-600 text-base font-normal font-['Poppins'] leading-5">
-                    {selectedOrder?.upazila || 'Type child category name here. . .'}
-                  </div>
-                </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-zinc-450 font-['Poppins'] uppercase tracking-wider">Upazila</label>
+              <div className="w-full bg-zinc-50 border border-zinc-200/80 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 shadow-sm font-['Poppins']">
+                {selectedOrder?.upazila || 'N/A'}
               </div>
             </div>
 
             {/* Thana Field */}
-            <div className="self-stretch flex flex-col justify-start items-start gap-2">
-              <div className="self-stretch inline-flex justify-start items-start gap-2">
-                <div className="flex-1 justify-start text-neutral-800 text-base font-medium font-['Poppins'] leading-5">Thana</div>
-              </div>
-              <div className="self-stretch h-12 p-3 rounded-lg outline-1 outline-offset-[-1px] outline-zinc-400 inline-flex justify-start items-start gap-1 overflow-hidden">
-                <div className="flex-1 flex justify-start items-start gap-2 overflow-hidden">
-                  <div className="flex-1 justify-start text-zinc-600 text-base font-normal font-['Poppins'] leading-5">
-                    {selectedOrder?.thana || 'Type child category name here. . .'}
-                  </div>
-                </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-zinc-450 font-['Poppins'] uppercase tracking-wider">Thana</label>
+              <div className="w-full bg-zinc-50 border border-zinc-200/80 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 shadow-sm font-['Poppins']">
+                {selectedOrder?.thana || 'N/A'}
               </div>
             </div>
 
             {/* Post office Field */}
-            <div className="self-stretch flex flex-col justify-start items-start gap-2">
-              <div className="self-stretch inline-flex justify-start items-start gap-2">
-                <div className="flex-1 justify-start text-neutral-800 text-base font-medium font-['Poppins'] leading-5">Post office</div>
-              </div>
-              <div className="self-stretch h-12 p-3 rounded-lg outline-1 outline-offset-[-1px] outline-zinc-400 inline-flex justify-start items-start gap-1 overflow-hidden">
-                <div className="flex-1 flex justify-start items-start gap-2 overflow-hidden">
-                  <div className="flex-1 justify-start text-zinc-600 text-base font-normal font-['Poppins'] leading-5">
-                    {selectedOrder?.postOffice || 'Type child category name here. . .'}
-                  </div>
-                </div>
+            <div className="flex flex-col gap-1.5 md:col-span-2">
+              <label className="text-xs font-bold text-zinc-450 font-['Poppins'] uppercase tracking-wider">Post Office / ZIP</label>
+              <div className="w-full bg-zinc-50 border border-zinc-200/80 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 shadow-sm font-['Poppins']">
+                {selectedOrder?.postOffice || 'N/A'}
               </div>
             </div>
-
-            {/* Confirm Button */}
-            <button
-              onClick={() => {
-                setDetailModalOpen(false);
-                setSelectedOrder(null);
-              }}
-              className="self-stretch h-12 px-6 py-3 bg-fuchsia-500 rounded inline-flex justify-center items-center gap-2.5 cursor-pointer hover:bg-fuchsia-600 transition-colors"
-            >
-              <div className="justify-start text-white text-base font-medium font-['Inter'] leading-5">Confirm</div>
-            </button>
           </div>
+
+          {/* Confirm Close Button */}
+          <button
+            onClick={() => {
+              setDetailModalOpen(false);
+              setSelectedOrder(null);
+            }}
+            className="w-full h-11 bg-gradient-to-r from-purple-600 to-fuchsia-600 rounded-xl text-white text-xs font-bold tracking-wider uppercase shadow-md shadow-purple-200/50 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer flex justify-center items-center"
+          >
+            Confirm Details
+          </button>
         </div>
       </Modal>
     </div>

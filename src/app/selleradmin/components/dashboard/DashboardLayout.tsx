@@ -24,7 +24,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, clas
   };
 
   return (
-    <div className={cn('w-full min-h-screen relative bg-white overflow-hidden flex', className)}>
+    <div className={cn('w-full min-h-screen relative bg-[#F9FAFC] overflow-hidden flex', className)}>
       {/* Sidebar (Layer 2) */}
       <Sidebar 
         className="flex-shrink-0" 
@@ -41,7 +41,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, clas
         <DashboardHeader />
 
         {/* Content Section (Layer 2) */}
-        <div className="flex-1 p-10 bg-white overflow-auto">
+        <div className="flex-1 p-8 md:p-10 bg-[#F9FAFC] overflow-auto">
           {children}
         </div>
       </div>
