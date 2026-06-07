@@ -5,6 +5,7 @@ import { DollarSign, ShoppingCart, Package, Users, ArrowUpRight } from 'lucide-r
 import { getAdminOrders } from '@/lib/indexeddb/adminCache';
 import { RecentCustomerInfoTable } from './RecentCustomerInfoTable';
 import { cn } from '@/lib/utils';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 type AdminOrder = {
   id: string;
@@ -27,7 +28,6 @@ interface StatCardProps {
 }
 
 const StatCard = ({ title, value, icon, iconBg, trendText, waveColor }: StatCardProps) => {
-  // Generate distinct wave path shapes for each theme color to look custom and professional
   let wavePath = "M 0 32 Q 25 10, 50 32 T 100 20 L 100 50 L 0 50 Z"; // default wave
   if (waveColor.includes("ec4899")) {
     wavePath = "M 0 25 Q 30 45, 60 15 T 100 30 L 100 50 L 0 50 Z";
@@ -82,6 +82,11 @@ export default function DashboardHome() {
   const [monthlyTarget, setMonthlyTarget] = useState(0);
   const [targetInput, setTargetInput] = useState('0');
   const [targetSaving, setTargetSaving] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -162,37 +167,12 @@ export default function DashboardHome() {
     }));
   }, [acceptedOrders]);
 
-  const pointsArray = useMemo(() => {
-    if (chartData.length === 0) return [];
-    const maxY = Math.max(...chartData.map((d) => d.value), 1);
-    return chartData.map((d, i) => {
-      const x = chartData.length > 1 ? (i / (chartData.length - 1)) * 100 : 50;
-      // Map Y coordinates to [15, 80] range to keep points neatly inside SVG viewport
-      const y = 80 - (d.value / maxY) * 65;
-      return { x, y };
-    });
+  const formattedChartData = useMemo(() => {
+    return chartData.map(d => ({
+      name: d.label,
+      value: d.value
+    }));
   }, [chartData]);
-
-  const linePath = useMemo(() => {
-    if (pointsArray.length === 0) return '';
-    let path = `M ${pointsArray[0].x},${pointsArray[0].y}`;
-    for (let i = 1; i < pointsArray.length; i++) {
-      const p0 = pointsArray[i - 1];
-      const p1 = pointsArray[i];
-      // Generate control points for a smooth cubic bezier spline curve
-      const cp1x = p0.x + (p1.x - p0.x) / 3;
-      const cp1y = p0.y;
-      const cp2x = p0.x + 2 * (p1.x - p0.x) / 3;
-      const cp2y = p1.y;
-      path += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p1.x},${p1.y}`;
-    }
-    return path;
-  }, [pointsArray]);
-
-  const areaPath = useMemo(() => {
-    if (pointsArray.length === 0) return '';
-    return `${linePath} L ${pointsArray[pointsArray.length - 1].x},95 L ${pointsArray[0].x},95 Z`;
-  }, [linePath, pointsArray]);
 
   const targetPercent =
     monthlyTarget <= 0 ? 0 : Math.min(100, Math.round((currentMonthSales / monthlyTarget) * 100));
@@ -286,64 +266,62 @@ export default function DashboardHome() {
 
       {/* Analytics and Monthly Target Cards */}
       <div className="grid gap-6 xl:grid-cols-[2fr_1fr]">
-        {/* Revenue Analytics Curve Chart */}
+        {/* Revenue Analytics Recharts Line Chart */}
         <div className="rounded-2xl border border-zinc-150/70 bg-white p-6 shadow-sm flex flex-col justify-between">
           <div className="mb-6 flex items-center justify-between">
             <h3 className="text-lg font-bold text-zinc-800 font-['Poppins']">Revenue Analytics</h3>
             <span className="rounded-lg bg-zinc-50 border border-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-500">Last 8 days</span>
           </div>
           <div className="h-60 w-full relative">
-            {loading ? (
+            {loading || !mounted ? (
               <div className="flex h-full items-center justify-center text-zinc-400 font-medium">Loading analytics...</div>
             ) : chartData.length === 0 ? (
               <div className="flex h-full items-center justify-center text-zinc-400 font-medium">No accepted order data yet.</div>
             ) : (
-              <div className="h-full w-full flex flex-col justify-between">
-                <div className="flex-1 w-full relative">
-                  <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full overflow-visible">
-                    <defs>
-                      <linearGradient id="revenueChartGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.25" />
-                        <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
-                    
-                    {/* SVG Grid Lines */}
-                    <g stroke="#F1F5F9" strokeWidth="0.5" strokeDasharray="3 3">
-                      <line x1="0" y1="15" x2="100" y2="15" />
-                      <line x1="0" y1="47.5" x2="100" y2="47.5" />
-                      <line x1="0" y1="80" x2="100" y2="80" />
-                    </g>
-                    
-                    {/* Curve Fill Area */}
-                    <path d={areaPath} fill="url(#revenueChartGradient)" />
-                    
-                    {/* Curve Main Stroke */}
-                    <path 
-                      d={linePath} 
-                      fill="none" 
-                      stroke="#8b5cf6" 
-                      strokeWidth="2.5" 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round" 
-                    />
-                    
-                    {/* Interactive Curve Nodes */}
-                    {pointsArray.map((p, idx) => (
-                      <g key={idx} className="group/node cursor-pointer">
-                        <circle cx={p.x} cy={p.y} r="4.5" fill="#8b5cf6" opacity="0.25" className="transition-all duration-200 group-hover/node:r-6" />
-                        <circle cx={p.x} cy={p.y} r="2.5" fill="#FFFFFF" stroke="#8b5cf6" strokeWidth="2" />
-                      </g>
-                    ))}
-                  </svg>
-                </div>
-                {/* Labels */}
-                <div className="mt-4 flex justify-between border-t border-zinc-50 pt-3 text-[10px] font-bold text-zinc-400 font-['Poppins']">
-                  {chartData.map((d) => (
-                    <span key={d.label}>{d.label}</span>
-                  ))}
-                </div>
-              </div>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={formattedChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                  <XAxis 
+                    dataKey="name" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#A1A1AA', fontSize: 10, fontWeight: 700, fontFamily: 'Poppins' }} 
+                    dy={10}
+                  />
+                  <YAxis 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#A1A1AA', fontSize: 10, fontWeight: 700, fontFamily: 'Poppins' }} 
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#ffffff', 
+                      borderRadius: '12px', 
+                      border: '1px solid #E4E4E7', 
+                      boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+                      fontFamily: 'Poppins',
+                      fontSize: '12px',
+                      fontWeight: '600'
+                    }} 
+                    formatter={(value: any) => [`৳${value.toLocaleString()}`, 'Revenue']}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="value" 
+                    stroke="#8b5cf6" 
+                    strokeWidth={2.5}
+                    fillOpacity={1} 
+                    fill="url(#colorValue)" 
+                    activeDot={{ r: 6, strokeWidth: 0, fill: '#8b5cf6' }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             )}
           </div>
         </div>

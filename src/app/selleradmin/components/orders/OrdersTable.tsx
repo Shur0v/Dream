@@ -425,25 +425,42 @@ export default function OrdersTable() {
     });
   };
 
+  const formatCurrency = (amount: number) => {
+    return `৳${amount.toLocaleString('en-BD', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
   const getStatusBadge = (status: string) => {
-    const styles = {
-      pending: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-      accepted: 'bg-green-100 text-green-800 border-green-300',
-      rejected: 'bg-red-100 text-red-800 border-red-300'
-    };
-    
-    return (
-      <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${styles[status as keyof typeof styles]}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </span>
-    );
+    switch (status) {
+      case 'accepted':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-105">
+            <Check className="w-3 h-3 text-emerald-600" />
+            Accepted
+          </span>
+        );
+      case 'rejected':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 text-rose-700 text-[11px] font-bold border border-rose-105">
+            <X className="w-3 h-3 text-rose-600" />
+            Rejected
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-[11px] font-bold border border-amber-105">
+            Pending
+          </span>
+        );
+    }
   };
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-        <div className="flex justify-center items-center">
-          <div className="text-gray-600">Loading orders...</div>
+      <div className="bg-white rounded-2xl border border-zinc-150/70 shadow-sm overflow-hidden p-8">
+        <div className="flex justify-center items-center py-12">
+          <div className="text-zinc-400 text-sm font-semibold font-['Poppins'] animate-pulse">
+            Loading orders...
+          </div>
         </div>
       </div>
     );
@@ -451,19 +468,11 @@ export default function OrdersTable() {
 
   if (error) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-        <div className="flex justify-center items-center">
-          <div className="text-red-600">Error: {error}</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (orders.length === 0) {
-    return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-        <div className="flex justify-center items-center">
-          <div className="text-gray-600">No orders found</div>
+      <div className="bg-white rounded-2xl border border-zinc-150/70 shadow-sm overflow-hidden p-8">
+        <div className="flex justify-center items-center py-12">
+          <div className="text-rose-500 text-sm font-semibold font-['Poppins']">
+            Error: {error}
+          </div>
         </div>
       </div>
     );
@@ -471,163 +480,204 @@ export default function OrdersTable() {
 
   return (
     <>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="flex justify-between items-center p-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Orders</h2>
+      <div className="bg-white rounded-2xl border border-zinc-150/70 shadow-sm overflow-hidden">
+        {/* Table Header */}
+        <div className="flex justify-between items-center px-6 py-5 border-b border-zinc-100 bg-white">
+          <h3 className="text-zinc-800 text-lg font-bold font-['Poppins']">Orders</h3>
           <div className="flex items-center gap-2">
             <button
               onClick={openAddModal}
-              className="flex items-center gap-2 px-4 py-2 bg-fuchsia-500 text-white rounded-lg hover:bg-fuchsia-600 cursor-pointer transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 text-white text-xs font-bold tracking-wider uppercase rounded-xl shadow-md shadow-purple-200/50 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer font-['Poppins']"
             >
               <span>Add Order</span>
             </button>
             <button
               onClick={fetchOrders}
               disabled={isLoading}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed cursor-pointer transition-colors"
+              className="flex items-center gap-2 px-4 py-2.5 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-600 text-xs font-bold tracking-wider uppercase rounded-xl disabled:bg-zinc-100 disabled:text-zinc-400 disabled:border-zinc-200 disabled:cursor-not-allowed transition-all cursor-pointer font-['Poppins']"
               title="Refresh orders"
             >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
               <span>Refresh</span>
             </button>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Order ID
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Product Details
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Color / Size
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Quantity
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Total Amount
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {orders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-semibold text-gray-900">{order.orderId}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col gap-2">
-                      {order.items.map((item) => (
-                        <div key={item.id} className="flex items-center gap-3">
-                          <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                            <Image
-                              src={item.image}
-                              alt={item.name}
-                              fill
-                              unoptimized={item.image.startsWith('http://') || item.image.startsWith('https://') || item.image.startsWith('blob:')}
-                              className="object-cover"
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium text-gray-900 truncate">
-                              {item.name}
+
+        {orders.length === 0 ? (
+          <div className="px-6 py-16 text-center bg-white">
+            <div className="text-zinc-400 text-sm font-semibold font-['Poppins']">
+              No orders found
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto bg-white">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-zinc-50/50 border-b border-zinc-100/80">
+                    <th className="px-6 py-4 text-left border-b border-zinc-100/80 bg-zinc-50/50">
+                      <div className="text-zinc-400 text-[10px] font-extrabold font-['Poppins'] uppercase tracking-wider">
+                        Order ID
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-left border-b border-zinc-100/80 bg-zinc-50/50">
+                      <div className="text-zinc-400 text-[10px] font-extrabold font-['Poppins'] uppercase tracking-wider">
+                        Product Details
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-left border-b border-zinc-100/80 bg-zinc-50/50">
+                      <div className="text-zinc-400 text-[10px] font-extrabold font-['Poppins'] uppercase tracking-wider">
+                        Color / Size
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-center border-b border-zinc-100/80 bg-zinc-50/50">
+                      <div className="text-zinc-400 text-[10px] font-extrabold font-['Poppins'] uppercase tracking-wider">
+                        Quantity
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-right border-b border-zinc-100/80 bg-zinc-50/50">
+                      <div className="text-zinc-400 text-[10px] font-extrabold font-['Poppins'] uppercase tracking-wider">
+                        Total Amount
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-center border-b border-zinc-100/80 bg-zinc-50/50">
+                      <div className="text-zinc-400 text-[10px] font-extrabold font-['Poppins'] uppercase tracking-wider">
+                        Status
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-center border-b border-zinc-100/80 bg-zinc-50/50">
+                      <div className="text-zinc-400 text-[10px] font-extrabold font-['Poppins'] uppercase tracking-wider">
+                        Date
+                      </div>
+                    </th>
+                    <th className="px-6 py-4 text-center border-b border-zinc-100/80 bg-zinc-50/50 w-24">
+                      <div className="text-zinc-400 text-[10px] font-extrabold font-['Poppins'] uppercase tracking-wider">
+                        Actions
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100/80">
+                  {orders.map((order) => (
+                    <tr key={order.id} className="hover:bg-zinc-50/50 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-purple-600 font-mono text-xs font-bold bg-purple-50/60 px-2 py-0.5 rounded-md border border-purple-100/50 inline-block">
+                          <code>{order.orderId}</code>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col gap-2">
+                          {order.items.map((item) => (
+                            <div key={item.id} className="flex items-center gap-3">
+                              <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-zinc-50 border border-zinc-100 flex-shrink-0">
+                                <Image
+                                  src={item.image}
+                                  alt={item.name}
+                                  fill
+                                  unoptimized={item.image.startsWith('http://') || item.image.startsWith('https://') || item.image.startsWith('blob:')}
+                                  className="object-cover"
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-zinc-800 text-sm font-bold font-['Poppins'] truncate max-w-[200px]">
+                                  {item.name}
+                                </div>
+                                <div className="text-zinc-400 text-xs font-semibold font-['Poppins']">
+                                  {formatCurrency(item.price)}
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-sm text-gray-500">
-                              ৳{item.price.toFixed(2)}
+                          ))}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-1">
+                          {order.items.map((item) => (
+                            <div key={item.id} className="text-xs font-semibold font-['Poppins'] text-zinc-650">
+                              {item.color || item.size ? (
+                                <div className="flex flex-col gap-0.5">
+                                  {item.color && <div>Color: <span className="font-bold text-zinc-800">{item.color}</span></div>}
+                                  {item.size && <div>Size: <span className="font-bold text-zinc-800">{item.size}</span></div>}
+                                </div>
+                              ) : (
+                                <span className="text-zinc-400 font-normal">N/A</span>
+                              )}
                             </div>
-                          </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-col gap-1">
-                      {order.items.map((item) => (
-                        <div key={item.id} className="text-sm text-gray-700">
-                          {item.color && <div>Color: <span className="font-medium">{item.color}</span></div>}
-                          {item.size && <div>Size: <span className="font-medium">{item.size}</span></div>}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <div className="flex flex-col gap-1 items-center">
+                          {order.items.map((item) => (
+                            <div key={item.id} className="text-sm font-semibold font-['Poppins'] text-zinc-700">
+                              {item.quantity}x
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex flex-col gap-1">
-                      {order.items.map((item) => (
-                        <div key={item.id} className="text-sm text-gray-700">
-                          {item.quantity}x
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <div className="inline-flex items-center gap-1 text-zinc-900 text-sm font-black font-['Poppins']">
+                          <span className="text-[10px] text-zinc-400 font-bold">BDT</span>
+                          <span>{order.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-semibold text-gray-900">
-                      ৳{order.totalAmount.toFixed(2)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(order.status)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">
-                      {formatDate(order.createdAt)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleViewDetails(order)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
-                        title="View Details"
-                      >
-                        <Eye className="w-5 h-5" />
-                      </button>
-                      {order.status === 'pending' && (
-                        <button
-                          onClick={() => handleRejectClick(order)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                          title="Reject Order"
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
-                      )}
-                      {order.status === 'rejected' && (
-                        <button
-                          onClick={() => handleDeleteClick(order)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
-                          title="Delete Order"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* Pagination */}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
-          onPageChange={(page) => setCurrentPage(page)}
-        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        {getStatusBadge(order.status)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <div className="text-zinc-500 text-xs font-semibold font-['Poppins']">
+                          {formatDate(order.createdAt)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => handleViewDetails(order)}
+                            className="p-1.5 rounded-xl hover:bg-purple-50 text-purple-600 hover:text-purple-700 border border-transparent hover:border-purple-200/50 transition-all inline-flex items-center justify-center cursor-pointer"
+                            title="View Details"
+                          >
+                            <Eye className="w-4.5 h-4.5" />
+                          </button>
+                          {order.status === 'pending' && (
+                            <button
+                              onClick={() => handleRejectClick(order)}
+                              className="p-1.5 rounded-xl hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-transparent hover:border-rose-200/50 transition-all inline-flex items-center justify-center cursor-pointer"
+                              title="Reject Order"
+                            >
+                              <X className="w-4.5 h-4.5" />
+                            </button>
+                          )}
+                          {order.status === 'rejected' && (
+                            <button
+                              onClick={() => handleDeleteClick(order)}
+                              className="p-1.5 rounded-xl hover:bg-rose-50 text-rose-600 hover:text-rose-700 border border-transparent hover:border-rose-200/50 transition-all inline-flex items-center justify-center cursor-pointer"
+                              title="Delete Order"
+                            >
+                              <Trash2 className="w-4.5 h-4.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Pagination wrapped inside container border */}
+            {totalItems > 0 && (
+              <div className="px-6 py-4 border-t border-zinc-100 bg-white">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  totalItems={totalItems}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={(page) => setCurrentPage(page)}
+                />
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Order Detail Modal */}
@@ -682,38 +732,69 @@ export default function OrdersTable() {
       )}
 
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6 shadow-2xl">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-2xl font-bold text-gray-900">Add Manual Order</h3>
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-zinc-950/40 backdrop-blur-sm p-4">
+          <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl border border-zinc-150">
+            <div className="mb-6 flex items-center justify-between border-b border-zinc-100 pb-4">
+              <div>
+                <h3 className="text-lg font-bold text-zinc-900 font-['Poppins']">Add Manual Order</h3>
+                <p className="text-xs text-zinc-450 font-semibold font-['Poppins'] mt-1">Create a new order manually for local customers</p>
+              </div>
               <button
                 onClick={() => !creatingManualOrder && setIsAddModalOpen(false)}
-                className="rounded-md p-2 text-gray-500 hover:bg-gray-100"
+                className="p-1.5 rounded-xl hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 border border-transparent hover:border-zinc-200/50 transition-all inline-flex items-center justify-center cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <input className="rounded-lg border border-gray-300 p-3" placeholder="Customer name *" value={manualForm.name} onChange={(e) => setManualForm((prev) => ({ ...prev, name: e.target.value }))} />
-              <input className="rounded-lg border border-gray-300 p-3" placeholder="Phone number *" value={manualForm.phoneNumber} onChange={(e) => setManualForm((prev) => ({ ...prev, phoneNumber: e.target.value }))} />
-              <input className="rounded-lg border border-gray-300 p-3" placeholder="Email (optional)" value={manualForm.email} onChange={(e) => setManualForm((prev) => ({ ...prev, email: e.target.value }))} />
-              <select className="rounded-lg border border-gray-300 p-3" value={manualForm.status} onChange={(e) => setManualForm((prev) => ({ ...prev, status: e.target.value }))}>
-                <option value="approved">Accepted</option>
-                <option value="pending">Pending</option>
-              </select>
-              <input className="rounded-lg border border-gray-300 p-3" placeholder="District *" value={manualForm.district} onChange={(e) => setManualForm((prev) => ({ ...prev, district: e.target.value }))} />
-              <input className="rounded-lg border border-gray-300 p-3" placeholder="Upazila *" value={manualForm.upazila} onChange={(e) => setManualForm((prev) => ({ ...prev, upazila: e.target.value }))} />
-              <input className="rounded-lg border border-gray-300 p-3" placeholder="Thana *" value={manualForm.thana} onChange={(e) => setManualForm((prev) => ({ ...prev, thana: e.target.value }))} />
-              <input className="rounded-lg border border-gray-300 p-3" placeholder="Post office *" value={manualForm.postOffice} onChange={(e) => setManualForm((prev) => ({ ...prev, postOffice: e.target.value }))} />
-              <input className="rounded-lg border border-gray-300 p-3 md:col-span-2" placeholder="Payment method" value={manualForm.paymentMethod} onChange={(e) => setManualForm((prev) => ({ ...prev, paymentMethod: e.target.value }))} />
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-zinc-450 font-['Poppins'] uppercase tracking-wider">Customer Name *</label>
+                <input className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 placeholder-zinc-450 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-['Poppins']" placeholder="Customer name *" value={manualForm.name} onChange={(e) => setManualForm((prev) => ({ ...prev, name: e.target.value }))} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-zinc-450 font-['Poppins'] uppercase tracking-wider">Phone Number *</label>
+                <input className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 placeholder-zinc-455 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-['Poppins']" placeholder="Phone number *" value={manualForm.phoneNumber} onChange={(e) => setManualForm((prev) => ({ ...prev, phoneNumber: e.target.value }))} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-zinc-450 font-['Poppins'] uppercase tracking-wider">Email (optional)</label>
+                <input className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 placeholder-zinc-450 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-['Poppins']" placeholder="Email (optional)" value={manualForm.email} onChange={(e) => setManualForm((prev) => ({ ...prev, email: e.target.value }))} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-zinc-450 font-['Poppins'] uppercase tracking-wider">Order Status</label>
+                <select className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-['Poppins']" value={manualForm.status} onChange={(e) => setManualForm((prev) => ({ ...prev, status: e.target.value }))}>
+                  <option value="approved">Accepted</option>
+                  <option value="pending">Pending</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-zinc-450 font-['Poppins'] uppercase tracking-wider">District *</label>
+                <input className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 placeholder-zinc-450 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-['Poppins']" placeholder="District *" value={manualForm.district} onChange={(e) => setManualForm((prev) => ({ ...prev, district: e.target.value }))} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-zinc-450 font-['Poppins'] uppercase tracking-wider">Upazila *</label>
+                <input className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 placeholder-zinc-450 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-['Poppins']" placeholder="Upazila *" value={manualForm.upazila} onChange={(e) => setManualForm((prev) => ({ ...prev, upazila: e.target.value }))} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-zinc-450 font-['Poppins'] uppercase tracking-wider">Thana *</label>
+                <input className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 placeholder-zinc-450 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-['Poppins']" placeholder="Thana *" value={manualForm.thana} onChange={(e) => setManualForm((prev) => ({ ...prev, thana: e.target.value }))} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-bold text-zinc-450 font-['Poppins'] uppercase tracking-wider">Post office *</label>
+                <input className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 placeholder-zinc-450 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-['Poppins']" placeholder="Post office *" value={manualForm.postOffice} onChange={(e) => setManualForm((prev) => ({ ...prev, postOffice: e.target.value }))} />
+              </div>
+              <div className="flex flex-col gap-1.5 md:col-span-2">
+                <label className="text-xs font-bold text-zinc-450 font-['Poppins'] uppercase tracking-wider">Payment Method</label>
+                <input className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 placeholder-zinc-450 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-['Poppins']" placeholder="Payment method" value={manualForm.paymentMethod} onChange={(e) => setManualForm((prev) => ({ ...prev, paymentMethod: e.target.value }))} />
+              </div>
             </div>
 
-            <div className="mt-5">
-              <label className="mb-2 block text-sm font-semibold text-gray-700">Select Products (one or multiple)</label>
+            <div className="mt-6">
+              <label className="mb-2 block text-xs font-bold text-zinc-450 font-['Poppins'] uppercase tracking-wider">Select Products (one or multiple)</label>
               <SearchableMultiSelect
                 options={productOptions}
                 selectedIds={selectedProductIds}
+                controlClassName="border border-zinc-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 bg-white"
                 onChange={(ids) => {
                   setSelectedProductIds(ids);
                   setManualItems((prev) => {
@@ -729,48 +810,69 @@ export default function OrdersTable() {
                 searchPlaceholder="Search product by name"
                 renderOption={(option) => (
                   <div className="flex items-center gap-2">
-                    <div className="relative h-8 w-8 overflow-hidden rounded-md bg-gray-100">
+                    <div className="relative h-8 w-8 overflow-hidden rounded-md bg-zinc-50 border border-zinc-150 flex-shrink-0">
                       <Image src={option.image} alt={option.name} fill className="object-cover" unoptimized />
                     </div>
-                    <span>{option.name}</span>
-                    <span className="text-xs text-gray-500">({option.price})</span>
+                    <span className="text-sm font-semibold text-zinc-700 font-['Poppins']">{option.name}</span>
+                    <span className="text-xs text-zinc-450 font-bold font-['Poppins']">({formatCurrency(option.price)})</span>
                   </div>
                 )}
               />
             </div>
 
             {manualItems.length > 0 && (
-              <div className="mt-4 space-y-3 rounded-lg border border-gray-200 p-4">
+              <div className="mt-5 space-y-3 rounded-2xl border border-zinc-150 bg-zinc-50/50 p-4">
                 {manualItems.map((row) => {
                   const product = productOptions.find((p) => p.id === row.productId);
                   if (!product) return null;
                   return (
-                    <div key={row.productId} className="grid grid-cols-1 gap-2 rounded-md bg-gray-50 p-3 md:grid-cols-5">
-                      <div className="md:col-span-2 flex items-center gap-2">
-                        <div className="relative h-10 w-10 overflow-hidden rounded bg-white">
+                    <div key={row.productId} className="grid grid-cols-1 md:grid-cols-5 gap-4 rounded-xl bg-white border border-zinc-150 shadow-sm p-4 items-center">
+                      <div className="md:col-span-2 flex items-center gap-3">
+                        <div className="relative h-12 w-12 overflow-hidden rounded-xl bg-zinc-50 border border-zinc-150 flex-shrink-0">
                           <Image src={product.image} alt={product.name} fill className="object-cover" unoptimized />
                         </div>
                         <div>
-                          <div className="text-sm font-semibold">{product.name}</div>
-                          <div className="text-xs text-gray-500">Price: à§³{product.price}</div>
+                          <div className="text-sm font-bold text-zinc-800 font-['Poppins']">{product.name}</div>
+                          <div className="text-xs text-zinc-400 font-bold font-['Poppins'] mt-0.5">Price: {formatCurrency(product.price)}</div>
                         </div>
                       </div>
-                      <input type="number" min={1} className="rounded border border-gray-300 px-2 py-1" value={row.quantity} onChange={(e) => setManualItems((prev) => prev.map((it) => it.productId === row.productId ? { ...it, quantity: Math.max(1, Number(e.target.value || 1)) } : it))} placeholder="Qty" />
-                      <input className="rounded border border-gray-300 px-2 py-1" value={row.color} onChange={(e) => setManualItems((prev) => prev.map((it) => it.productId === row.productId ? { ...it, color: e.target.value } : it))} placeholder="Color (optional)" />
-                      <input className="rounded border border-gray-300 px-2 py-1" value={row.size} onChange={(e) => setManualItems((prev) => prev.map((it) => it.productId === row.productId ? { ...it, size: e.target.value } : it))} placeholder="Size (optional)" />
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider md:hidden">Qty</label>
+                        <input type="number" min={1} className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-semibold text-zinc-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-['Poppins']" value={row.quantity} onChange={(e) => setManualItems((prev) => prev.map((it) => it.productId === row.productId ? { ...it, quantity: Math.max(1, Number(e.target.value || 1)) } : it))} placeholder="Qty" />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider md:hidden">Color</label>
+                        <input className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-semibold text-zinc-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-['Poppins']" value={row.color} onChange={(e) => setManualItems((prev) => prev.map((it) => it.productId === row.productId ? { ...it, color: e.target.value } : it))} placeholder="Color" />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider md:hidden">Size</label>
+                        <input className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-semibold text-zinc-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-['Poppins']" value={row.size} onChange={(e) => setManualItems((prev) => prev.map((it) => it.productId === row.productId ? { ...it, size: e.target.value } : it))} placeholder="Size" />
+                      </div>
                     </div>
                   );
                 })}
               </div>
             )}
 
-            <div className="mt-5 flex items-center justify-between border-t border-gray-200 pt-4">
-              <div className="text-lg font-semibold text-gray-800">Total: à§³{manualTotal.toFixed(2)}</div>
+            <div className="mt-6 flex items-center justify-between border-t border-zinc-100 pt-5">
+              <div className="text-base font-bold text-zinc-700 font-['Poppins']">
+                Total: <span className="text-lg font-black text-purple-650">{formatCurrency(manualTotal)}</span>
+              </div>
               <div className="flex gap-2">
-                <button onClick={() => setIsAddModalOpen(false)} disabled={creatingManualOrder} className="rounded-lg border border-gray-300 px-4 py-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  disabled={creatingManualOrder}
+                  className="px-5 py-2.5 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-xl text-xs font-bold tracking-wider uppercase text-zinc-650 transition-all cursor-pointer font-['Poppins']"
+                >
                   Cancel
                 </button>
-                <button onClick={handleCreateManualOrder} disabled={creatingManualOrder} className="rounded-lg bg-fuchsia-500 px-4 py-2 font-semibold text-white disabled:opacity-70">
+                <button
+                  type="button"
+                  onClick={handleCreateManualOrder}
+                  disabled={creatingManualOrder}
+                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 text-white text-xs font-bold tracking-wider uppercase rounded-xl shadow-md shadow-purple-200/50 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer font-['Poppins']"
+                >
                   {creatingManualOrder ? 'Saving...' : 'Create Order'}
                 </button>
               </div>
@@ -781,4 +883,3 @@ export default function OrdersTable() {
     </>
   );
 }
-

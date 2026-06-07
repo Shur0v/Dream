@@ -203,65 +203,65 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
       {/* Page Title */}
       <div className="w-full flex items-center justify-between">
         <div className="flex flex-col gap-1">
-          <h2 className="text-fuchsia-500 text-2xl md:text-3xl font-semibold font-['Poppins']">Category</h2>
-          <p className="text-zinc-400 text-sm md:text-base font-normal">Manage your store inventory</p>
+          <h2 className="text-zinc-800 text-2xl font-bold font-['Poppins']">Category</h2>
+          <p className="text-zinc-400 text-xs font-semibold font-['Poppins'] uppercase tracking-wider">Manage your store inventory</p>
         </div>
       </div>
 
       {/* Form Grid */}
-      <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-7">
+      <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left card */}
-        <div className="w-full p-4 bg-white rounded-lg flex flex-col gap-6">
+        <div className="w-full p-6 bg-white rounded-2xl border border-zinc-150/80 shadow-sm flex flex-col gap-6">
           {/* Category Name */}
           <div className="flex flex-col gap-2">
-            <label className="text-neutral-800 text-base font-medium font-['Poppins']">Category Name</label>
-            <div className="w-full p-3 rounded-lg outline outline-1 outline-zinc-400 inline-flex items-center gap-2">
+            <label className="text-zinc-500 text-xs font-bold font-['Poppins'] uppercase tracking-wider">Category Name</label>
+            <div className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 placeholder-zinc-450 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-500 transition-all font-['Poppins'] inline-flex items-center gap-2">
               <input
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 placeholder="Type category name here..."
-                className="w-full bg-transparent outline-none text-zinc-700 text-base font-['Poppins']"
+                className="w-full bg-transparent outline-none text-zinc-700 text-sm font-semibold font-['Poppins']"
               />
             </div>
           </div>
 
           {/* Child Category Name */}
           <div className="flex flex-col gap-2">
-            <label className="text-neutral-800 text-base font-medium font-['Poppins']">Child Category Name</label>
-            <div className="w-full h-12 p-3 rounded-lg outline outline-1 outline-zinc-400 inline-flex items-center gap-2">
+            <label className="text-zinc-500 text-xs font-bold font-['Poppins'] uppercase tracking-wider">Child Category Name</label>
+            <div className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 placeholder-zinc-450 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-500 transition-all font-['Poppins'] inline-flex items-center gap-2">
               <input
                 value={childCategory}
                 onChange={(e) => setChildCategory(e.target.value)}
                 placeholder="Type child category name here..."
-                className="flex-1 bg-transparent outline-none text-zinc-700 text-base font-['Poppins']"
+                className="flex-1 bg-transparent outline-none text-zinc-700 text-sm font-semibold font-['Poppins']"
               />
-              <Plus className="w-4 h-4 text-neutral-800" />
+              <Plus className="w-4 h-4 text-zinc-550" />
             </div>
           </div>
         </div>
 
         {/* Right card - Photo */}
-        <div className="w-full p-4 bg-white rounded-lg flex flex-col gap-2">
-          <label className="text-neutral-800 text-base font-medium font-['Poppins']">Photo</label>
+        <div className="w-full p-6 bg-white rounded-2xl border border-zinc-150/80 shadow-sm flex flex-col gap-4">
+          <label className="text-zinc-500 text-xs font-bold font-['Poppins'] uppercase tracking-wider">Photo</label>
           <ImageUploadHint width={320} height={320} />
           <div
             onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
             onDrop={handleDrop}
-            className="w-full min-h-56 px-3 py-6 rounded-lg outline outline-1 outline-zinc-400 flex flex-col items-center justify-center gap-4"
+            className="w-full min-h-56 px-4 py-6 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50/50 hover:bg-zinc-50 flex flex-col items-center justify-center gap-4 transition-all"
           >
-            <div className="p-2.5 bg-blue-100 rounded-[117px]">
-              <div className="p-1.5 bg-blue-200 rounded-[32px]">
-                <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center">
-                  <ImagePlus className="w-5 h-5 text-fuchsia-500" />
+            <div className="p-2 bg-purple-50 rounded-full">
+              <div className="p-1.5 bg-purple-100/80 rounded-full">
+                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                  <ImagePlus className="w-4 h-4 text-purple-600" />
                 </div>
               </div>
             </div>
 
             {image || previewUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={image || previewUrl || ''} alt="Preview" className="w-full max-w-md h-40 object-contain rounded" />
+              <img src={image || previewUrl || ''} alt="Preview" className="w-full max-w-md h-40 object-contain rounded-xl border border-zinc-100" />
             ) : (
-              <p className="text-center text-zinc-600 text-base font-normal font-['Poppins']">
+              <p className="text-center text-zinc-455 text-xs font-bold font-['Poppins'] uppercase tracking-wider">
                 Drag and drop image here, or click add image
               </p>
             )}
@@ -269,7 +269,7 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
             <button
               type="button"
               onClick={handleChoose}
-              className="px-4 py-2.5 bg-fuchsia-500 rounded-lg text-white text-sm font-medium font-['Poppins']"
+              className="px-4 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-600 text-xs font-bold tracking-wider uppercase rounded-xl transition-all cursor-pointer font-['Poppins']"
             >
               Add Image
             </button>
@@ -290,7 +290,7 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
         <button
           type="button"
           onClick={onCancel}
-          className="h-12 px-6 py-3 rounded outline outline-1 outline-red-500 text-red-500 font-medium"
+          className="h-11 px-5 py-2.5 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-xl text-xs font-bold tracking-wider uppercase text-zinc-650 transition-all cursor-pointer flex items-center justify-center font-['Poppins']"
         >
           Cancel
         </button>
@@ -298,11 +298,11 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
           type="button"
           onClick={handleConfirm}
           disabled={!canConfirm}
-          className={cn('h-12 px-6 py-3 rounded bg-fuchsia-500 text-white font-medium flex items-center justify-center gap-2', !canConfirm && 'opacity-60 cursor-not-allowed')}
+          className={cn('h-11 px-6 py-2.5 bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 text-white text-xs font-bold tracking-wider uppercase rounded-xl shadow-md shadow-purple-200/50 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-75 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2 font-[\'Poppins\']', !canConfirm && 'opacity-60 cursor-not-allowed')}
         >
           {saving ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin text-white" />
               Saving...
             </>
           ) : (
@@ -313,24 +313,24 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
 
       {/* Error Message */}
       {error && (
-        <div className="w-full p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-600 text-sm font-['Poppins']">{error}</p>
+        <div className="w-full p-4 bg-rose-50 border border-rose-100 rounded-xl">
+          <p className="text-rose-600 text-sm font-semibold font-['Poppins']">{error}</p>
         </div>
       )}
 
       {/* Existing Categories Section */}
       {loading ? (
-        <div className="w-full flex justify-center items-center py-12">
-          <p className="text-zinc-500 text-sm font-['Poppins']">Loading categories...</p>
+        <div className="w-full flex justify-center items-center py-12 bg-white rounded-2xl border border-zinc-150/70 shadow-sm">
+          <p className="text-zinc-400 text-sm font-semibold font-['Poppins'] animate-pulse">Loading categories...</p>
         </div>
       ) : categories.length > 0 ? (
         <div className="w-full flex flex-col gap-4">
-          <h3 className="text-slate-950 text-xl md:text-2xl font-medium font-['Poppins']">Existing Categories</h3>
+          <h3 className="text-zinc-800 text-lg font-bold font-['Poppins']">Existing Categories</h3>
           <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
             {categories.map((cat) => (
               <div
                 key={cat.id}
-                className="relative group p-1.5 md:p-3 bg-fuchsia-400/10 rounded-xl flex flex-col justify-start items-center gap-1.5 md:gap-6 hover:shadow-[5px_11px_22.1px_0px_rgba(0,0,0,0.15)] transition-all duration-300"
+                className="relative group p-4 bg-white rounded-2xl border border-zinc-150 shadow-sm flex flex-col justify-start items-center gap-4 hover:shadow-md hover:border-zinc-200/80 transition-all duration-300"
               >
                 {/* Delete Button */}
                 <button
@@ -338,13 +338,13 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
                   onClick={() => handleDeleteClick(cat.id, cat.name)}
                   disabled={deleting}
                   className={cn(
-                    "absolute top-2 right-2 z-10 p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200",
+                    "absolute top-2 right-2 z-10 p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer",
                     deleting && "opacity-50 cursor-not-allowed"
                   )}
                   aria-label={`Delete ${cat.name} category`}
                 >
                   {deleting && deleteTargetId === cat.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
                   ) : (
                     <Trash2 className="w-4 h-4" />
                   )}
@@ -368,7 +368,7 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
                 )}
 
                 {/* Category Name */}
-                <div className="w-full text-center text-black text-sm md:text-lg font-medium font-['Poppins'] leading-tight md:leading-normal">
+                <div className="w-full text-center text-zinc-800 text-sm font-bold font-['Poppins'] truncate">
                   {cat.name}
                 </div>
               </div>
@@ -376,8 +376,8 @@ export default function AddCategoryForm({ onCancel, onConfirm, onDelete }: AddCa
           </div>
         </div>
       ) : (
-        <div className="w-full flex justify-center items-center py-12">
-          <p className="text-zinc-500 text-sm font-['Poppins']">No categories found. Add your first category above.</p>
+        <div className="w-full flex justify-center items-center py-12 bg-white rounded-2xl border border-zinc-150/70 shadow-sm">
+          <p className="text-zinc-450 text-sm font-semibold font-['Poppins']">No categories found. Add your first category above.</p>
         </div>
       )}
 

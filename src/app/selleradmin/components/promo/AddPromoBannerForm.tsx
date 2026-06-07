@@ -193,21 +193,21 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
   return (
     <div className="w-full flex flex-col gap-6">
       {/* Show/Hide Toggle Switch */}
-      <div className="w-full p-5 bg-white rounded-xl border border-gray-200 shadow-sm flex items-center justify-between gap-4">
+      <div className="w-full p-6 bg-white rounded-2xl border border-zinc-150/80 shadow-sm flex items-center justify-between gap-4">
         <div className="flex flex-col gap-1 flex-1">
-          <span className="text-slate-950 text-lg font-semibold font-['Poppins']">Show on Client Side</span>
-          <span className="text-zinc-500 text-sm font-normal font-['Poppins']">Toggle visibility of promo banners on homepage</span>
+          <span className="text-zinc-800 text-base font-bold font-['Poppins']">Show on Client Side</span>
+          <span className="text-zinc-400 text-xs font-semibold font-['Poppins']">Toggle visibility of promo banners on homepage</span>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
-          <span className={cn('text-sm font-medium font-Poppins transition-colors', !isVisible ? 'text-slate-950' : 'text-zinc-400')}>
+          <span className={cn('text-xs font-bold font-[\'Poppins\'] uppercase tracking-wider transition-colors', !isVisible ? 'text-zinc-800' : 'text-zinc-400')}>
             Hide
           </span>
           <button
             type="button"
             onClick={handleVisibilityToggle}
             className={cn(
-              'relative inline-flex h-8 w-[60px] items-center rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-fuchsia-500 focus:ring-offset-2 shadow-inner',
-              isVisible ? 'bg-fuchsia-500' : 'bg-gray-300'
+              'relative inline-flex h-8 w-[60px] items-center rounded-full transition-all duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:ring-offset-2 shadow-inner cursor-pointer',
+              isVisible ? 'bg-purple-650' : 'bg-zinc-200'
             )}
             aria-label="Toggle visibility"
             role="switch"
@@ -220,7 +220,7 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
               )}
             />
           </button>
-          <span className={cn('text-sm font-medium font-Poppins transition-colors', isVisible ? 'text-slate-950' : 'text-zinc-400')}>
+          <span className={cn('text-xs font-bold font-[\'Poppins\'] uppercase tracking-wider transition-colors', isVisible ? 'text-zinc-800' : 'text-zinc-400')}>
             Show
           </span>
         </div>
@@ -232,97 +232,97 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
           <button
             type="button"
             onClick={onBack || (() => router.back())}
-            className="w-10 h-10 p-2 bg-neutral-100 rounded-lg flex justify-center items-center"
+            className="w-10 h-10 p-2 bg-zinc-55/60 border border-zinc-150 rounded-xl flex justify-center items-center cursor-pointer hover:bg-zinc-100 transition-colors"
             aria-label="Back"
           >
-            <ArrowLeft className="w-5 h-5 text-zinc-900" />
+            <ArrowLeft className="w-5 h-5 text-zinc-700" />
           </button>
           <div className="flex flex-col gap-1">
-            <h2 className="text-fuchsia-500 text-2xl md:text-3xl font-semibold font-['Poppins']">Promo Banners</h2>
-            <p className="text-zinc-400 text-sm md:text-base font-normal">Manage promotional banners</p>
+            <h2 className="text-zinc-800 text-2xl font-bold font-['Poppins']">Promo Banners</h2>
+            <p className="text-zinc-450 text-xs font-semibold font-['Poppins'] uppercase tracking-wider">Manage promotional banners</p>
           </div>
         </div>
       </div>
 
       {error && (
-        <div className="w-full p-3 rounded-lg bg-red-50 text-red-600 text-sm font-medium">
-          {error}
+        <div className="w-full p-4 bg-rose-50 border border-rose-100 rounded-xl">
+          <p className="text-rose-600 text-sm font-semibold font-['Poppins']">{error}</p>
         </div>
       )}
 
       {/* Form Grid */}
-      <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-7">
+      <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left card */}
-        <div className="w-full p-4 bg-white rounded-lg flex flex-col gap-6">
+        <div className="w-full p-6 bg-white rounded-2xl border border-zinc-150/80 shadow-sm flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <label className="text-neutral-800 text-base font-medium font-['Poppins']">Title</label>
-            <div className="w-full p-3 rounded-lg outline outline-1 outline-zinc-400 inline-flex items-center gap-2">
+            <label className="text-zinc-500 text-xs font-bold font-['Poppins'] uppercase tracking-wider">Title</label>
+            <div className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 placeholder-zinc-450 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-500 transition-all font-['Poppins'] inline-flex items-center gap-2">
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Enter banner title..."
-                className="w-full bg-transparent outline-none text-zinc-700 text-base font-['Poppins']"
+                className="w-full bg-transparent outline-none text-zinc-700 text-sm font-semibold font-['Poppins']"
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-neutral-800 text-base font-medium font-['Poppins']">Subtitle</label>
-            <div className="w-full p-3 rounded-lg outline outline-1 outline-zinc-400 inline-flex items-center gap-2">
+            <label className="text-zinc-500 text-xs font-bold font-['Poppins'] uppercase tracking-wider">Subtitle</label>
+            <div className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 placeholder-zinc-450 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-500 transition-all font-['Poppins'] inline-flex items-center gap-2">
               <input
                 value={subtitle}
                 onChange={(e) => setSubtitle(e.target.value)}
                 placeholder="Enter banner subtitle..."
-                className="w-full bg-transparent outline-none text-zinc-700 text-base font-['Poppins']"
+                className="w-full bg-transparent outline-none text-zinc-700 text-sm font-semibold font-['Poppins']"
               />
             </div>
           </div>
 
           {/* Countdown Timer */}
           <div className="flex flex-col gap-2">
-            <label className="text-neutral-800 text-base font-medium font-['Poppins']">Countdown Timer</label>
+            <label className="text-zinc-500 text-xs font-bold font-['Poppins'] uppercase tracking-wider mb-1">Countdown Timer</label>
             <div className="grid grid-cols-4 gap-2">
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-neutral-600">Days</label>
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Days</label>
                 <input
                   type="number"
                   min="0"
                   value={days}
                   onChange={(e) => setDays(parseInt(e.target.value) || 0)}
-                  className="w-full p-2 rounded-lg outline outline-1 outline-zinc-400 text-zinc-700 text-base font-['Poppins']"
+                  className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-semibold text-zinc-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-['Poppins']"
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-neutral-600">Hours</label>
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Hours</label>
                 <input
                   type="number"
                   min="0"
                   max="23"
                   value={hours}
                   onChange={(e) => setHours(parseInt(e.target.value) || 0)}
-                  className="w-full p-2 rounded-lg outline outline-1 outline-zinc-400 text-zinc-700 text-base font-['Poppins']"
+                  className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-semibold text-zinc-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-['Poppins']"
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-neutral-600">Minutes</label>
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Minutes</label>
                 <input
                   type="number"
                   min="0"
                   max="59"
                   value={minutes}
                   onChange={(e) => setMinutes(parseInt(e.target.value) || 0)}
-                  className="w-full p-2 rounded-lg outline outline-1 outline-zinc-400 text-zinc-700 text-base font-['Poppins']"
+                  className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-semibold text-zinc-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-['Poppins']"
                 />
               </div>
               <div className="flex flex-col gap-1">
-                <label className="text-xs text-neutral-600">Seconds</label>
+                <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Seconds</label>
                 <input
                   type="number"
                   min="0"
                   max="59"
                   value={seconds}
                   onChange={(e) => setSeconds(parseInt(e.target.value) || 0)}
-                  className="w-full p-2 rounded-lg outline outline-1 outline-zinc-400 text-zinc-700 text-base font-['Poppins']"
+                  className="w-full bg-white border border-zinc-200 rounded-xl px-3 py-2 text-sm font-semibold text-zinc-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-['Poppins']"
                 />
               </div>
             </div>
@@ -330,27 +330,27 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
         </div>
 
         {/* Right card - Photo */}
-        <div className="w-full p-4 bg-white rounded-lg flex flex-col gap-2">
-          <label className="text-neutral-800 text-base font-medium font-['Poppins']">Banner Image</label>
+        <div className="w-full p-6 bg-white rounded-2xl border border-zinc-150/80 shadow-sm flex flex-col gap-4">
+          <label className="text-zinc-500 text-xs font-bold font-['Poppins'] uppercase tracking-wider">Banner Image</label>
           <ImageUploadHint width={984} height={458} />
           <div
             onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
             onDrop={handleDrop}
-            className="w-full min-h-56 px-3 py-6 rounded-lg outline outline-1 outline-zinc-400 flex flex-col items-center justify-center gap-4"
+            className="w-full min-h-56 px-4 py-6 rounded-2xl border border-dashed border-zinc-300 bg-zinc-50/50 hover:bg-zinc-50 flex flex-col items-center justify-center gap-4 transition-all"
           >
             {image ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={image} alt="Preview" className="w-full max-w-md h-40 object-contain rounded" />
+              <img src={image} alt="Preview" className="w-full max-w-md h-40 object-contain rounded-xl border border-zinc-100" />
             ) : (
               <>
-                <div className="p-2.5 bg-blue-100 rounded-[117px]">
-                  <div className="p-1.5 bg-blue-200 rounded-[32px]">
-                    <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center">
-                      <Upload className="w-5 h-5 text-fuchsia-500" />
+                <div className="p-2 bg-purple-50 rounded-full">
+                  <div className="p-1.5 bg-purple-100/80 rounded-full">
+                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                      <Upload className="w-4 h-4 text-purple-600" />
                     </div>
                   </div>
                 </div>
-                <p className="text-center text-zinc-600 text-base font-normal font-['Poppins']">
+                <p className="text-center text-zinc-455 text-xs font-bold font-['Poppins'] uppercase tracking-wider">
                   Drag and drop image here, or click add image
                 </p>
               </>
@@ -359,7 +359,7 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
             <button
               type="button"
               onClick={handleChooseFile}
-              className="px-4 py-2.5 bg-fuchsia-500 rounded-lg text-white text-sm font-medium font-['Poppins']"
+              className="px-4 py-2 bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-600 text-xs font-bold tracking-wider uppercase rounded-xl transition-all cursor-pointer font-['Poppins']"
             >
               {image ? 'Change Image' : 'Add Image'}
             </button>
@@ -369,12 +369,12 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
               type="file"
               accept="image/*"
               className="hidden"
-            onChange={(e) => {
-              void handleFiles(e.target.files);
-            }}
-          />
+              onChange={(e) => {
+                void handleFiles(e.target.files);
+              }}
+            />
+          </div>
         </div>
-      </div>
       </div>
 
       {/* Footer buttons */}
@@ -382,7 +382,7 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
         <button
           type="button"
           onClick={onBack || (() => router.back())}
-          className="h-12 px-6 py-3 rounded outline outline-1 outline-red-500 text-red-500 font-medium"
+          className="h-11 px-5 py-2.5 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-xl text-xs font-bold tracking-wider uppercase text-zinc-655 transition-all cursor-pointer flex items-center justify-center font-['Poppins']"
         >
           Cancel
         </button>
@@ -391,7 +391,7 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
           onClick={handleConfirm}
           disabled={!canConfirm || saving || uploading}
           className={cn(
-            'h-12 px-6 py-3 rounded bg-fuchsia-500 text-white font-medium transition-opacity',
+            'h-11 px-6 py-2.5 bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 text-white text-xs font-bold tracking-wider uppercase rounded-xl shadow-md shadow-purple-200/50 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center font-[\'Poppins\']',
             (!canConfirm || saving || uploading) && 'opacity-60 cursor-not-allowed'
           )}
         >
@@ -402,20 +402,20 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
       {/* Existing Banners Section */}
       <div className="w-full flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-slate-950 text-xl md:text-2xl font-medium font-['Poppins']">Existing Promo Banners</h3>
+          <h3 className="text-zinc-800 text-lg font-bold font-['Poppins']">Existing Promo Banners</h3>
           {!loading && (
-            <span className="text-sm text-zinc-500 font-medium">
+            <span className="text-xs text-zinc-450 font-bold font-['Poppins'] uppercase tracking-wider">
               {banners.filter(banner => banner.isActive).length} active / {banners.length} total
             </span>
           )}
         </div>
 
         {loading ? (
-          <div className="w-full p-4 bg-white rounded-lg border border-dashed border-neutral-200 text-center text-zinc-500">
+          <div className="w-full p-8 bg-white rounded-2xl border border-zinc-150/70 text-center text-zinc-400 font-semibold font-['Poppins'] shadow-sm animate-pulse">
             Loading promo banners...
           </div>
         ) : banners.length === 0 ? (
-          <div className="w-full p-4 bg-white rounded-lg border border-dashed border-neutral-200 text-center text-zinc-500">
+          <div className="w-full p-8 bg-white rounded-2xl border border-zinc-150/70 text-center text-zinc-455 font-semibold font-['Poppins'] shadow-sm">
             No promo banners yet. Add your first banner above.
           </div>
         ) : (
@@ -425,34 +425,34 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
               return (
                 <div
                   key={banner.id}
-                  className="relative group p-4 bg-white rounded-xl border border-gray-200 flex flex-col gap-3 hover:shadow-lg transition-all duration-300"
+                  className="relative group p-4 bg-white rounded-2xl border border-zinc-150 shadow-sm flex flex-col gap-3 hover:shadow-md hover:border-zinc-200/80 transition-all duration-300"
                 >
                   <button
                     type="button"
                     onClick={() => handleDeleteClick(banner.id, banner.title)}
-                    className="absolute top-2 right-2 z-10 p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                    className="absolute top-2 right-2 z-10 p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer"
                     aria-label={`Delete ${banner.title}`}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
 
                   <img
-                    className="w-full h-32 rounded-lg object-cover"
+                    className="w-full h-32 rounded-xl object-cover border border-zinc-100"
                     src={banner.image}
                     alt={banner.title}
                     loading="lazy"
                   />
 
                   <div className="flex flex-col gap-1">
-                    <div className="text-black text-sm font-semibold font-['Poppins'] line-clamp-2">
+                    <div className="text-zinc-800 text-sm font-bold font-['Poppins'] line-clamp-2">
                       {banner.title}
                     </div>
-                    <div className="text-zinc-600 text-xs font-normal font-['Poppins'] line-clamp-2">
+                    <div className="text-zinc-500 text-xs font-semibold font-['Poppins'] line-clamp-2 mt-0.5">
                       {banner.subtitle || '—'}
                     </div>
-                    <div className="text-zinc-500 text-xs font-mono font-['Poppins'] mt-1">
+                    <div className="text-zinc-400 font-mono text-[11px] font-bold bg-zinc-55/60 px-2 py-0.5 rounded-md border border-zinc-100/50 inline-block w-fit mt-1.5">
                       {countdown.days}d {countdown.hours}h {countdown.minutes}m {countdown.seconds}s
-                      {!banner.isActive && <span className="ml-2 text-red-500 font-semibold">Hidden</span>}
+                      {!banner.isActive && <span className="ml-2 text-rose-500 font-bold">Hidden</span>}
                     </div>
                   </div>
                 </div>
@@ -478,4 +478,3 @@ export default function AddPromoBannerForm({ onBack, onSave, onDelete }: AddProm
     </div>
   );
 }
-

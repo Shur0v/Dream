@@ -154,40 +154,40 @@ export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColor
       {/* Page Title */}
       <div className="w-full flex items-center justify-between">
         <div className="flex flex-col gap-1">
-          <h2 className="text-fuchsia-500 text-2xl md:text-3xl font-semibold font-['Poppins']">Color</h2>
-          <p className="text-zinc-400 text-sm md:text-base font-normal">Manage your color inventory</p>
+          <h2 className="text-zinc-800 text-2xl font-bold font-['Poppins']">Color</h2>
+          <p className="text-zinc-400 text-xs font-semibold font-['Poppins'] uppercase tracking-wider">Manage your color inventory</p>
         </div>
       </div>
 
       {/* Form Grid */}
-      <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-7">
+      <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left card - Color Name */}
-        <div className="w-full p-4 bg-white rounded-lg flex flex-col gap-6">
+        <div className="w-full p-6 bg-white rounded-2xl border border-zinc-150/80 shadow-sm flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <label className="text-neutral-800 text-base font-medium font-['Poppins']">Color Name</label>
-            <div className="w-full p-3 rounded-lg outline outline-1 outline-zinc-400 inline-flex items-center gap-2">
+            <label className="text-zinc-500 text-xs font-bold font-['Poppins'] uppercase tracking-wider">Color Name</label>
+            <div className="w-full bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-700 placeholder-zinc-450 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-500 transition-all font-['Poppins'] inline-flex items-center gap-2">
               <input
                 value={colorName}
                 onChange={(e) => setColorName(e.target.value)}
                 placeholder="Type color name here... (e.g., Red, Blue)"
-                className="w-full bg-transparent outline-none text-zinc-700 text-base font-['Poppins']"
+                className="w-full bg-transparent outline-none text-zinc-700 text-sm font-semibold font-['Poppins']"
               />
             </div>
           </div>
         </div>
 
         {/* Right card - Color Code */}
-        <div className="w-full p-4 bg-white rounded-lg flex flex-col gap-6">
+        <div className="w-full p-6 bg-white rounded-2xl border border-zinc-150/80 shadow-sm flex flex-col gap-6">
           <div className="flex flex-col gap-2">
-            <label className="text-neutral-800 text-base font-medium font-['Poppins']">Color Code</label>
-            <div className="w-full flex gap-3 items-center">
+            <label className="text-zinc-500 text-xs font-bold font-['Poppins'] uppercase tracking-wider">Color Code</label>
+            <div className="w-full flex gap-3 items-center font-['Poppins']">
               <input
                 type="color"
                 value={colorCode}
                 onChange={(e) => setColorCode(e.target.value)}
-                className="w-16 h-12 rounded border border-gray-300 cursor-pointer"
+                className="w-16 h-11 rounded-xl border border-zinc-200 cursor-pointer shadow-sm"
               />
-              <div className="flex-1 p-3 rounded-lg outline outline-1 outline-zinc-400 inline-flex items-center gap-2">
+              <div className="flex-1 bg-white border border-zinc-200 rounded-xl px-4 py-3 text-sm font-semibold text-zinc-750 placeholder-zinc-450 focus-within:ring-2 focus-within:ring-purple-500/20 focus-within:border-purple-500 transition-all inline-flex items-center gap-2">
                 <input
                   type="text"
                   value={colorCode}
@@ -200,12 +200,12 @@ export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColor
                     setColorCode(value);
                   }}
                   placeholder="#000000"
-                  className="w-full bg-transparent outline-none text-zinc-700 text-base font-['Poppins'] font-mono"
+                  className="w-full bg-transparent outline-none text-zinc-700 text-sm font-semibold font-mono font-['Poppins']"
                 />
               </div>
             </div>
             {colorCode && !isValidHex(colorCode) && (
-              <p className="text-red-500 text-sm font-['Poppins']">Please enter a valid hex color code (e.g., #FF0000)</p>
+              <p className="text-rose-500 text-xs font-semibold font-['Poppins'] mt-1">Please enter a valid hex color code (e.g., #FF0000)</p>
             )}
           </div>
         </div>
@@ -213,8 +213,8 @@ export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColor
 
       {/* Error Message */}
       {error && (
-        <div className="w-full p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-600 text-sm font-['Poppins']">{error}</p>
+        <div className="w-full p-4 bg-rose-50 border border-rose-100 rounded-xl">
+          <p className="text-rose-600 text-sm font-semibold font-['Poppins']">{error}</p>
         </div>
       )}
 
@@ -223,7 +223,7 @@ export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColor
         <button
           type="button"
           onClick={onCancel}
-          className="h-12 px-6 py-3 rounded outline outline-1 outline-red-500 text-red-500 font-medium"
+          className="h-11 px-5 py-2.5 bg-white border border-zinc-200 hover:bg-zinc-50 rounded-xl text-xs font-bold tracking-wider uppercase text-zinc-650 transition-all cursor-pointer flex items-center justify-center font-['Poppins']"
         >
           Cancel
         </button>
@@ -232,7 +232,7 @@ export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColor
           onClick={handleConfirm}
           disabled={!canConfirm || !isValidHex(colorCode) || saving}
           className={cn(
-            'h-12 px-6 py-3 rounded bg-fuchsia-500 text-white font-medium',
+            'h-11 px-6 py-2.5 bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-700 hover:to-fuchsia-700 text-white text-xs font-bold tracking-wider uppercase rounded-xl shadow-md shadow-purple-200/50 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center font-[\'Poppins\']',
             (!canConfirm || !isValidHex(colorCode) || saving) && 'opacity-60 cursor-not-allowed'
           )}
         >
@@ -242,17 +242,17 @@ export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColor
 
       {/* Existing Colors Section */}
       {loading ? (
-        <div className="w-full flex justify-center items-center py-12">
-          <p className="text-zinc-500 text-sm font-['Poppins']">Loading colors...</p>
+        <div className="w-full flex justify-center items-center py-12 bg-white rounded-2xl border border-zinc-150/70 shadow-sm">
+          <p className="text-zinc-400 text-sm font-semibold font-['Poppins'] animate-pulse">Loading colors...</p>
         </div>
       ) : colors.length > 0 ? (
         <div className="w-full flex flex-col gap-4">
-          <h3 className="text-slate-950 text-xl md:text-2xl font-medium font-['Poppins']">Existing Colors</h3>
+          <h3 className="text-zinc-800 text-lg font-bold font-['Poppins']">Existing Colors</h3>
           <div className="w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 md:gap-6">
             {colors.map((color) => (
               <div
                 key={color.id}
-                className="relative group p-1.5 md:p-3 bg-fuchsia-400/10 rounded-xl flex flex-col justify-start items-center gap-1.5 md:gap-6 hover:shadow-[5px_11px_22.1px_0px_rgba(0,0,0,0.15)] transition-all duration-300"
+                className="relative group p-4 bg-white rounded-2xl border border-zinc-150 shadow-sm flex flex-col justify-start items-center gap-3 hover:shadow-md hover:border-zinc-200/80 transition-all duration-300"
               >
                 {/* Delete Button */}
                 <button
@@ -260,36 +260,36 @@ export default function AddColorForm({ onCancel, onConfirm, onDelete }: AddColor
                   onClick={() => handleDeleteClick(color.id, color.name)}
                   disabled={deleting}
                   className={cn(
-                    "absolute top-2 right-2 z-10 p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200",
+                    "absolute top-2 right-2 z-10 p-1.5 bg-red-500 hover:bg-red-600 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer",
                     deleting && "opacity-50 cursor-not-allowed"
                   )}
                   aria-label={`Delete ${color.name} color`}
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
 
                 {/* Color Preview */}
                 <div
-                  className="w-full h-20 md:h-40 rounded-lg border-2 border-gray-300"
+                  className="w-full h-20 rounded-xl border border-zinc-150 shadow-inner"
                   style={{ backgroundColor: color.hexCode }}
                 />
 
                 {/* Color Name */}
-                <div className="w-full text-center text-black text-sm md:text-lg font-medium font-['Poppins'] leading-tight md:leading-normal">
+                <div className="w-full text-center text-zinc-800 text-sm font-bold font-['Poppins'] truncate">
                   {color.name}
                 </div>
 
                 {/* Color Code */}
-                <div className="w-full text-center text-zinc-600 text-xs md:text-sm font-mono font-['Poppins']">
-                  {color.hexCode}
+                <div className="text-zinc-400 font-mono text-[11px] font-bold bg-zinc-55/60 px-2 py-0.5 rounded-md border border-zinc-100/50 inline-block">
+                  <code>{color.hexCode}</code>
                 </div>
               </div>
             ))}
           </div>
         </div>
       ) : (
-        <div className="w-full flex justify-center items-center py-12">
-          <p className="text-zinc-500 text-sm font-['Poppins']">No colors found. Add your first color above.</p>
+        <div className="w-full flex justify-center items-center py-12 bg-white rounded-2xl border border-zinc-150/70 shadow-sm">
+          <p className="text-zinc-450 text-sm font-semibold font-['Poppins']">No colors found. Add your first color above.</p>
         </div>
       )}
 
