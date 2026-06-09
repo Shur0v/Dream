@@ -69,7 +69,7 @@ export default function SellerAdminLoginPage() {
               Seller Admin Access
             </div>
             <div className="self-stretch text-center justify-start text-neutral-800 text-base font-medium leading-tight">
-              Sign in to manage landing sections
+              Sign in to manage landing sections. Default ID: admin, password: admin
             </div>
           </div>
 
@@ -84,7 +84,7 @@ export default function SellerAdminLoginPage() {
                   name="id"
                   value={formData.id}
                   onChange={handleChange}
-                  placeholder="Enter your admin ID"
+                  placeholder="admin"
                   className="self-stretch h-11 px-5 py-3.5 rounded-md outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-start items-center gap-2.5 text-zinc-500 text-sm font-normal leading-none"
                   required
                 />
@@ -99,7 +99,7 @@ export default function SellerAdminLoginPage() {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  placeholder="Enter your password"
+                  placeholder="admin"
                   className="self-stretch h-11 px-5 py-3.5 rounded-md outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-start items-center gap-2.5 text-zinc-500 text-sm font-normal leading-none"
                   required
                 />

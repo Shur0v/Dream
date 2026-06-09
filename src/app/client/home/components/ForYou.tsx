@@ -24,7 +24,8 @@ interface ForYouProps {
  */
 export default function ForYou({ currentProduct }: ForYouProps) {
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
-  const homeCacheKey = '/api/products?limit=50&inStock=true';
+  const homeCacheKey = '/api/for-you-products?limit=4';
+  const fallbackHomeCacheKey = '/api/products?limit=50&inStock=true';
   const initialCached = !currentProduct ? peekCachedResponse(homeCacheKey) : null;
   const initialProducts: Product[] = !currentProduct
     ? ((initialCached?.data || []).filter((p: Product) => p.isActive).slice(0, 4))
@@ -117,7 +118,28 @@ export default function ForYou({ currentProduct }: ForYouProps) {
           }
         } else {
           // On other pages: Fetch 4 different tech products
-          const cacheKey = homeCacheKey;
+          const selectedCached = await getCachedResponse(homeCacheKey);
+          if (selectedCached && active) {
+            const selectedProducts = (selectedCached.data || []).filter((p: Product) => p.isActive).slice(0, 4);
+            if (selectedProducts.length > 0) {
+              setProducts(selectedProducts);
+              setLoading(false);
+              fetchedProducts = selectedProducts;
+            }
+          } else if (active && initialProducts.length === 0) {
+            setLoading(true);
+          }
+
+          const selectedResponse = await fetchWithCache(homeCacheKey, {}, 60 * 60 * 1000);
+          const selectedResult = await selectedResponse.json();
+          const selectedProducts = (selectedResult.data || []).filter((p: Product) => p.isActive).slice(0, 4);
+          if (active && selectedResult.success && selectedProducts.length > 0) {
+            setProducts(selectedProducts);
+            fetchedProducts = selectedProducts;
+            return;
+          }
+
+          const cacheKey = fallbackHomeCacheKey;
           
           // Check cache first
           const cachedData = await getCachedResponse(cacheKey);

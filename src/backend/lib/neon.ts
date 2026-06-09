@@ -89,6 +89,13 @@ const createStatements = [
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
+  `CREATE TABLE IF NOT EXISTS for_you_products (
+    id TEXT PRIMARY KEY,
+    data JSONB NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
   `CREATE TABLE IF NOT EXISTS hero_banners (
     id TEXT PRIMARY KEY,
     data JSONB NOT NULL,
@@ -167,6 +174,7 @@ const createStatements = [
   `CREATE INDEX IF NOT EXISTS idx_colors_active ON colors(is_active)`,
   `CREATE INDEX IF NOT EXISTS idx_featured_active ON featured_products(is_active)`,
   `CREATE INDEX IF NOT EXISTS idx_best_selling_active ON best_selling_products(is_active)`,
+  `CREATE INDEX IF NOT EXISTS idx_for_you_active ON for_you_products(is_active)`,
   `CREATE INDEX IF NOT EXISTS idx_users_email ON users((data->>'email'))`,
   `CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON product_reviews((data->>'productId'))`,
   `CREATE INDEX IF NOT EXISTS idx_resellers_user_id ON resellers((data->>'userId'))`,

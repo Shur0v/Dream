@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Edit, Trash2, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Product } from '@/types';
+import { HomepageProductSection, Product } from '@/types';
 import DeleteConfirmationModal from '../ui/DeleteConfirmationModal';
 import EditProductModal from './EditProductModal';
 import { getApiUrl } from '@/lib/apiConfig';
@@ -31,6 +31,7 @@ type DisplayProduct = {
   stock?: number;
   resellerCommissionType?: 'percentage' | 'fixed';
   commissionValue?: number;
+  homepagePlacement?: HomepageProductSection;
 };
 
 export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
@@ -353,6 +354,25 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
       const result = await response.json();
       
       if (result.success && result.data) {
+        const homepagePlacement = (data as any).homepagePlacement as HomepageProductSection | undefined;
+        if (homepagePlacement) {
+          const placementResponse = await fetch('/api/homepage-products/placement', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              productId: editingProduct.id,
+              section: homepagePlacement,
+            }),
+          });
+
+          const placementResult = await placementResponse.json();
+          if (!placementResponse.ok || !placementResult.success) {
+            throw new Error(placementResult.error || 'Product updated, but homepage placement failed');
+          }
+        }
+
         console.log('[AllProductsGrid] Product updated successfully:', result.data);
         // Invalidate cache
         localStorage.removeItem('products_cache');

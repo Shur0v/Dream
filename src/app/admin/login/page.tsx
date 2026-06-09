@@ -7,18 +7,26 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { adminLogin } from '@/lib/adminAuth';
 
 export default function AdminLoginPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
-    email: '',
+    id: '',
     password: '',
     rememberMe: false,
   });
+  const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Admin login:', formData);
-    window.location.href = '/admin/dashboard';
+    setError('');
+    if (adminLogin(formData.id, formData.password)) {
+      router.push('/admin/dashboard');
+      return;
+    }
+    setError('Invalid ID or password. Use admin / admin unless changed.');
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,24 +60,24 @@ export default function AdminLoginPage() {
               Admin Access
             </div>
             <div className="layer-7 self-stretch text-center justify-start text-neutral-800 text-base font-medium font-['Lato'] leading-tight" data-layer="7">
-              Sign in to access the admin dashboard
+              Sign in to access the admin dashboard. Default ID: admin, password: admin
             </div>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="layer-8 self-stretch flex flex-col justify-start items-start gap-10" data-layer="8">
             <div className="layer-9 self-stretch flex flex-col justify-start items-start gap-6" data-layer="9">
-              {/* Email */}
+              {/* Admin ID */}
               <div className="layer-10 self-stretch flex flex-col justify-start items-start gap-2" data-layer="10">
                 <div className="layer-11 self-stretch justify-start text-neutral-600 text-base font-medium font-['Poppins'] leading-none" data-layer="11">
-                  Email Address
+                  Admin ID
                 </div>
                 <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
+                  type="text"
+                  name="id"
+                  value={formData.id}
                   onChange={handleChange}
-                  placeholder="admin@dreamshop.com"
+                  placeholder="admin"
                   className="layer-12 self-stretch h-11 px-5 py-3.5 rounded-md outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-start items-center gap-2.5 text-zinc-500 text-sm font-normal font-['Poppins'] leading-none"
                   required
                   data-layer="12"
@@ -86,7 +94,7 @@ export default function AdminLoginPage() {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  placeholder="Enter your password"
+                  placeholder="admin"
                   className="layer-15 self-stretch h-11 px-5 py-3.5 rounded-md outline-1 outline-offset-[-1px] outline-gray-200 inline-flex justify-start items-center gap-2.5 text-zinc-500 text-sm font-normal font-['Poppins'] leading-none"
                   required
                   data-layer="15"
@@ -115,6 +123,12 @@ export default function AdminLoginPage() {
                 </div>
               </div>
             </div>
+
+            {error && (
+              <div className="self-stretch rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+                {error}
+              </div>
+            )}
 
             {/* Submit */}
             <button type="submit" className="layer-22 w-[792px] h-14 px-5 py-3.5 bg-fuchsia-500 rounded-md inline-flex justify-center items-center gap-2.5" data-layer="22">

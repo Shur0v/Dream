@@ -13,6 +13,7 @@ export type CommissionType = 'percentage' | 'fixed';
 export type CommissionStatus = 'pending' | 'approved' | 'paid' | 'cancelled' | 'rejected';
 export type PayoutStatus = 'requested' | 'approved' | 'paid' | 'rejected';
 export type PayoutMethod = 'bkash' | 'bank' | 'nagad' | 'rocket';
+export type HomepageProductSection = 'none' | 'featured' | 'trendy' | 'for-you';
 
 // User Interface
 export interface User {
@@ -148,6 +149,36 @@ export interface BestSellingProduct {
   createdAt: string;
   updatedAt: string;
   bestSellingAt: string; // When it was marked as best selling
+}
+
+// For You Product Interface
+export interface ForYouProduct {
+  id: string;
+  productId: string; // Reference to original product
+  name: string;
+  description: string;
+  price: number;
+  originalPrice?: number;
+  discount?: number;
+  images: string[];
+  category: string;
+  categoryId?: string;
+  subcategory?: string;
+  brand: string;
+  sku: string;
+  stock: number;
+  resellerCommissionType?: CommissionType;
+  commissionValue?: number;
+  colors?: string[];
+  colorOptions?: Color[];
+  size?: string[];
+  isActive: boolean;
+  tags: string[];
+  specifications?: Record<string, any>;
+  sellerId: string;
+  createdAt: string;
+  updatedAt: string;
+  forYouAt: string; // When it was marked for the For You section
 }
 
 // Hero Banner Interface

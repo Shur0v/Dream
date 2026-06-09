@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import SimpleSelect from '../ui/SimpleSelect';
 import SearchableMultiSelect from '../ui/SearchableMultiSelect';
 import ImageUploadHint from '../ui/ImageUploadHint';
-import { Color, Category } from '@/types';
+import { Color, Category, HomepageProductSection } from '@/types';
 import { fetchCategories as loadCategoriesFromApi } from '@/lib/categories';
 import { getApiUrl } from '@/lib/apiConfig';
 import { uploadImageClient } from '@/lib/uploadImageClient';
@@ -35,6 +35,7 @@ const productSchema = z.object({
   sellerId: z.string().optional(),
   seller: z.string().optional(),
   images: z.array(z.string()),
+  homepagePlacement: z.enum(['none', 'featured', 'trendy', 'for-you']).default('none'),
 });
 
 type ProductFormInput = z.input<typeof productSchema>;
@@ -51,6 +52,8 @@ type Distribution = 'Best selling' | 'Featured' | 'New arrival';
 const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL'];
 const distributionOptions: Distribution[] = ['Best selling', 'Featured', 'New arrival'];
 const currencyOptions = ['৳', '৳', '€', '£', '¥'];
+
+const homepagePlacementOptions: HomepageProductSection[] = ['none', 'featured', 'trendy', 'for-you'];
 
 export default function AddProductForm({ onBack, onSave, isSaving = false }: AddProductFormProps) {
   const [images, setImages] = useState<string[]>(Array(12).fill(''));
@@ -99,6 +102,7 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
       sellerId: 'seller-1',
       seller: '',
       images: [],
+      homepagePlacement: 'none',
     },
     mode: 'onChange',
   });
@@ -491,6 +495,27 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
                     {errors.stock && (
                       <p className="text-red-500 text-sm">{errors.stock.message}</p>
                     )}
+                  </div>
+
+                  <div className="w-full flex flex-col gap-2.5">
+                    <label className="self-stretch text-neutral-600 text-base font-medium font-['Poppins'] leading-6">
+                      Homepage Placement
+                    </label>
+                    <Controller
+                      name="homepagePlacement"
+                      control={control}
+                      render={({ field }) => (
+                        <SimpleSelect
+                          value={(field.value || 'none') as HomepageProductSection}
+                          onChange={(value) => field.onChange(value)}
+                          options={homepagePlacementOptions}
+                          placeholder="Select homepage section"
+                        />
+                      )}
+                    />
+                    <p className="text-zinc-400 text-sm">
+                      Trendy displays in Best Selling. None keeps it off selected homepage lists.
+                    </p>
                   </div>
                 </div>
 

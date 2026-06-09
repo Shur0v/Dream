@@ -3,16 +3,17 @@
  * Handles seller admin authentication with localStorage
  */
 
-const ADMIN_CREDENTIALS = {
-  id: 'adminnn',
-  password: '#24fgr_0*',
-};
+const ADMIN_CREDENTIALS = [
+  { id: 'admin', password: 'admin' },
+  { id: 'adminnn', password: '#24fgr_0*' },
+];
 
 const AUTH_STORAGE_KEY = 'seller_admin_auth';
 
 export interface AdminAuthData {
   isAuthenticated: boolean;
   loginTime: string;
+  id?: string;
 }
 
 /**
@@ -36,10 +37,12 @@ export function isAdminAuthenticated(): boolean {
  * Login admin with credentials
  */
 export function adminLogin(id: string, password: string): boolean {
-  if (id === ADMIN_CREDENTIALS.id && password === ADMIN_CREDENTIALS.password) {
+  const isValid = ADMIN_CREDENTIALS.some((credential) => credential.id === id && credential.password === password);
+  if (isValid) {
     const authData: AdminAuthData = {
       isAuthenticated: true,
       loginTime: new Date().toISOString(),
+      id,
     };
     
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authData));

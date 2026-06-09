@@ -102,6 +102,25 @@ export default function AddProductPage() {
       const result = await response.json();
 
       if (result.success) {
+        const productId = result.data?.id;
+        if (productId && data.homepagePlacement) {
+          const placementResponse = await fetch('/api/homepage-products/placement', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              productId,
+              section: data.homepagePlacement,
+            }),
+          });
+
+          const placementResult = await placementResponse.json();
+          if (!placementResponse.ok || !placementResult.success) {
+            throw new Error(placementResult.error || 'Product saved, but homepage placement failed');
+          }
+        }
+
         // Invalidate admin cache so stats refresh
         try {
           const { invalidateAdminOrdersCache } = await import('@/lib/indexeddb/adminCache');

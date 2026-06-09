@@ -4,7 +4,9 @@ import {
   Color,
   FestivalBanner,
   FeaturedProduct,
+  ForYouProduct,
   HeroBanner,
+  HomepageProductSection,
   Order,
   Product,
   ProductReview,
@@ -31,6 +33,7 @@ type EntityTable =
   | 'users'
   | 'featured_products'
   | 'best_selling_products'
+  | 'for_you_products'
   | 'hero_banners'
   | 'promo_banners'
   | 'festival_banners'
@@ -55,6 +58,11 @@ export type SiteThemeSettings = {
 
 export type MonthlyTargetSettings = {
   amount: number;
+  updatedAt: string;
+};
+
+export type ResellerAnnouncementSettings = {
+  message: string;
   updatedAt: string;
 };
 
@@ -250,6 +258,7 @@ export async function deleteProduct(id: string): Promise<Product | null> {
   if (!deleted) return null;
   await sql.query(`DELETE FROM featured_products WHERE (data->>'productId') = $1 OR id = $1`, [id]);
   await sql.query(`DELETE FROM best_selling_products WHERE (data->>'productId') = $1 OR id = $1`, [id]);
+  await sql.query(`DELETE FROM for_you_products WHERE (data->>'productId') = $1 OR id = $1`, [id]);
   invalidateProductsCache();
   return deleted;
 }
@@ -685,9 +694,32 @@ export async function saveUser(user: Partial<User> & { email: string }): Promise
   return upsertRow('users', { ...(merged as any), ...extraFields, isActive: true });
 }
 
+const mergeSelectedProductSnapshot = <
+  T extends { id: string; productId: string; isActive: boolean; createdAt: string; updatedAt: string },
+  K extends keyof T
+>(
+  selected: T,
+  product: Product | undefined,
+  dateKey: K
+): T => {
+  if (!product) return selected;
+  return {
+    ...(product as any),
+    id: selected.id,
+    productId: product.id,
+    [dateKey]: selected[dateKey],
+    isActive: selected.isActive !== false && product.isActive !== false,
+    createdAt: selected.createdAt || product.createdAt,
+    updatedAt: product.updatedAt || selected.updatedAt,
+  } as T;
+};
+
 export async function getFeaturedProducts(): Promise<FeaturedProduct[]> {
   const rows = await getRows<FeaturedProduct>('featured_products');
-  return rowsToEntities<FeaturedProduct>(rows);
+  const selected = rowsToEntities<FeaturedProduct>(rows);
+  return Promise.all(
+    selected.map(async (item) => mergeSelectedProductSnapshot(item, await getProductById(item.productId), 'featuredAt'))
+  );
 }
 
 export async function getFeaturedProductById(id: string): Promise<FeaturedProduct | undefined> {
@@ -743,7 +775,10 @@ export async function updateFeaturedProduct(productId: string): Promise<Featured
 
 export async function getBestSellingProducts(): Promise<BestSellingProduct[]> {
   const rows = await getRows<BestSellingProduct>('best_selling_products');
-  return rowsToEntities<BestSellingProduct>(rows);
+  const selected = rowsToEntities<BestSellingProduct>(rows);
+  return Promise.all(
+    selected.map(async (item) => mergeSelectedProductSnapshot(item, await getProductById(item.productId), 'bestSellingAt'))
+  );
 }
 
 export async function getBestSellingProductById(id: string): Promise<BestSellingProduct | undefined> {
@@ -795,6 +830,102 @@ export async function updateBestSellingProduct(productId: string): Promise<BestS
     updatedAt: nowIso(),
   };
   return upsertRow('best_selling_products', updated as any);
+}
+
+export async function getForYouProducts(): Promise<ForYouProduct[]> {
+  const rows = await getRows<ForYouProduct>('for_you_products');
+  const selected = rowsToEntities<ForYouProduct>(rows);
+  return Promise.all(
+    selected.map(async (item) => mergeSelectedProductSnapshot(item, await getProductById(item.productId), 'forYouAt'))
+  );
+}
+
+export async function getForYouProductById(id: string): Promise<ForYouProduct | undefined> {
+  const row = await getRowById<ForYouProduct>('for_you_products', id);
+  return row ? ({ ...(row.data as any), id: row.id } as ForYouProduct) : undefined;
+}
+
+export async function getForYouProductByProductId(productId: string): Promise<ForYouProduct | undefined> {
+  const rows = await getForYouProducts();
+  return rows.find((item) => item.productId === productId && item.isActive !== false);
+}
+
+export async function addForYouProduct(productId: string): Promise<ForYouProduct> {
+  const existing = await getForYouProductByProductId(productId);
+  if (existing) return existing;
+  const product = await getProductById(productId);
+  if (!product) throw new Error(`Product with ID ${productId} not found`);
+  const forYou: ForYouProduct = withTimestamps({
+    ...(product as any),
+    id: makeId('foryou'),
+    productId: product.id,
+    forYouAt: nowIso(),
+    isActive: true,
+  });
+  return upsertRow('for_you_products', forYou as any);
+}
+
+export async function removeForYouProduct(productId: string): Promise<ForYouProduct | null> {
+  const item = await getForYouProductByProductId(productId);
+  if (!item) return null;
+  return softDeleteById<ForYouProduct>('for_you_products', item.id);
+}
+
+export async function removeForYouProductById(id: string): Promise<ForYouProduct | null> {
+  return softDeleteById<ForYouProduct>('for_you_products', id);
+}
+
+export async function updateForYouProduct(productId: string): Promise<ForYouProduct | null> {
+  const existing = await getForYouProductByProductId(productId);
+  const product = await getProductById(productId);
+  if (!existing || !product) return null;
+  const updated: ForYouProduct = {
+    ...(product as any),
+    id: existing.id,
+    productId: product.id,
+    forYouAt: existing.forYouAt,
+    isActive: true,
+    createdAt: existing.createdAt,
+    updatedAt: nowIso(),
+  };
+  return upsertRow('for_you_products', updated as any);
+}
+
+export async function getHomepageProductSection(productId: string): Promise<HomepageProductSection> {
+  const [featured, bestSelling, forYou] = await Promise.all([
+    getFeaturedProductByProductId(productId),
+    getBestSellingProductByProductId(productId),
+    getForYouProductByProductId(productId),
+  ]);
+
+  if (featured) return 'featured';
+  if (bestSelling) return 'trendy';
+  if (forYou) return 'for-you';
+  return 'none';
+}
+
+export async function setHomepageProductSection(
+  productId: string,
+  section: HomepageProductSection
+): Promise<HomepageProductSection> {
+  const product = await getProductById(productId);
+  if (!product) throw new Error(`Product with ID ${productId} not found`);
+
+  await Promise.all([
+    removeFeaturedProduct(productId),
+    removeBestSellingProduct(productId),
+    removeForYouProduct(productId),
+  ]);
+
+  if (section === 'featured') {
+    await addFeaturedProduct(productId);
+  } else if (section === 'trendy') {
+    await addBestSellingProduct(productId);
+  } else if (section === 'for-you') {
+    await addForYouProduct(productId);
+  }
+
+  return section;
 }
 
 export async function getHeroBanner(): Promise<HeroBanner | null> {
@@ -1045,6 +1176,36 @@ export async function resetMonthlyTargetSettings(): Promise<MonthlyTargetSetting
   );
   return {
     amount: 0,
+    updatedAt: nowIso(),
+  };
+}
+
+export async function getResellerAnnouncementSettings(): Promise<ResellerAnnouncementSettings> {
+  await ensureDatabaseReady();
+  const rows = await sql.query(`SELECT data, updated_at FROM site_settings WHERE key = 'reseller_announcement' LIMIT 1`);
+  const row = rows[0] as { data?: { message?: string }; updated_at?: string } | undefined;
+
+  return {
+    message: row?.data?.message || 'Share your referral link, track every order, and request payouts from this dashboard.',
+    updatedAt: row?.updated_at || nowIso(),
+  };
+}
+
+export async function saveResellerAnnouncementSettings(message: string): Promise<ResellerAnnouncementSettings> {
+  await ensureDatabaseReady();
+  const normalized = String(message || '').trim().slice(0, 240);
+
+  await sql.query(
+    `INSERT INTO site_settings (key, data, updated_at)
+     VALUES ('reseller_announcement', $1::jsonb, NOW())
+     ON CONFLICT (key) DO UPDATE SET
+       data = EXCLUDED.data,
+       updated_at = NOW()`,
+    [JSON.stringify({ message: normalized })]
+  );
+
+  return {
+    message: normalized,
     updatedAt: nowIso(),
   };
 }

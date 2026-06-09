@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import SimpleSelect from '../ui/SimpleSelect';
 import SearchableMultiSelect from '../ui/SearchableMultiSelect';
 import ImageUploadHint from '../ui/ImageUploadHint';
-import { Color, Category } from '@/types';
+import { Color, Category, HomepageProductSection } from '@/types';
 import { getApiUrl } from '@/lib/apiConfig';
 import { fetchCategories as loadCategoriesFromApi } from '@/lib/categories';
 import { uploadImageClient } from '@/lib/uploadImageClient';
@@ -34,6 +34,7 @@ interface EditableProduct {
   discount?: number;
   subcategory?: string;
   images?: string[];
+  homepagePlacement?: HomepageProductSection;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -48,6 +49,8 @@ interface EditProductModalProps {
 
 const sizeOptions = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '2XL'];
 const currencyOptions = ['৳', '৳', '€', '£', '¥'];
+
+const homepagePlacementOptions: HomepageProductSection[] = ['none', 'featured', 'trendy', 'for-you'];
 
 export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpdate, product }: EditProductModalProps) {
   const [form, setForm] = useState<Partial<EditableProduct>>({
@@ -71,6 +74,7 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
     specifications: {},
     discount: undefined,
     subcategory: '',
+    homepagePlacement: 'none',
   });
 
   const [specKey, setSpecKey] = useState('');
@@ -181,12 +185,27 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
         specifications: product.specifications || {},
         discount: product.discount,
         subcategory: product.subcategory || '',
+        homepagePlacement: product.homepagePlacement || 'none',
       });
       // Load all images from product (check for images array or single image)
       const productImages = (product as any).images && Array.isArray((product as any).images) 
         ? (product as any).images 
         : (product.image ? [product.image] : []);
       setImages(productImages);
+
+      fetch(`/api/homepage-products/placement?productId=${encodeURIComponent(product.id)}`)
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.success && result.data?.section) {
+            setForm((prev) => ({
+              ...prev,
+              homepagePlacement: result.data.section,
+            }));
+          }
+        })
+        .catch((error) => {
+          console.error('Error loading homepage placement:', error);
+        });
     }
   }, [isOpen, product]);
 
@@ -350,6 +369,7 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
       isActive: form.isActive !== undefined ? form.isActive : (product.isActive ?? true),
       image: images[0] || form.image || '',
       images: images, // Include all images
+      homepagePlacement: form.homepagePlacement || 'none',
       updatedAt: new Date().toISOString(),
     };
     console.log('[EditProductModal] Saving product data:', productData);
@@ -706,6 +726,19 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
                     <span className="text-zinc-900 text-base font-normal font-['Poppins']">Available in stock</span>
                   </label>
                 </div>
+              </div>
+
+              <div className="w-full flex flex-col gap-2.5">
+                <label className="self-stretch text-neutral-600 text-base font-medium font-['Poppins'] leading-6">
+                  Homepage Placement
+                </label>
+                <SimpleSelect
+                  value={form.homepagePlacement || 'none'}
+                  onChange={(value) => handleChange('homepagePlacement', value as HomepageProductSection)}
+                  options={homepagePlacementOptions}
+                  placeholder="Select homepage section"
+                />
+                <p className="text-zinc-400 text-sm">Trendy displays in Best Selling.</p>
               </div>
             </div>
           </div>
