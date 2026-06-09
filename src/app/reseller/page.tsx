@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Ca
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Package, Mail, Lock, User, Phone, MapPin } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 /**
  * Reseller Registration page component
@@ -28,10 +29,29 @@ export default function ResellerPage() {
     confirmPassword: '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Reseller registration:', formData);
-    // TODO: Implement reseller registration logic
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    const response = await fetch('/api/reseller', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: formData.ownerName,
+        phone: formData.phone,
+        email: formData.email,
+        password: formData.password,
+        shopName: formData.businessName,
+      }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      toast.error(result.error || 'Reseller signup failed');
+      return;
+    }
+    toast.success('Signup submitted. Admin approval required.');
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

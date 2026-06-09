@@ -172,6 +172,8 @@ export async function POST(request: NextRequest) {
       brand,
       sku,
       stock,
+      resellerCommissionType,
+      commissionValue,
       colors,
       size,
       tags,
@@ -242,6 +244,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const commissionType = resellerCommissionType === 'fixed' ? 'fixed' : 'percentage';
+    const commissionValueNum = commissionValue === undefined || commissionValue === null || commissionValue === ''
+      ? 10
+      : Number(commissionValue);
+    if (!Number.isFinite(commissionValueNum) || commissionValueNum < 0) {
+      return NextResponse.json(
+        { success: false, error: 'Commission value must be a valid non-negative number' },
+        { status: 400 }
+      );
+    }
+
     const newProduct: Product = {
       id: `product-${Date.now()}`,
       name: String(name).trim(),
@@ -258,6 +271,8 @@ export async function POST(request: NextRequest) {
       brand: String(brand).trim(),
       sku: String(sku).trim(),
       stock: stockNum,
+      resellerCommissionType: commissionType,
+      commissionValue: commissionValueNum,
       colors: colors && Array.isArray(colors) && colors.length > 0 ? colors.filter((c: string) => c && c.trim() !== '') : [],
       size: size && Array.isArray(size) ? size.filter((s: string) => s) : undefined,
       isActive: true,

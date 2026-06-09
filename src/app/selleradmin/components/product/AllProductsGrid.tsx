@@ -29,6 +29,8 @@ type DisplayProduct = {
   updatedAt?: string;
   sku?: string;
   stock?: number;
+  resellerCommissionType?: 'percentage' | 'fixed';
+  commissionValue?: number;
 };
 
 export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
@@ -64,6 +66,8 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
       updatedAt: p.updatedAt,
       sku: p.sku,
       stock: p.stock,
+      resellerCommissionType: p.resellerCommissionType,
+      commissionValue: p.commissionValue,
     }));
   }, [rawProducts]);
 
@@ -318,6 +322,8 @@ export default function AllProductsGrid({ onDelete }: AllProductsGridProps) {
         brand: (data as any).brand || editingProduct.brand || '',
         sku: (data as any).sku || editingProduct.sku || '',
         stock: data.stock !== undefined ? data.stock : editingProduct.stock,
+        resellerCommissionType: (data as any).resellerCommissionType || editingProduct.resellerCommissionType || 'percentage',
+        commissionValue: (data as any).commissionValue !== undefined ? (data as any).commissionValue : editingProduct.commissionValue ?? 10,
         colors: (data as any).colors && Array.isArray((data as any).colors) ? (data as any).colors : [],
         size: (data as any).sizes && Array.isArray((data as any).sizes) ? (data as any).sizes : [], // Backend expects 'size' not 'sizes'
         tags: (data as any).tags && Array.isArray((data as any).tags) ? (data as any).tags : [],

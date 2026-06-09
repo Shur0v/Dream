@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { CheckoutModal } from '@/components/cart/CheckoutModal';
 import { SuccessModal } from '@/components/ui/SuccessModal';
 import { addToCart, addToWishlist, isInWishlist, removeFromWishlist, CartItem, WishlistItem } from '@/lib/userStorage';
+import { getStoredReferralCode } from '@/components/referral/ReferralTracker';
 
 interface ProductInfoProps {
   product: {
@@ -121,6 +122,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
       shippingAddress: input.shippingAddress,
       billingAddress: input.shippingAddress,
       paymentMethod: 'Cash on Delivery',
+      referralCode: getStoredReferralCode() || undefined,
       notes: JSON.stringify({
         customerName: input.customerName,
         phoneNumber: input.phoneNumber,
@@ -129,6 +131,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ product, images = [], classNa
         upazila: input.upazila,
         thana: input.thana,
         postOffice: input.postOffice,
+        referralCode: getStoredReferralCode() || undefined,
       }),
     };
 

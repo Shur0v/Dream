@@ -26,6 +26,8 @@ const productSchema = z.object({
   brand: z.string().min(1, 'Brand is required'),
   sku: z.string().min(1, 'SKU is required'),
   stock: z.number().min(0, 'Stock cannot be negative'),
+  resellerCommissionType: z.enum(['percentage', 'fixed']).default('percentage'),
+  commissionValue: z.number().min(0, 'Commission cannot be negative').default(10),
   sizes: z.array(z.string()),
   colors: z.array(z.string()),
   tags: z.array(z.string()),
@@ -88,6 +90,8 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
       brand: '',
       sku: '',
       stock: 0,
+      resellerCommissionType: 'percentage',
+      commissionValue: 10,
       sizes: [],
       colors: [],
       tags: [],
@@ -486,6 +490,46 @@ export default function AddProductForm({ onBack, onSave, isSaving = false }: Add
                     </div>
                     {errors.stock && (
                       <p className="text-red-500 text-sm">{errors.stock.message}</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="w-full flex flex-col gap-2.5">
+                    <label className="self-stretch text-neutral-600 text-base font-medium font-['Poppins'] leading-6">
+                      Reseller Commission Type
+                    </label>
+                    <Controller
+                      name="resellerCommissionType"
+                      control={control}
+                      render={({ field }) => (
+                        <SimpleSelect
+                          value={field.value || 'percentage'}
+                          onChange={field.onChange}
+                          options={['percentage', 'fixed']}
+                          placeholder="Select commission type"
+                        />
+                      )}
+                    />
+                  </div>
+
+                  <div className="w-full flex flex-col gap-2.5">
+                    <label className="self-stretch text-neutral-600 text-base font-medium font-['Poppins'] leading-6">
+                      Commission Value
+                    </label>
+                    <div className="w-full h-14 px-5 py-3.5 rounded-md outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex items-center gap-2.5">
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        {...register('commissionValue', { valueAsNumber: true })}
+                        placeholder="10"
+                        className="w-full bg-transparent outline-none text-zinc-900 text-base font-normal font-['Poppins']"
+                      />
+                    </div>
+                    <p className="text-zinc-400 text-sm">Percentage uses %, fixed uses BDT per quantity.</p>
+                    {errors.commissionValue && (
+                      <p className="text-red-500 text-sm">{errors.commissionValue.message}</p>
                     )}
                   </div>
                 </div>

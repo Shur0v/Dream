@@ -12,6 +12,7 @@ import { CheckoutModal } from './CheckoutModal';
 import { SuccessModal } from '@/components/ui/SuccessModal';
 import { getCartItems, saveCartItems, removeFromCart, updateCartQuantity, CartItem as StorageCartItem, getUserEmail, syncCartFromApi } from '@/lib/userStorage';
 import { getApiUrl } from '@/lib/apiConfig';
+import { getStoredReferralCode } from '@/components/referral/ReferralTracker';
 
 // Use CartItem from userStorage
 type CartItem = StorageCartItem;
@@ -186,6 +187,7 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
         shippingAddress: shippingAddress,
         billingAddress: shippingAddress, // Use same address for billing
         paymentMethod: 'Cash on Delivery',
+        referralCode: getStoredReferralCode() || undefined,
         notes: JSON.stringify({
           customerName: formData.name,
           phoneNumber: formData.phoneNumber,
@@ -194,6 +196,7 @@ export const CartDropdown: React.FC<CartDropdownProps> = ({
           upazila: formData.upazila,
           thana: formData.thana,
           postOffice: formData.postOffice,
+          referralCode: getStoredReferralCode() || undefined,
         }),
       };
 

@@ -8,6 +8,11 @@
 
 // User Role Types
 export type UserRole = 'client' | 'seller' | 'reseller' | 'super-admin';
+export type ResellerStatus = 'pending' | 'active' | 'banned';
+export type CommissionType = 'percentage' | 'fixed';
+export type CommissionStatus = 'pending' | 'approved' | 'paid' | 'cancelled' | 'rejected';
+export type PayoutStatus = 'requested' | 'approved' | 'paid' | 'rejected';
+export type PayoutMethod = 'bkash' | 'bank' | 'nagad' | 'rocket';
 
 // User Interface
 export interface User {
@@ -71,6 +76,8 @@ export interface Product {
   brand: string;
   sku: string;
   stock: number;
+  resellerCommissionType?: CommissionType;
+  commissionValue?: number;
   colors?: string[]; // Array of color IDs
   colorOptions?: Color[]; // Full color objects
   size?: string[];
@@ -99,6 +106,8 @@ export interface FeaturedProduct {
   brand: string;
   sku: string;
   stock: number;
+  resellerCommissionType?: CommissionType;
+  commissionValue?: number;
   colors?: string[]; // Array of color IDs
   colorOptions?: Color[]; // Full color objects
   size?: string[];
@@ -127,6 +136,8 @@ export interface BestSellingProduct {
   brand: string;
   sku: string;
   stock: number;
+  resellerCommissionType?: CommissionType;
+  commissionValue?: number;
   colors?: string[]; // Array of color IDs
   colorOptions?: Color[]; // Full color objects
   size?: string[];
@@ -268,6 +279,56 @@ export interface Order {
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   trackingNumber?: string;
   notes?: string;
+  resellerId?: string;
+  referralCode?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Reseller {
+  id: string;
+  userId: string;
+  name: string;
+  phone: string;
+  email?: string;
+  shopName?: string;
+  referralCode: string;
+  status: ResellerStatus;
+  totalEarnings: number;
+  availableBalance: number;
+  pendingBalance: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Referral {
+  id: string;
+  resellerId: string;
+  referralCode: string;
+  clickedIp?: string;
+  userAgent?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Commission {
+  id: string;
+  resellerId: string;
+  orderId: string;
+  amount: number;
+  status: CommissionStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Payout {
+  id: string;
+  resellerId: string;
+  amount: number;
+  method: PayoutMethod;
+  number: string;
+  status: PayoutStatus;
+  note?: string;
   createdAt: string;
   updatedAt: string;
 }

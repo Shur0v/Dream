@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckoutModal } from '@/components/cart/CheckoutModal';
 import { stateFirstPaymentService } from '@/services/payment';
 import { apiService } from '@/services/api';
+import { getStoredReferralCode } from '@/components/referral/ReferralTracker';
 
 function PaymentCheckoutContent() {
   const router = useRouter();
@@ -93,6 +94,7 @@ function PaymentCheckoutContent() {
           country: 'Bangladesh',
         },
         paymentMethod: 'State First Payment',
+        referralCode: getStoredReferralCode() || undefined,
         notes: JSON.stringify({
           customerName: formData.name,
           phoneNumber: formData.phoneNumber,
@@ -101,6 +103,7 @@ function PaymentCheckoutContent() {
           upazila: formData.upazila,
           thana: formData.thana,
           postOffice: formData.postOffice,
+          referralCode: getStoredReferralCode() || undefined,
         }),
       };
 

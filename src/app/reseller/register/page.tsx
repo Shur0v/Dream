@@ -7,6 +7,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import toast from 'react-hot-toast';
 
 export default function ResellerRegisterPage() {
   const [formData, setFormData] = useState({
@@ -17,9 +18,32 @@ export default function ResellerRegisterPage() {
     acceptAgreement: false,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Reseller registration:', formData);
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    if (!formData.acceptAgreement) {
+      toast.error('Please accept the reseller agreement');
+      return;
+    }
+
+    const response = await fetch('/api/reseller', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: formData.resellerIdOrNumber,
+        phone: formData.contactNumber || formData.resellerIdOrNumber,
+        password: formData.password,
+      }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+      toast.error(result.error || 'Reseller signup failed');
+      return;
+    }
+    toast.success('Signup submitted. Admin approval required.');
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

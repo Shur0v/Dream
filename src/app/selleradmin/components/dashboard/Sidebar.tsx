@@ -110,6 +110,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isCollapsed = false
       href: '/selleradmin/users',
       icon: <Users className="w-5 h-5" />
     },
+    {
+      label: 'Resellers',
+      href: '/selleradmin/resellers',
+      icon: <ShoppingBag className="w-5 h-5" />
+    },
+    {
+      label: 'Payouts',
+      href: '/selleradmin/payouts',
+      icon: <TrendingUp className="w-5 h-5" />
+    },
     { 
       label: 'Theme Control', 
       href: '/selleradmin/theme-control',

@@ -89,6 +89,8 @@ export async function PUT(
       brand,
       sku,
       stock,
+      resellerCommissionType,
+      commissionValue,
       colors,
       size,
       tags,
@@ -128,6 +130,13 @@ export async function PUT(
       );
     }
 
+    if (commissionValue !== undefined && Number(commissionValue) < 0) {
+      return NextResponse.json(
+        { success: false, error: 'Commission value cannot be negative' },
+        { status: 400 }
+      );
+    }
+
     if (colors && Array.isArray(colors)) {
       const allColors = await getColors();
       const validColors = colors.every(colorId =>
@@ -159,6 +168,8 @@ export async function PUT(
       ...(brand && { brand }),
       ...(sku && { sku }),
       ...(stock !== undefined && { stock: parseInt(stock) }),
+      ...(resellerCommissionType !== undefined && { resellerCommissionType: resellerCommissionType === 'fixed' ? 'fixed' : 'percentage' }),
+      ...(commissionValue !== undefined && { commissionValue: Number(commissionValue) }),
       ...(colors !== undefined && { colors }),
       ...(size !== undefined && { size }),
       ...(tags && { tags }),

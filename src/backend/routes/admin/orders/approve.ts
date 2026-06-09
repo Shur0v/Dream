@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getOrderById, saveOrder } from '@backend/lib/db';
+import { getOrderById, saveOrder, settleCommissionForOrder } from '@backend/lib/db';
 import { mockApiDelay } from '@/lib/dummyData';
 import { OrderStatus } from '@/types';
 
@@ -34,6 +34,7 @@ export async function POST(
     };
 
     await saveOrder(updatedOrder);
+    await settleCommissionForOrder(updatedOrder.id, 'approved');
 
     return NextResponse.json({
       success: true,

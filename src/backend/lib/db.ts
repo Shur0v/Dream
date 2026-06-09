@@ -10,6 +10,13 @@ import {
   ProductReview,
   PromoBanner,
   PromoBannerVariant,
+  Commission,
+  CommissionStatus,
+  Payout,
+  PayoutMethod,
+  Referral,
+  Reseller,
+  ResellerStatus,
   ReviewSource,
   User,
 } from '@/types';
@@ -27,7 +34,11 @@ type EntityTable =
   | 'hero_banners'
   | 'promo_banners'
   | 'festival_banners'
-  | 'product_reviews';
+  | 'product_reviews'
+  | 'resellers'
+  | 'referrals'
+  | 'commissions'
+  | 'payouts';
 
 type StoredRow<T> = {
   id: string;
@@ -53,6 +64,21 @@ const CACHE_TTL = 5 * 60 * 1000;
 
 const nowIso = () => new Date().toISOString();
 const makeId = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+const normalizeAmount = (value: unknown): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+};
+
+const normalizeReferralCode = (value: string) =>
+  value
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '')
+    .slice(0, 16);
+
+const makeReferralCode = (seed = 'DREAM') =>
+  normalizeReferralCode(`${seed.slice(0, 5)}${Math.random().toString(36).slice(2, 8)}`) || `DS${Date.now()}`;
 
 const decodeNextImageUrl = (value: string): string => {
   if (!value) return value;
@@ -258,6 +284,300 @@ export async function saveOrder(order: Order): Promise<Order> {
     id: order.id || makeId('order'),
     isActive: true,
   } as any);
+}
+
+export async function getResellers(includeInactive = true): Promise<Reseller[]> {
+  const rows = await getRows<Reseller>('resellers', includeInactive);
+  return rowsToEntities<Reseller>(rows);
+}
+
+export async function getResellerById(id: string): Promise<Reseller | undefined> {
+  const row = await getRowById<Reseller>('resellers', id);
+  return row ? ({ ...(row.data as any), id: row.id } as Reseller) : undefined;
+}
+
+export async function getResellerByUserId(userId: string): Promise<Reseller | undefined> {
+  const resellers = await getResellers(true);
+  return resellers.find((reseller) => reseller.userId === userId);
+}
+
+export async function getResellerByReferralCode(referralCode: string): Promise<Reseller | undefined> {
+  const normalized = normalizeReferralCode(referralCode);
+  if (!normalized) return undefined;
+  const resellers = await getResellers(true);
+  return resellers.find((reseller) => reseller.referralCode === normalized);
+}
+
+export async function saveReseller(reseller: Reseller): Promise<Reseller> {
+  return upsertRow('resellers', {
+    ...reseller,
+    referralCode: normalizeReferralCode(reseller.referralCode),
+    totalEarnings: normalizeAmount(reseller.totalEarnings),
+    availableBalance: normalizeAmount(reseller.availableBalance),
+    pendingBalance: normalizeAmount(reseller.pendingBalance),
+    status: reseller.status || 'pending',
+    isActive: reseller.status !== 'banned',
+  } as any);
+}
+
+export async function createResellerSignup(input: {
+  name: string;
+  phone: string;
+  email?: string;
+  password?: string;
+  shopName?: string;
+  status?: ResellerStatus;
+}): Promise<Reseller> {
+  const email = input.email?.trim() || `${input.phone.replace(/\D/g, '') || Date.now()}@reseller.dreamshop.local`;
+  const nameParts = input.name.trim().split(/\s+/);
+  const user = await saveUser({
+    email,
+    firstName: nameParts[0] || input.name,
+    lastName: nameParts.slice(1).join(' '),
+    phone: input.phone,
+    password: input.password,
+    role: 'reseller',
+    isEmailVerified: false,
+  } as any);
+
+  const existing = await getResellerByUserId(user.id);
+  if (existing) return existing;
+
+  let referralCode = makeReferralCode(input.shopName || input.name || input.phone);
+  while (await getResellerByReferralCode(referralCode)) {
+    referralCode = makeReferralCode(input.shopName || input.name || input.phone);
+  }
+
+  return saveReseller({
+    id: makeId('reseller'),
+    userId: user.id,
+    name: input.name,
+    phone: input.phone,
+    email: input.email,
+    shopName: input.shopName,
+    referralCode,
+    status: input.status || 'pending',
+    totalEarnings: 0,
+    availableBalance: 0,
+    pendingBalance: 0,
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+  });
+}
+
+export async function getReferrals(resellerId?: string): Promise<Referral[]> {
+  const rows = await getRows<Referral>('referrals', true);
+  const referrals = rowsToEntities<Referral>(rows);
+  return resellerId ? referrals.filter((item) => item.resellerId === resellerId) : referrals;
+}
+
+export async function trackReferralClick(input: {
+  referralCode: string;
+  clickedIp?: string;
+  userAgent?: string;
+}): Promise<Referral | null> {
+  const reseller = await getResellerByReferralCode(input.referralCode);
+  if (!reseller || reseller.status !== 'active') return null;
+  return upsertRow('referrals', {
+    id: makeId('ref'),
+    resellerId: reseller.id,
+    referralCode: reseller.referralCode,
+    clickedIp: input.clickedIp,
+    userAgent: input.userAgent,
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+    isActive: true,
+  } as any);
+}
+
+export async function getCommissions(resellerId?: string): Promise<Commission[]> {
+  const rows = await getRows<Commission>('commissions', true);
+  const commissions = rowsToEntities<Commission>(rows);
+  return resellerId ? commissions.filter((item) => item.resellerId === resellerId) : commissions;
+}
+
+export async function getCommissionByOrderId(orderId: string): Promise<Commission | undefined> {
+  const commissions = await getCommissions();
+  return commissions.find((item) => item.orderId === orderId);
+}
+
+export async function saveCommission(commission: Commission): Promise<Commission> {
+  return upsertRow('commissions', {
+    ...commission,
+    amount: normalizeAmount(commission.amount),
+    status: commission.status || 'pending',
+    isActive: true,
+  } as any);
+}
+
+export async function calculateOrderCommission(order: Order): Promise<number> {
+  let total = 0;
+  for (const item of order.items || []) {
+    const snapshot = item.product as any;
+    const product = snapshot || (await getProductById(item.productId));
+    const type = product?.resellerCommissionType || 'percentage';
+    const value = normalizeAmount(product?.commissionValue ?? 10);
+    const base = normalizeAmount(item.price || product?.price) * normalizeAmount(item.quantity || 1);
+    total += type === 'fixed' ? value * normalizeAmount(item.quantity || 1) : (base * value) / 100;
+  }
+  return Math.round(total * 100) / 100;
+}
+
+export async function createPendingCommissionForOrder(order: Order): Promise<Commission | null> {
+  if (!order.resellerId) return null;
+  const reseller = await getResellerById(order.resellerId);
+  if (!reseller || reseller.status !== 'active') return null;
+  const existing = await getCommissionByOrderId(order.id);
+  if (existing) return existing;
+
+  const amount = await calculateOrderCommission(order);
+  if (amount <= 0) return null;
+
+  const commission = await saveCommission({
+    id: makeId('commission'),
+    resellerId: reseller.id,
+    orderId: order.id,
+    amount,
+    status: 'pending',
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+  });
+
+  await saveReseller({
+    ...reseller,
+    pendingBalance: normalizeAmount(reseller.pendingBalance) + amount,
+    updatedAt: nowIso(),
+  });
+
+  return commission;
+}
+
+export async function settleCommissionForOrder(orderId: string, nextStatus: CommissionStatus): Promise<Commission | null> {
+  const commission = await getCommissionByOrderId(orderId);
+  if (!commission) return null;
+  if (commission.status === nextStatus || commission.status === 'paid') return commission;
+
+  const reseller = await getResellerById(commission.resellerId);
+  if (!reseller) return null;
+
+  const amount = normalizeAmount(commission.amount);
+  let availableBalance = normalizeAmount(reseller.availableBalance);
+  let pendingBalance = normalizeAmount(reseller.pendingBalance);
+  let totalEarnings = normalizeAmount(reseller.totalEarnings);
+
+  if (commission.status === 'pending') {
+    pendingBalance = Math.max(0, pendingBalance - amount);
+  }
+
+  if (commission.status === 'approved' && nextStatus !== 'approved' && nextStatus !== 'paid') {
+    availableBalance = Math.max(0, availableBalance - amount);
+    totalEarnings = Math.max(0, totalEarnings - amount);
+  }
+
+  if (nextStatus === 'approved') {
+    availableBalance += amount;
+    totalEarnings += amount;
+  }
+
+  await saveReseller({
+    ...reseller,
+    availableBalance,
+    pendingBalance,
+    totalEarnings,
+    updatedAt: nowIso(),
+  });
+
+  return saveCommission({
+    ...commission,
+    status: nextStatus,
+    updatedAt: nowIso(),
+  });
+}
+
+export async function getPayouts(resellerId?: string): Promise<Payout[]> {
+  const rows = await getRows<Payout>('payouts', true);
+  const payouts = rowsToEntities<Payout>(rows);
+  return resellerId ? payouts.filter((item) => item.resellerId === resellerId) : payouts;
+}
+
+export async function requestPayout(input: {
+  resellerId: string;
+  amount: number;
+  method: PayoutMethod;
+  number: string;
+}): Promise<Payout> {
+  const reseller = await getResellerById(input.resellerId);
+  if (!reseller) throw new Error('Reseller not found');
+  const amount = normalizeAmount(input.amount);
+  if (amount <= 0) throw new Error('Payout amount must be greater than 0');
+  if (amount > normalizeAmount(reseller.availableBalance)) throw new Error('Insufficient available balance');
+
+  await saveReseller({
+    ...reseller,
+    availableBalance: Math.max(0, normalizeAmount(reseller.availableBalance) - amount),
+    updatedAt: nowIso(),
+  });
+
+  return upsertRow('payouts', {
+    id: makeId('payout'),
+    resellerId: input.resellerId,
+    amount,
+    method: input.method,
+    number: input.number,
+    status: 'requested',
+    createdAt: nowIso(),
+    updatedAt: nowIso(),
+    isActive: true,
+  } as any);
+}
+
+export async function updatePayoutStatus(id: string, status: Payout['status'], note?: string): Promise<Payout | null> {
+  const row = await getRowById<Payout>('payouts', id);
+  if (!row) return null;
+  const payout = { ...(row.data as any), id: row.id } as Payout;
+  const reseller = await getResellerById(payout.resellerId);
+
+  if (reseller && status === 'rejected' && payout.status !== 'rejected' && payout.status !== 'paid') {
+    await saveReseller({
+      ...reseller,
+      availableBalance: normalizeAmount(reseller.availableBalance) + normalizeAmount(payout.amount),
+      updatedAt: nowIso(),
+    });
+  }
+
+  return upsertRow('payouts', {
+    ...payout,
+    status,
+    note,
+    updatedAt: nowIso(),
+    isActive: true,
+  } as any);
+}
+
+export async function getResellerDashboardData(resellerId: string) {
+  const [reseller, commissions, payouts, referrals, orders] = await Promise.all([
+    getResellerById(resellerId),
+    getCommissions(resellerId),
+    getPayouts(resellerId),
+    getReferrals(resellerId),
+    getOrders(),
+  ]);
+  if (!reseller) return null;
+
+  const resellerOrders = orders.filter((order) => order.resellerId === reseller.id);
+  return {
+    reseller,
+    commissions,
+    payouts,
+    referrals,
+    orders: resellerOrders,
+    stats: {
+      totalOrders: resellerOrders.length,
+      pendingCommissions: commissions.filter((item) => item.status === 'pending').reduce((sum, item) => sum + item.amount, 0),
+      approvedCommissions: commissions.filter((item) => item.status === 'approved' || item.status === 'paid').reduce((sum, item) => sum + item.amount, 0),
+      clicks: referrals.length,
+    },
+  };
 }
 
 export async function getCategories(includeInactive = false): Promise<Category[]> {

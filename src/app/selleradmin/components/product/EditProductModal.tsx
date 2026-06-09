@@ -27,6 +27,8 @@ interface EditableProduct {
   tags?: string[];
   sku?: string;
   stock?: number;
+  resellerCommissionType?: 'percentage' | 'fixed';
+  commissionValue?: number;
   isActive?: boolean;
   specifications?: Record<string, unknown>;
   discount?: number;
@@ -63,6 +65,8 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
     tags: [],
     sku: '',
     stock: undefined,
+    resellerCommissionType: 'percentage',
+    commissionValue: 10,
     isActive: true,
     specifications: {},
     discount: undefined,
@@ -171,6 +175,8 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
         tags: product.tags || [],
         sku: product.sku || '',
         stock: product.stock,
+        resellerCommissionType: product.resellerCommissionType || 'percentage',
+        commissionValue: product.commissionValue ?? 10,
         isActive: product.isActive ?? true,
         specifications: product.specifications || {},
         discount: product.discount,
@@ -335,6 +341,8 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
       brand: form.brand || product.brand || '',
       sku: form.sku || product.sku || '',
       stock: form.stock !== undefined ? form.stock : product.stock,
+      resellerCommissionType: form.resellerCommissionType || product.resellerCommissionType || 'percentage',
+      commissionValue: form.commissionValue !== undefined ? form.commissionValue : (product.commissionValue ?? 10),
       sizes: form.sizes || [],
       colors: form.colors || [],
       tags: form.tags || [],
@@ -443,6 +451,38 @@ export default function EditProductModal({ isOpen, onClose, onSave, onImagesUpda
                   placeholder="Write product description"
                   className="w-full h-full bg-transparent outline-none text-zinc-900 text-base font-normal font-['Poppins'] resize-none"
                 />
+              </div>
+            </div>
+
+            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="w-full flex flex-col gap-2.5">
+                <label className="self-stretch text-neutral-600 text-base font-medium font-['Poppins'] leading-6">
+                  Reseller Commission Type
+                </label>
+                <SimpleSelect
+                  value={form.resellerCommissionType || 'percentage'}
+                  onChange={(v) => handleChange('resellerCommissionType', v as 'percentage' | 'fixed')}
+                  options={['percentage', 'fixed'] as readonly string[]}
+                  placeholder="Select commission type"
+                />
+              </div>
+
+              <div className="w-full flex flex-col gap-2.5">
+                <label className="self-stretch text-neutral-600 text-base font-medium font-['Poppins'] leading-6">
+                  Commission Value
+                </label>
+                <div className="w-full h-14 px-5 py-3.5 rounded-md outline outline-1 outline-offset-[-1px] outline-gray-200 inline-flex items-center gap-2.5">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.commissionValue ?? ''}
+                    onChange={(e) => handleChange('commissionValue', e.target.value ? parseFloat(e.target.value) : 0)}
+                    placeholder="10"
+                    className="w-full bg-transparent outline-none text-zinc-900 text-base font-normal font-['Poppins']"
+                  />
+                </div>
+                <p className="text-zinc-400 text-sm">Percentage uses %, fixed uses BDT per quantity.</p>
               </div>
             </div>
           </div>

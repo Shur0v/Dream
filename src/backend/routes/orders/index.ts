@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getOrders, saveOrder } from '@backend/lib/db';
+import {
+  createPendingCommissionForOrder,
+  getOrders,
+  getResellerByReferralCode,
+  saveOrder,
+  trackReferralClick,
+} from '@backend/lib/db';
 import { OrderStatus } from '@/types';
 import { buildSteadfastRecipientAddress, createSteadfastOrder, isSteadfastEnabled } from '@backend/lib/steadfast';
 
@@ -47,6 +53,23 @@ export async function POST(request: NextRequest) {
 
     const totalAmount = items.reduce((sum: number, item: any) => sum + (item.price || 0) * (item.quantity || 1), 0);
 
+    const parsedNotes = typeof notes === 'string' ? (() => {
+      try {
+        return JSON.parse(notes);
+      } catch {
+        return {};
+      }
+    })() : (notes || {});
+    const requestedReferralCode = String(body.referralCode || parsedNotes?.referralCode || parsedNotes?.ref || '').trim();
+    const reseller = requestedReferralCode ? await getResellerByReferralCode(requestedReferralCode) : undefined;
+    if (reseller?.status === 'active') {
+      await trackReferralClick({
+        referralCode: reseller.referralCode,
+        clickedIp: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || undefined,
+        userAgent: request.headers.get('user-agent') || undefined,
+      });
+    }
+
     const newOrder = {
       id: `order-${Date.now()}`,
       userId: String(userId),
@@ -66,12 +89,15 @@ export async function POST(request: NextRequest) {
       paymentMethod: paymentMethod || 'Credit Card',
       paymentStatus: 'pending' as 'pending' | 'paid' | 'failed' | 'refunded',
       notes: notes || undefined,
+      resellerId: reseller?.status === 'active' ? reseller.id : undefined,
+      referralCode: reseller?.status === 'active' ? reseller.referralCode : undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       isActive: true,
     };
 
     let savedOrder = await saveOrder(newOrder as any);
+    await createPendingCommissionForOrder(savedOrder as any);
 
     let steadfast: any = null;
     if (isSteadfastEnabled()) {

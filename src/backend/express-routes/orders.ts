@@ -4,9 +4,12 @@
 
 import { Router, Request, Response } from 'express';
 import {
+  createPendingCommissionForOrder,
   getOrders as getOrdersFromMongo,
   getOrderById as getOrderByIdFromMongo,
+  getResellerByReferralCode,
   saveOrder as saveOrderToMongo,
+  trackReferralClick,
 } from '../lib/db';
 import { buildSteadfastRecipientAddress, createSteadfastOrder, isSteadfastEnabled } from '../lib/steadfast';
 import { OrderStatus } from '../../types';
@@ -17,6 +20,30 @@ const saveOrder = saveOrderToMongo;
 
 const router = Router();
 const paramToString = (value: string | string[] | undefined): string => Array.isArray(value) ? value[0] || '' : value || '';
+
+const getRequestIp = (req: Request): string => {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string') return forwarded.split(',')[0]?.trim() || req.ip || '';
+  if (Array.isArray(forwarded)) return forwarded[0] || req.ip || '';
+  return req.ip || '';
+};
+
+const getReferralCodeFromPayload = (body: any): string => {
+  if (typeof body?.referralCode === 'string') return body.referralCode.trim();
+  if (typeof body?.ref === 'string') return body.ref.trim();
+  const notes = body?.notes;
+  if (!notes) return '';
+  if (typeof notes === 'object') return String(notes.referralCode || notes.ref || '').trim();
+  if (typeof notes === 'string') {
+    try {
+      const parsed = JSON.parse(notes);
+      return String(parsed?.referralCode || parsed?.ref || '').trim();
+    } catch {
+      return '';
+    }
+  }
+  return '';
+};
 
 const mockApiDelay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -104,6 +131,9 @@ router.post('/', async (req: Request, res: Response) => {
       notes,
     } = req.body;
 
+    const referralCode = getReferralCodeFromPayload(req.body);
+    const reseller = referralCode ? await getResellerByReferralCode(referralCode) : null;
+
     console.log('[POST /api/orders] Received order data:', {
       userId,
       itemsCount: items?.length,
@@ -143,6 +173,8 @@ router.post('/', async (req: Request, res: Response) => {
       paymentMethod: paymentMethod || 'Credit Card',
       paymentStatus: 'pending' as 'pending' | 'paid' | 'failed' | 'refunded',
       notes: notes || undefined,
+      resellerId: reseller?.status === 'active' ? reseller.id : undefined,
+      referralCode: reseller?.status === 'active' ? reseller.referralCode : undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -156,6 +188,13 @@ router.post('/', async (req: Request, res: Response) => {
 
     // Save order to MongoDB
     let savedOrder = await saveOrderToMongo(newOrder as any);
+    if (reseller?.status === 'active') {
+      await trackReferralClick({
+        referralCode: reseller.referralCode,
+        clickedIp: getRequestIp(req),
+      });
+      await createPendingCommissionForOrder(savedOrder as any);
+    }
     console.log('[POST /api/orders] Order saved successfully:', savedOrder.id);
 
     // Optional SteadFast payment/consignment integration

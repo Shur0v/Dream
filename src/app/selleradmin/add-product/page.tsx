@@ -78,6 +78,8 @@ export default function AddProductPage() {
         brand: data.brand,
         sku: data.sku,
         stock: data.stock,
+        resellerCommissionType: data.resellerCommissionType,
+        commissionValue: data.commissionValue,
         colors: colorIds.length > 0 ? colorIds : [], // Always send array, never undefined
         size: data.sizes || [],
         tags: data.tags || [],

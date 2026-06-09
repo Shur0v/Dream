@@ -117,6 +117,34 @@ const createStatements = [
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`,
+  `CREATE TABLE IF NOT EXISTS resellers (
+    id TEXT PRIMARY KEY,
+    data JSONB NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE TABLE IF NOT EXISTS referrals (
+    id TEXT PRIMARY KEY,
+    data JSONB NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE TABLE IF NOT EXISTS commissions (
+    id TEXT PRIMARY KEY,
+    data JSONB NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
+  `CREATE TABLE IF NOT EXISTS payouts (
+    id TEXT PRIMARY KEY,
+    data JSONB NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`,
   `CREATE TABLE IF NOT EXISTS carts (
     id TEXT PRIMARY KEY,
     user_id TEXT UNIQUE NOT NULL,
@@ -141,6 +169,15 @@ const createStatements = [
   `CREATE INDEX IF NOT EXISTS idx_best_selling_active ON best_selling_products(is_active)`,
   `CREATE INDEX IF NOT EXISTS idx_users_email ON users((data->>'email'))`,
   `CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON product_reviews((data->>'productId'))`,
+  `CREATE INDEX IF NOT EXISTS idx_resellers_user_id ON resellers((data->>'userId'))`,
+  `CREATE INDEX IF NOT EXISTS idx_resellers_referral_code ON resellers((data->>'referralCode'))`,
+  `CREATE INDEX IF NOT EXISTS idx_resellers_status ON resellers((data->>'status'))`,
+  `CREATE INDEX IF NOT EXISTS idx_referrals_reseller_id ON referrals((data->>'resellerId'))`,
+  `CREATE INDEX IF NOT EXISTS idx_commissions_reseller_id ON commissions((data->>'resellerId'))`,
+  `CREATE INDEX IF NOT EXISTS idx_commissions_order_id ON commissions((data->>'orderId'))`,
+  `CREATE INDEX IF NOT EXISTS idx_commissions_status ON commissions((data->>'status'))`,
+  `CREATE INDEX IF NOT EXISTS idx_payouts_reseller_id ON payouts((data->>'resellerId'))`,
+  `CREATE INDEX IF NOT EXISTS idx_payouts_status ON payouts((data->>'status'))`,
   `CREATE INDEX IF NOT EXISTS idx_carts_user_id ON carts(user_id)`,
   `CREATE INDEX IF NOT EXISTS idx_wishlists_user_id ON wishlists(user_id)`,
 ];
